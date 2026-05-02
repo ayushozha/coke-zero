@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/drone.schema.json",
+  "title": "Drone Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "track_id",
+    "platform_type",
+    "activity"
+  ],
+  "properties": {
+    "track_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "platform_type": {
+      "type": "string",
+      "enum": [
+        "fixed_wing",
+        "rotary",
+        "multirotor",
+        "loitering_munition",
+        "unknown"
+      ]
+    },
+    "activity": {
+      "type": "string",
+      "enum": [
+        "launch",
+        "landing",
+        "transit",
+        "loiter",
+        "payload_release",
+        "lost_link"
+      ]
+    },
+    "altitude_m": {
+      "type": "number",
+      "minimum": 0
+    },
+    "speed_mps": {
+      "type": "number",
+      "minimum": 0
+    },
+    "heading_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    },
+    "operator_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    }
+  }
+}
