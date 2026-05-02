@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.13.3",
     "pyyaml>=6.0.3",
     "skyfield>=1.54",
+    "jsonschema>=4.26.0"
 ]
 
 [dependency-groups]

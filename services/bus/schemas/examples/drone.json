@@ -1,0 +1,30 @@
+{
+  "id": "sig_drone_000001",
+  "ts": "2026-05-02T15:18:10Z",
+  "domain": "drone",
+  "source": "canopy-drone-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.83,
+  "location": {
+    "lat": 34.0522,
+    "alt_m": 210,
+    "ce_m": 95,
+    "lng": -118.2437
+  },
+  "payload": {
+    "track_id": "uas-track-7781",
+    "platform_type": "multirotor",
+    "activity": "loiter",
+    "altitude_m": 210,
+    "speed_mps": 8.4,
+    "heading_deg": 74.5,
+    "operator_id": "operator-unknown",
+    "event_type": "drone",
+    "summary": "drone signal"
+  },
+  "provenance": {
+    "source_id": "canopy-drone-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}
