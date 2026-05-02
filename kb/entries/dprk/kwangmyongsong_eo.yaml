@@ -1,0 +1,19 @@
+id: kp_kwangmyongsong_eo
+actor: DPRK
+unit: National Aerospace Technology Administration
+system: Kwangmyongsong-class / Malligyong-1 reconnaissance satellite
+domain: orbital
+signature:
+  behavior: revisit_imaging
+  band: optical
+  altitude: LEO
+doctrine: >
+  DPRK reconnaissance satellite program publicly oriented toward imaging
+  South Korean, Japanese, and US Pacific assets. Operational utility is
+  contested in open-source assessments; however, the political signal of an
+  overpass remains a relevant attribution cue when paired with regional
+  posture changes.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Attribution priors low without corroborating regional indicators; treat overpass alone as informational."

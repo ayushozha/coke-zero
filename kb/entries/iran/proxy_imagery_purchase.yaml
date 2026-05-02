@@ -1,0 +1,20 @@
+id: ir_proxy_imagery_purchase
+actor: Iran
+unit: IRGC Quds Force / aligned proxies
+system: Commercial-imagery procurement pattern
+domain: osint
+signature:
+  pattern: commercial_imagery_purchase_via_proxy
+  ttps:
+    - shell_company_buyer
+    - aoi_repeated_tasking
+  detection_cue: aoi_alignment_with_iran_aligned_targeting
+doctrine: >
+  Open-source reporting documents Iranian and Iran-aligned procurement of
+  commercial imagery products through proxy buyers. The signature is
+  repeated tasking of an AOR aligned with known Iranian targeting interests
+  ahead of activity in that area.
+sources:
+  - csis_2025_space_threat_assessment
+  - reuters_iran_imagery_2024
+notes: "HUMINT or financial-intel cue feeding orbital expectation; pair with overpass timing for attribution."

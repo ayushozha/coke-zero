@@ -1,0 +1,18 @@
+id: cn_ground_asat_sc19
+actor: China
+unit: PLA Rocket Force / Aerospace Force
+system: SC-19 / DN-1 ground-based ASAT
+domain: kinetic
+signature:
+  pattern: ground_launched_kinetic_intercept
+  altitude_band: LEO
+  precedent_event: 2007_fy1c_intercept
+doctrine: >
+  Direct-ascent kinetic ASAT capability demonstrated against the FY-1C
+  weather satellite in 2007. Launch indications are observable as anomalous
+  rocket plume signatures from known PLA test ranges; effects are
+  catastrophic and produce long-lived debris fields.
+sources:
+  - csis_2025_space_threat_assessment
+  - dia_2022_challenges_security_in_space
+notes: "High-severity, low-frequency. Match against rocket-plume detection from known sites."

@@ -1,0 +1,18 @@
+id: ru_cosmos2576_inspector
+actor: Russia
+unit: Russian Aerospace Forces
+system: Cosmos 2576
+domain: orbital
+signature:
+  behavior: rpo_close_approach
+  profile: coplanar_inspector
+  altitude: LEO
+doctrine: >
+  Inspector-class payload publicly reported in 2024 deployed into a coplanar
+  orbit with a US national security satellite. Pattern is consistent with the
+  Cosmos 2519 / 2521 / 2542 lineage of "nesting doll" inspectors and with the
+  Russian preference for shadowing maneuvers over kinetic engagement.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Coplanar shadowing of high-value LEO assets — pair with terrestrial RF activations for coordinated-campaign attribution."

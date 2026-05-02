@@ -1,0 +1,24 @@
+id: ru_doctrine_rf_coorbital_pairing
+actor: Russia
+unit: General Staff
+system: Doctrinal pattern (RF + co-orbital pairing)
+domain: doctrine
+signature:
+  pattern: opening_phase_paired_action
+  components:
+    - terrestrial_ew_envelope
+    - coorbital_inspector_or_release
+    - cyber_probe_against_ground_segment
+  observable_window_min: 5
+  observable_window_max: 90
+doctrine: >
+  Russian counterspace doctrine, as inferred from open-source exercise
+  reporting and historical incidents, pairs ground-based EW envelopes with
+  co-orbital action and concurrent cyber probes against ground segments.
+  Detection of two of these legs within minutes of each other should raise
+  the prior on the third.
+sources:
+  - csis_2025_space_threat_assessment
+  - mitchell_2025_dec
+  - ussf_2025_space_warfighting
+notes: "Cross-domain prior — used by attribution agent to elevate confidence when 2 of 3 legs observed."

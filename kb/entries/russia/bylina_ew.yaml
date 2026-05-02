@@ -1,0 +1,18 @@
+id: ru_bylina_ew
+actor: Russia
+unit: Russian Aerospace Forces
+system: Bylina (R-330BMV / automated EW C2)
+domain: rf_ew
+signature:
+  pattern: automated_ew_c2_with_clustered_jammers
+  deployment: ground_brigade_level
+  detection_cue: simultaneous_multi_band_jam_initiation
+doctrine: >
+  Automated EW command-and-control system that orchestrates clustered jammers
+  (Krasukha, Leer, Tirada, etc.) across bands. Public reporting frames Bylina
+  as the integrator that produces the layered EW envelopes observed in
+  exercise reporting.
+sources:
+  - swf_2025_global_counterspace
+  - mitchell_2025_dec
+notes: "Simultaneous multi-band jam onset is a Bylina-coordinated tell; expect multiple targets in the same minute."
