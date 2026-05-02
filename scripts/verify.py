@@ -43,6 +43,14 @@ TIMEOUT_STUB_S = 10.0
 TIMEOUT_LIVE_S = 180.0
 DRAIN_STUB_S = 1.0
 DRAIN_LIVE_S = 8.0
+RECOMMENDATION_SCENARIOS = {
+    "beat47.jsonl",
+    "army_multidomain_attack_chain.jsonl",
+    "army_relay_reconfig.jsonl",
+    "iran_counter_c5isr_brigade.jsonl",
+    "iran_hormuz_convoy_resilience.jsonl",
+    "iran_proxy_uas_base_defense.jsonl",
+}
 
 
 def _build_llm(*, live: bool, kb: KB) -> LLMClient:
@@ -59,7 +67,20 @@ def _build_llm(*, live: bool, kb: KB) -> LLMClient:
     return StubLLMClient(kb)
 
 
-async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
+def _should_require_recommendation(scenarios: list[Path], policy: str) -> bool:
+    if policy == "always":
+        return True
+    if policy == "never":
+        return False
+    return any(path.name in RECOMMENDATION_SCENARIOS for path in scenarios)
+
+
+async def _verify(
+    scenarios: list[Path],
+    *,
+    live: bool = False,
+    require_recommendation: bool = True,
+) -> int:
     bus = InProcessBus()
     kb = KB.load_from_json(ROOT / "data" / "kb_seed_entries.json")
     llm = _build_llm(live=live, kb=kb)
@@ -134,12 +155,11 @@ async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
     elif not all(isinstance(e, UIEvent) for _, e in collected["ui_event"]):
         failures.append("non-UIEvent leaked onto ui_events.*")
 
-    # We expect at least one recommendation_created from the Beat 4.7 RPO path.
-    if collected["ui_event"]:
+    if require_recommendation and collected["ui_event"]:
         rec_types = {ui_evt.type for _, ui_evt in collected["ui_event"]}
         if "recommendation_created" not in rec_types:
             failures.append(
-                "no UIEvent of type=recommendation_created (Beat 4.7 path missing)"
+                "no UIEvent of type=recommendation_created"
             )
 
     if failures:
@@ -189,9 +209,27 @@ def main() -> int:
         nargs="*",
         help="Scenario JSONL paths (default: all four canonical beats).",
     )
+    parser.add_argument(
+        "--require-recommendation",
+        choices=["auto", "always", "never"],
+        default="auto",
+        help=(
+            "Whether to require a recommendation_created UIEvent. Auto requires "
+            "it only for recommendation-oriented scenarios such as Beat 4.7, "
+            "Army multi-domain, relay reconfig, and Iran space-support demos."
+        ),
+    )
     args = parser.parse_args()
     scenarios = [Path(p) for p in args.scenarios] or DEFAULT_SCENARIOS
-    return asyncio.run(_verify(scenarios, live=args.live))
+    return asyncio.run(
+        _verify(
+            scenarios,
+            live=args.live,
+            require_recommendation=_should_require_recommendation(
+                scenarios, args.require_recommendation
+            ),
+        )
+    )
 
 
 if __name__ == "__main__":
