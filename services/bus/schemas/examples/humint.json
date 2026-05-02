@@ -1,0 +1,25 @@
+{
+  "id": "sig_humint_00001",
+  "ts": "2026-05-02T13:25:00Z",
+  "domain": "humint",
+  "source": "canopy-humint-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.67,
+  "location": {
+    "mgrs": "18SUJ23480647"
+  },
+  "payload": {
+    "report_id": "humint-rpt-20260502-001",
+    "source_code": "src-4412",
+    "reliability": "b",
+    "credibility": 3,
+    "summary": "Source reports increased vehicle activity near a logistics facility during early morning hours.",
+    "collection_method": "field_contact",
+    "event_type": "humint"
+  },
+  "provenance": {
+    "source_id": "canopy-humint-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

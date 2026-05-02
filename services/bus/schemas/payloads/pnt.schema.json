@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/pnt.schema.json",
+  "title": "PNT Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "system",
+    "effect_type",
+    "integrity",
+    "event_type",
+    "summary"
+  ],
+  "properties": {
+    "system": {
+      "type": "string",
+      "enum": [
+        "gps",
+        "galileo",
+        "glonass",
+        "beidou",
+        "ins",
+        "multi"
+      ]
+    },
+    "effect_type": {
+      "type": "string",
+      "enum": [
+        "nominal",
+        "jamming",
+        "spoofing",
+        "degraded_accuracy",
+        "outage"
+      ]
+    },
+    "integrity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "position_error_m": {
+      "type": "number",
+      "minimum": 0
+    },
+    "time_error_ns": {
+      "type": "number",
+      "minimum": 0
+    },
+    "jam_to_noise_db": {
+      "type": "number"
+    }
+  }
+}

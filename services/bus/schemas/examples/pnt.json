@@ -1,0 +1,28 @@
+{
+  "id": "sig_pnt_00000001",
+  "ts": "2026-05-02T15:08:15Z",
+  "domain": "pnt",
+  "source": "canopy-pnt-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.78,
+  "location": {
+    "lat": 32.7157,
+    "ce_m": 1200,
+    "lng": -117.1611
+  },
+  "payload": {
+    "system": "gps",
+    "effect_type": "degraded_accuracy",
+    "integrity": 0.64,
+    "position_error_m": 38.5,
+    "time_error_ns": 91.2,
+    "jam_to_noise_db": 4.1,
+    "event_type": "degraded_accuracy",
+    "summary": "pnt signal"
+  },
+  "provenance": {
+    "source_id": "canopy-pnt-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}
