@@ -28,28 +28,72 @@ GNSS_SPOOF_TOKEN = "spoof"
 # Per-domain event_type → anomaly kind mappings for the simple "echo this as
 # an anomaly" path. Orbital event_types are handled by the correlator below.
 DOMAIN_PATTERN_MAP: dict[tuple[str, str], str] = {
+    # RF / EW
     ("rf_ew", "rf_interference"): "rf_anomaly",
     ("rf_ew", "satcom_rf_spike"): "rf_anomaly",
+    ("rf_ew", "gnss_jamming_signature"): "rf_gnss_jamming",
+    ("rf_ew", "uas_control_link_detected"): "rf_uas_control_link",
+    ("rf_ew", "emission_posture_risk"): "rf_emission_posture_risk",
+    ("rf_ew", "telemetry_degradation"): "rf_telemetry_degradation",
+    # PNT / GNSS
     ("pnt", "pnt_spoofing"): "gnss_spoof",
     ("pnt", "pnt_rf_alignment"): "gnss_spoof",
     ("pnt", "gps_spoof"): "gnss_spoof",
+    # Cyber
     ("cyber", "credential_spray"): "cyber_probe_burst",
     ("cyber", "credential_probe"): "cyber_probe_burst",
     ("cyber", "process_anomaly"): "cyber_probe_burst",
     ("cyber", "intrusion"): "cyber_probe_burst",
     ("cyber", "response_action"): "cyber_response_action",
+    # SATCOM
     ("satcom", "satcom_degradation"): "satcom_degradation",
     ("satcom", "satcom_link_margin_drop"): "satcom_degradation",
     ("satcom", "telemetry_degradation"): "satcom_degradation",
+    # SDA
+    ("sda", "sda_catalog_match"): "sda_catalog_match",
+    ("sda", "maritime_space_picture_shift"): "sda_maritime_picture_shift",
+    ("sda", "overhead_ir_cue"): "sda_overhead_ir_cue",
+    ("sda", "counterspace_capability_context"): "sda_counterspace_context",
+    # Drone — both threat (spoof, lost link) and protective (FDIR, relay)
     ("drone", "drone_spoofing"): "drone_spoofing",
     ("drone", "lost_link"): "drone_lost_link",
     ("drone", "degraded_telemetry"): "drone_degraded",
+    ("drone", "autonomous_relay_handoff"): "drone_relay_handoff",
+    ("drone", "relay_candidate_ready"): "drone_relay_candidate_ready",
+    ("drone", "relay_mesh_status"): "drone_relay_mesh_status",
+    ("drone", "fdir_recovery_action"): "drone_fdir_recovery",
+    ("drone", "base_defense_posture_change"): "drone_base_defense_posture",
+    ("drone", "uas_track_detected"): "drone_uas_track",
+    # Terrain
+    ("terrain", "terrain_masking_risk"): "terrain_masking_risk",
+    # HUMINT
     ("humint", "procurement_report"): "humint_report",
+    # OSINT — assessments and contexts (correlation outputs from upstream cells)
     ("osint", "convergence"): "osint_convergence",
     ("osint", "commander_update"): "osint_commander_update",
     ("osint", "close_approach_assessment"): "osint_close_approach_assessment",
     ("osint", "campaign_assessment"): "osint_campaign_assessment",
     ("osint", "collection_cue"): "osint_collection_cue",
+    ("osint", "multi_domain_attack_assessment"): "osint_multi_domain_attack",
+    ("osint", "iran_counter_c5isr_assessment"): "osint_iran_c5isr_assessment",
+    ("osint", "space_support_hold_recommendation"): "osint_space_support_hold",
+    ("osint", "space_enabled_base_defense_assessment"): "osint_space_base_defense",
+    ("osint", "collection_risk_assessment"): "osint_collection_risk",
+    ("osint", "relay_resilience_assessment"): "osint_relay_resilience",
+    ("osint", "fdir_assessment"): "osint_fdir_assessment",
+    ("osint", "blockade_notice"): "osint_blockade_notice",
+    ("osint", "missile_uas_capability_context"): "osint_missile_uas_context",
+    ("osint", "militia_uas_risk_context"): "osint_militia_uas_context",
+}
+
+# Event types we deliberately do not emit anomalies for — baseline / context /
+# informational signals. They still get logged as "seen" but the engine
+# remains quiet rather than producing low-value threat warnings.
+IGNORED_EVENT_TYPES: set[tuple[str, str]] = {
+    ("cyber", "ground_segment_baseline"),
+    ("drone", "telemetry_update"),
+    ("osint", "osint_context"),
+    ("osint", "public_report"),
 }
 
 
@@ -157,6 +201,10 @@ class FusionService:
 
         event_type = signal.payload.event_type
         domain = signal.domain
+
+        if (domain, event_type) in IGNORED_EVENT_TYPES:
+            log.debug("fusion: ignoring baseline %s/%s", domain, event_type)
+            return
 
         # 1) Per-domain pattern echo (works for every domain except orbit,
         # which has its own correlator below).

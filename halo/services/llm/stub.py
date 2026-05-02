@@ -201,6 +201,246 @@ _KIND_TO_ATTRIBUTION: dict[str, _AttribTemplate] = {
         predicted_next=None,
         capability_lookups=["commercial_dependency"],
     ),
+    # ---- RF / EW (extended) -----------------------------------------------
+    "rf_gnss_jamming": _AttribTemplate(
+        actor="Russia",
+        confidence=0.78,
+        evidence=[
+            "Detected GNSS jamming signature is consistent with documented EW capabilities.",
+            "Signature alone is informational; pair with PNT receiver effects to raise confidence.",
+        ],
+        predicted_next="If receivers report position drift, escalate to multi-constellation fallback.",
+        capability_lookups=["jamming_spoofing"],
+    ),
+    "rf_uas_control_link": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.62,
+        evidence=[
+            "RF emissions consistent with adversary UAS control link in the AOR.",
+            "Public detection alone does not confirm operator; correlate with overhead cues.",
+        ],
+        predicted_next="Watch for follow-on UAS track or control-link bursts converging on protected nodes.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "rf_emission_posture_risk": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "Friendly emissions are at risk of detection during a hostile collection window.",
+        ],
+        predicted_next="Recommend emission-control posture for the duration of the overpass.",
+        capability_lookups=["commercial_dependency"],
+    ),
+    "rf_telemetry_degradation": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "Telemetry degradation observed; correlate with RF or PNT cues before raising confidence.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    # ---- SDA --------------------------------------------------------------
+    "sda_overhead_ir_cue": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.62,
+        evidence=[
+            "Overhead IR cue is consistent with possible launch or hot-emitter activity in the AOR.",
+            "Public assessment; correlate with regional posture before raising confidence.",
+        ],
+        predicted_next="Watch for follow-on RF or imagery cues that confirm a launch profile.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "sda_maritime_picture_shift": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.58,
+        evidence=[
+            "Maritime AIS / overhead imagery picture shifting in the watch box.",
+            "Treat as commercial-dependency context until corroborated by direct sensors.",
+        ],
+        predicted_next=None,
+        capability_lookups=["commercial_dependency"],
+    ),
+    "sda_catalog_match": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "SDA catalog match; informational track update.",
+        ],
+        predicted_next=None,
+        capability_lookups=["commercial_dependency"],
+    ),
+    "sda_counterspace_context": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.62,
+        evidence=[
+            "Public counterspace capability context relevant to the AOR.",
+            "Treat as background prior; not direct attribution.",
+        ],
+        predicted_next=None,
+        capability_lookups=["co_orbital_rpo", "attribution_uncertainty"],
+    ),
+    # ---- Drone (protective autonomous actions and tracks) -----------------
+    "drone_relay_handoff": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.45,
+        evidence=[
+            "Autonomous drone relay handoff completed; ISR continuity preserved.",
+            "Status update — not an adversary attribution.",
+        ],
+        predicted_next="Monitor relay mesh stability and degraded-mode traffic.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "drone_relay_candidate_ready": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.40,
+        evidence=[
+            "Relay candidate drone reports ready to take primary role.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "drone_relay_mesh_status": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.40,
+        evidence=[
+            "Drone relay mesh status update.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "drone_fdir_recovery": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.45,
+        evidence=[
+            "Drone FDIR recovery action executed; isolating spoofed navigation.",
+            "Status update — autonomous response, not adversary attribution.",
+        ],
+        predicted_next="ISR continues with reduced confidence until alternate PNT confirmed.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "drone_base_defense_posture": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "Base defense posture change consistent with elevated UAS or proxy risk.",
+        ],
+        predicted_next="Watch for UAS tracks or RF control links converging on the perimeter.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "drone_uas_track": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.62,
+        evidence=[
+            "UAS track detected; correlate with RF and overhead cues before raising confidence.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    # ---- Terrain ----------------------------------------------------------
+    "terrain_masking_risk": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.45,
+        evidence=[
+            "Terrain masking risk along the route; affects relay geometry and link margins.",
+        ],
+        predicted_next="Pre-position relay or shift route to mitigate masking.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    # ---- OSINT (correlation outputs and contexts, extended) --------------
+    "osint_multi_domain_attack": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.78,
+        evidence=[
+            "Cross-domain assessment is consistent with coordinated counter-C5ISR pressure.",
+            "Public reporting does not prove a single actor; assessment is confidence-scored.",
+        ],
+        predicted_next="Anticipate continued pressure on space-enabled functions across the next contact cycle.",
+        capability_lookups=["jamming_spoofing", "satcom_jamming", "co_orbital_rpo"],
+    ),
+    "osint_iran_c5isr_assessment": _AttribTemplate(
+        actor="Iran",
+        confidence=0.66,
+        evidence=[
+            "Pattern is consistent with Iran-aligned counter-C5ISR pressure on space-enabled functions.",
+            "Public reporting only; not proof of intent.",
+        ],
+        predicted_next="Expect sustained pressure on PNT, SATCOM, and overhead distribution chains.",
+        capability_lookups=["jamming_spoofing", "satcom_jamming", "attribution_uncertainty"],
+    ),
+    "osint_space_support_hold": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.70,
+        evidence=[
+            "Space-support functions degraded; recommend hold until fallbacks confirmed.",
+        ],
+        predicted_next="Resume movement only when alternate PNT and SATCOM fallback are validated.",
+        capability_lookups=["satcom_jamming", "jamming_spoofing"],
+    ),
+    "osint_space_base_defense": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.66,
+        evidence=[
+            "Space-enabled base defense assessment is consistent with elevated UAS / counterspace pressure.",
+            "Confidence-scored; not proof of attribution.",
+        ],
+        predicted_next="Maintain perimeter sensor custody and cached overhead products through the window.",
+        capability_lookups=["attribution_uncertainty", "satcom_jamming"],
+    ),
+    "osint_collection_risk": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.62,
+        evidence=[
+            "Collection risk assessment; commercial overpass and adversary tasking both relevant.",
+        ],
+        predicted_next="Recommend mask or timing change during the collection window.",
+        capability_lookups=["commercial_dependency"],
+    ),
+    "osint_relay_resilience": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "Relay resilience assessment; the network adapted without operator intervention.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "osint_fdir_assessment": _AttribTemplate(
+        actor="Unknown",
+        confidence=0.55,
+        evidence=[
+            "FDIR assessment; ISR preserved with reduced confidence after navigation isolation.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "osint_blockade_notice": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.60,
+        evidence=[
+            "Public blockade timeline relevant to space-enabled convoy support.",
+        ],
+        predicted_next="Open a theater space-support watch window aligned with the announced timeline.",
+        capability_lookups=["commercial_dependency"],
+    ),
+    "osint_missile_uas_context": _AttribTemplate(
+        actor="Iran",
+        confidence=0.60,
+        evidence=[
+            "Public missile / UAS capability context is consistent with regional pressure on US forces.",
+        ],
+        predicted_next=None,
+        capability_lookups=["attribution_uncertainty"],
+    ),
+    "osint_militia_uas_context": _AttribTemplate(
+        actor="Iran",
+        confidence=0.58,
+        evidence=[
+            "Public militia / UAS risk context relevant to base space-support nodes.",
+        ],
+        predicted_next="Pair with overhead and RF cues before raising confidence.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
 }
 
 _DEFAULT_ATTRIBUTION = _AttribTemplate(
