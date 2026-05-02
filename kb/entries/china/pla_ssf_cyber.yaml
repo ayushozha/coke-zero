@@ -1,0 +1,22 @@
+id: cn_pla_ssf_cyber
+actor: China
+unit: PLA Aerospace Force / former Strategic Support Force
+system: Cyber operations against space ground segment
+domain: cyber
+signature:
+  pattern: long_dwell_recon_then_credential_theft
+  ttps:
+    - supply_chain_compromise
+    - vpn_exploitation
+    - hands_on_keyboard_lateralization
+  ground_station_targeting: true
+doctrine: >
+  PLA cyber forces, restructured under the Aerospace Force in 2024, are
+  publicly assessed to conduct long-dwell reconnaissance against satellite
+  ground stations, ISP infrastructure, and defense contractors. Activity
+  often precedes kinetic or co-orbital action by weeks or longer.
+sources:
+  - csis_2025_space_threat_assessment
+  - mandiant_apt41_public_reporting
+  - mitchell_2025_dec
+notes: "Long-dwell cyber posture means cyber probes alone do not raise immediate threat — pair with orbital cues."

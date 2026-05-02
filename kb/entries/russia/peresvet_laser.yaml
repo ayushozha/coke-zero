@@ -1,0 +1,20 @@
+id: ru_peresvet_laser
+actor: Russia
+unit: Russian Aerospace Forces
+system: Peresvet
+domain: directed_energy
+signature:
+  pattern: ground_laser_dazzle
+  deployment: fixed_or_relocatable
+  target_classes:
+    - eo_imaging_satellite
+doctrine: >
+  Mobile laser system publicly framed by Russian leadership as a strategic
+  defense asset; open-source assessments place it in the dazzling/anti-EO
+  role against imaging satellites. Capability claims exceed verifiable
+  effects, so attribution should be treated as moderate-confidence absent
+  corroborating sensor data.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Anti-EO dazzling — corroborate with EO sensor anomaly reports before high-confidence attribution."

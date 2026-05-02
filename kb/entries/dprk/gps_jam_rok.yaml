@@ -1,0 +1,21 @@
+id: kp_gps_jam_rok
+actor: DPRK
+unit: Korean People's Army / Reconnaissance General Bureau
+system: Border-area GPS jamming
+domain: rf_ew
+signature:
+  band: GNSS L1
+  pattern: high_power_border_jam
+  deployment: ground_fixed_border
+  geography:
+    - inter_korean_border
+    - west_sea
+doctrine: >
+  Recurring high-power GNSS jamming events from DPRK territory affecting
+  ROK civilian and military receivers. Events are episodic, often timed to
+  coincide with political or exercise tempo, and produce broad-area effects
+  rather than precision spoofing.
+sources:
+  - csis_2025_space_threat_assessment
+  - rok_mnd_public_statements
+notes: "Pattern is geographic and bursty; useful for ruling DPRK in or out as the source of regional jam events."

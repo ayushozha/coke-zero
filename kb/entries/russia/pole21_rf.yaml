@@ -1,0 +1,20 @@
+id: ru_pole21_rf
+actor: Russia
+unit: GRU
+system: Pole-21
+domain: rf_ew
+signature:
+  band: GNSS L1/L2
+  pattern: wideband_jam_with_spoof
+  deployment: ground_mobile
+  detection_cue: gps_position_inertial_mismatch
+doctrine: >
+  Wide-area GNSS denial system based on cellular-tower-mounted jammer cells.
+  Public reporting describes Pole-21 deployments in Ukraine and other theaters,
+  often paired with co-orbital or terrestrial action in the opening phase of
+  operations. Observable cue is consistent inertial/GNSS divergence across
+  multiple receivers in a contiguous area.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "RF/PNT — when paired with concurrent RPO indicators, attribution confidence rises."

@@ -1,0 +1,19 @@
+id: cn_beidou_2022_rpo_precedent
+actor: China
+unit: PLA Aerospace Force
+system: SJ-21 / BeiDou (precedent event)
+domain: orbital
+signature:
+  behavior: rpo_grapple_and_relocate
+  profile: low_relative_velocity_close_approach
+  altitude: GEO
+  observed_year: 2022
+doctrine: >
+  Reference precedent for SJ-21-class grapple-and-relocate. The event
+  involved approach, capture, and relocation of a defunct BeiDou satellite
+  to a graveyard orbit. This pattern is the basis for matching against
+  observed close-approach geometry on adversary GEO assets.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Use this entry as the matched precedent when the attribution agent observes SJ-21-like geometry."
