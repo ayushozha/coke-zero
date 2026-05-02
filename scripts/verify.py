@@ -59,7 +59,9 @@ def _build_llm(*, live: bool, kb: KB) -> LLMClient:
     return StubLLMClient(kb)
 
 
-async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
+async def _verify(
+    scenarios: list[Path], *, live: bool = False, require_recommendation: bool = False
+) -> int:
     bus = InProcessBus()
     kb = KB.load_from_json(ROOT / "data" / "kb_seed_entries.json")
     llm = _build_llm(live=live, kb=kb)
@@ -102,12 +104,21 @@ async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
         asyncio.create_task(replay.run(), name="replay"),
     ]
 
-    timeout_s = TIMEOUT_LIVE_S if live else TIMEOUT_STUB_S
-    drain_s = DRAIN_LIVE_S if live else DRAIN_STUB_S
+    # Poll the pipeline after replay finishes: keep draining until at least one
+    # event of every expected type has landed, or until the overall budget runs
+    # out. Live attribution can take 10–30 s per call, so a fixed drain is
+    # brittle; we'd rather wait for the work to complete (with a ceiling).
+    overall_budget_s = TIMEOUT_LIVE_S if live else TIMEOUT_STUB_S
+    quiescent_drain_s = DRAIN_LIVE_S if live else DRAIN_STUB_S
     try:
-        await asyncio.wait_for(replay_done.wait(), timeout=timeout_s)
-        # Allow the pipeline to drain after the last published signal.
-        await asyncio.sleep(drain_s)
+        await asyncio.wait_for(replay_done.wait(), timeout=overall_budget_s)
+        deadline = asyncio.get_running_loop().time() + overall_budget_s
+        while asyncio.get_running_loop().time() < deadline:
+            if all(collected[k] for k in ("anomaly", "attribution", "decision", "ui_event")):
+                # Got at least one of each — let any in-flight follow-ups land.
+                await asyncio.sleep(quiescent_drain_s)
+                break
+            await asyncio.sleep(0.5)
     except TimeoutError:
         pass
     finally:
@@ -134,12 +145,15 @@ async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
     elif not all(isinstance(e, UIEvent) for _, e in collected["ui_event"]):
         failures.append("non-UIEvent leaked onto ui_events.*")
 
-    # We expect at least one recommendation_created from the Beat 4.7 RPO path.
-    if collected["ui_event"]:
+    # The canonical four-beat demo and `army_multidomain_attack_chain` should
+    # produce a recommendation_created UIEvent (Beat 4.7-style RPO escalation).
+    # Per-scenario runs (drone FDIR, relay reconfig, Hormuz convoy, etc.) often
+    # land on local-authority decisions only, so this check is opt-in.
+    if require_recommendation and collected["ui_event"]:
         rec_types = {ui_evt.type for _, ui_evt in collected["ui_event"]}
         if "recommendation_created" not in rec_types:
             failures.append(
-                "no UIEvent of type=recommendation_created (Beat 4.7 path missing)"
+                "no UIEvent of type=recommendation_created (request-authority path missing)"
             )
 
     if failures:
@@ -185,13 +199,25 @@ def main() -> int:
         help="Hit the real Anthropic API (requires ANTHROPIC_API_KEY).",
     )
     parser.add_argument(
+        "--require-recommendation",
+        action="store_true",
+        default=False,
+        help=(
+            "Fail unless at least one UIEvent of type=recommendation_created is "
+            "emitted. Auto-on when running the default four-beat demo."
+        ),
+    )
+    parser.add_argument(
         "scenarios",
         nargs="*",
         help="Scenario JSONL paths (default: all four canonical beats).",
     )
     args = parser.parse_args()
     scenarios = [Path(p) for p in args.scenarios] or DEFAULT_SCENARIOS
-    return asyncio.run(_verify(scenarios, live=args.live))
+    require_rec = args.require_recommendation or not args.scenarios
+    return asyncio.run(
+        _verify(scenarios, live=args.live, require_recommendation=require_rec)
+    )
 
 
 if __name__ == "__main__":
