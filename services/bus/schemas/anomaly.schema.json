@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["id", "time", "kind", "source_signal", "severity", "payload"],
+  "properties": {
+    "id": {"type": "string"},
+    "time": {"type": "number"},
+    "kind": {"type": "string"},
+    "source_signal": {"type": "string"},
+    "severity": {"type": "number"},
+    "payload": {"type": "object"}
+  }
+}
