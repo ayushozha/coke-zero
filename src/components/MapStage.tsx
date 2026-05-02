@@ -8,7 +8,7 @@ export function MapStage() {
   return (
     <section className="map-stage" aria-label="Operational map">
       {view === 'globe' ? (
-        <CesiumGlobe onOpenAor={() => setView('aor')} />
+        <CesiumGlobe />
       ) : (
         <AorMap />
       )}
@@ -25,12 +25,12 @@ export function MapStage() {
           onClick={() => setView('aor')}
           type="button"
         >
-          AOR
+          Tactical
         </button>
       </div>
       <div className="map-stage__readout">
-        <span>{view === 'globe' ? 'North Axis' : 'Local AOR'}</span>
-        <strong>{view === 'globe' ? 'SAT-BRAVO' : 'Relay Team 2'}</strong>
+        <span>{view === 'globe' ? 'Continuous Cesium' : 'MapLibre AOR'}</span>
+        <strong>{view === 'globe' ? 'Globe to AOR' : 'Relay Team 2'}</strong>
       </div>
     </section>
   )
