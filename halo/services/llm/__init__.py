@@ -11,7 +11,7 @@ __all__ = ["LLMClient"]
 
 class LLMClient(Protocol):
     async def attribute(
-        self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry]
+        self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry] = ()
     ) -> Attribution: ...
 
     async def decide(self, attribution: Attribution) -> Decision: ...

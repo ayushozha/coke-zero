@@ -1,9 +1,4 @@
-"""Prompt scaffolds for the live Anthropic decision agent.
-
-Foundation-pass content. Real prompt engineering — commander's-intent
-threading, supporting/supported routing language, ROE alignment — is the
-next iteration's work.
-"""
+"""Prompt scaffolds for the live Anthropic decision agent."""
 from __future__ import annotations
 
 from typing import Any
@@ -51,7 +46,8 @@ DECISION_TOOL: dict[str, Any] = {
                 "type": ["object", "null"],
                 "description": (
                     "Populated when authority='request'. Minimal CJFSCC routing "
-                    "envelope: to, supporting_supported, justification, actor, confidence."
+                    "envelope: to, supporting_supported, justification, actor, "
+                    "confidence, kb_citations."
                 ),
             },
         },
@@ -62,11 +58,12 @@ DECISION_TOOL: dict[str, Any] = {
 def decision_system_prompt() -> str:
     return (
         "You are CANOPY's decision agent. Given an attribution, recommend the "
-        "appropriate counterspace action via the submit_decision tool. Honor the "
-        "doctrinal split: 'local' authority means the brigade can execute now; "
-        "'request' authority means the action exceeds local authority and must "
-        "route to the CJFSCC for engagement authority. Always populate request_packet "
-        "when authority='request'."
+        "appropriate counterspace action via the submit_decision tool. Honor "
+        "the doctrinal split: 'local' authority means the brigade can execute "
+        "now; 'request' authority means the action exceeds local authority "
+        "and must route to the CJFSCC for engagement authority. Always "
+        "populate request_packet when authority='request', and include the "
+        "attribution's kb_citations inside it for auditability."
     )
 
 
