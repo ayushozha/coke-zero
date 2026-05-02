@@ -1,0 +1,24 @@
+[
+  {
+    "id": "SATCOM-3",
+    "name": "SATCOM-3",
+    "realism": "synthetic_orbital_overlay",
+    "role": "friendly_satcom_dependency",
+    "epoch": "2026-06-18T14:40:00Z",
+    "reference_frame": "scenario_relative",
+    "nominal_altitude_km": 550,
+    "notes": "Fictional protected dependency for Beat 4.7 SATCOM degradation context."
+  },
+  {
+    "id": "CANOPY-RPO-1",
+    "name": "UNKNOWN-RSO-441",
+    "realism": "synthetic_orbital_overlay",
+    "role": "rpo_close_approach_placeholder",
+    "epoch": "2026-06-18T14:40:00Z",
+    "reference_frame": "CANOPY-LEO-07-relative",
+    "initial_range_km": 42.8,
+    "closest_approach_km": 8.6,
+    "relative_velocity_mps": 12.4,
+    "notes": "Fictional non-cooperative inspector object for demo-only RPO workflows."
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "id": "sig_cyber_000001",
+  "ts": "2026-05-02T15:01:22Z",
+  "domain": "cyber",
+  "source": "canopy-cyber-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.89,
+  "location": {
+    "label": "cyber adapter observation"
+  },
+  "payload": {
+    "event_id": "cyber-event-20260502-001",
+    "event_type": "intrusion",
+    "severity": "high",
+    "src_ip": "203.0.113.42",
+    "dst_ip": "198.51.100.10",
+    "protocol": "tcp",
+    "indicator": "203.0.113.42",
+    "mitre_technique": "T1190",
+    "summary": "cyber signal"
+  },
+  "provenance": {
+    "source_id": "canopy-cyber-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

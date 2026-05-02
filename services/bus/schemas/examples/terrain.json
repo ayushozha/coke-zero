@@ -1,0 +1,27 @@
+{
+  "id": "sig_terrain_0001",
+  "ts": "2026-05-02T12:30:00Z",
+  "domain": "terrain",
+  "source": "canopy-terrain-adapter",
+  "realism": "real_source",
+  "confidence": 0.76,
+  "location": {
+    "area_wkt": "POLYGON((-116.62 35.25,-116.55 35.25,-116.55 35.31,-116.62 35.31,-116.62 35.25))"
+  },
+  "payload": {
+    "feature_id": "terrain-segment-114",
+    "feature_type": "road",
+    "assessment": "restricted",
+    "slope_deg": 7.8,
+    "surface": "unpaved",
+    "elevation_m": 641.2,
+    "weather_impact": "moderate",
+    "event_type": "terrain",
+    "summary": "terrain signal"
+  },
+  "provenance": {
+    "source_id": "canopy-terrain-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "sig_osint_000001",
+  "ts": "2026-05-02T14:40:00Z",
+  "domain": "osint",
+  "source": "canopy-osint-adapter",
+  "realism": "real_source",
+  "confidence": 0.72,
+  "location": {
+    "area_wkt": "POLYGON((-77.1 38.8,-76.9 38.8,-76.9 39.0,-77.1 39.0,-77.1 38.8))"
+  },
+  "payload": {
+    "report_id": "osint-rpt-20260502-001",
+    "source_uri": "https://example.org/reports/infrastructure-update",
+    "publisher": "Example Public Monitor",
+    "summary": "Public reporting describes temporary service disruption near a regional communications facility.",
+    "language": "en",
+    "topics": [
+      "communications",
+      "service_disruption"
+    ],
+    "event_type": "osint"
+  },
+  "provenance": {
+    "source_id": "canopy-osint-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}
