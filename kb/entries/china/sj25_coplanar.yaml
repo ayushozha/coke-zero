@@ -1,0 +1,18 @@
+id: cn_sj25_coplanar
+actor: China
+unit: PLA Aerospace Force
+system: SJ-25 (Shijian-25)
+domain: orbital
+signature:
+  behavior: rpo_coplanar_approach
+  profile: refueling_or_inspection
+  altitude: GEO
+doctrine: >
+  Publicly framed as an on-orbit refueling demonstrator. Open-source tracking
+  in early 2025 reported coplanar approach geometry against another Chinese
+  GEO satellite. The dual-use nature of the platform means similar geometry
+  could be applied against adversary GEO assets.
+sources:
+  - csis_2025_space_threat_assessment
+  - mitchell_2025_dec
+notes: "On-orbit refueling capability — credible escort, interrogation, or tow under different intent."

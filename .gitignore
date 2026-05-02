@@ -1,6 +1,29 @@
-.venv/
-.uv-cache/
+
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# uv / venv
+.venv/
+.env
+.env.local
+
+# Generated data
+data/kb.sqlite
+data/kb.sqlite-journal
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+

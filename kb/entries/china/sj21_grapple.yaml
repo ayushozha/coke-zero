@@ -1,0 +1,18 @@
+id: cn_sj21_grapple
+actor: China
+unit: PLA Aerospace Force
+system: SJ-21 (Shijian-21)
+domain: orbital
+signature:
+  behavior: rpo_grapple_and_relocate
+  profile: 2022_beidou_pattern
+  altitude: GEO
+doctrine: >
+  Demonstrated grapple-and-relocate of a defunct BeiDou satellite to a
+  graveyard orbit in 2022. The capability is publicly described as a debris
+  remediation system, but the same on-orbit servicing technology supports
+  hostile relocation, towing, or interrogation of high-value GEO assets.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Coplanar GEO close-approach with low relative-velocity profile is the SJ-21 tell."

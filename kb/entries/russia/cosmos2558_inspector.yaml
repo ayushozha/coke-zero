@@ -1,0 +1,18 @@
+id: ru_cosmos2558_inspector
+actor: Russia
+unit: Russian Aerospace Forces
+system: Cosmos 2558
+domain: orbital
+signature:
+  behavior: rpo_subsatellite_release
+  profile: nesting_doll_inspector
+  altitude: LEO
+doctrine: >
+  Continuation of the Cosmos 2519/2521/2542 "nesting doll" inspector lineage.
+  Sub-satellite release events on this lineage have been publicly correlated
+  with Russian co-orbital ASAT testing concepts. Behavior is observable as
+  an unannounced ephemeris bifurcation followed by close-approach geometry.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Watch for ephemeris bifurcation events; treat sub-satellite release as a high-severity indicator."

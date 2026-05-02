@@ -1,0 +1,18 @@
+id: cn_yaogan_sar
+actor: China
+unit: PLA Strategic Support / Aerospace Force
+system: Yaogan SAR constellation
+domain: orbital
+signature:
+  behavior: revisit_imaging
+  profile: triplet_formation
+  band: SAR
+doctrine: >
+  Large constellation of SAR-imaging satellites operating in triplet
+  formations to provide rapid revisit and geolocation of surface emitters.
+  Publicly assessed to support PLA targeting of moving naval and ground
+  forces.
+sources:
+  - csis_2025_space_threat_assessment
+  - dia_2022_challenges_security_in_space
+notes: "Yaogan triplet overpass of an AOR is a high-confidence indicator of PLA targeting interest."

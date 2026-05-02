@@ -1,0 +1,22 @@
+id: ru_gru26165_cyber
+actor: Russia
+unit: GRU Unit 26165 (APT28 / Fancy Bear)
+system: APT28 toolset
+domain: cyber
+signature:
+  pattern: spearphish_then_cred_harvest
+  ttps:
+    - lateral_movement_via_smb
+    - credential_dumping
+    - opportunistic_vpn_brute
+  ground_station_targeting: true
+doctrine: >
+  Long-running Russian state-sponsored intrusion set with documented targeting
+  of military, defense industrial base, and ground station infrastructure.
+  Cyber probes against satellite ground segments often precede or accompany
+  RF and co-orbital action.
+sources:
+  - csis_2025_space_threat_assessment
+  - mandiant_apt28_public_reporting
+  - mitchell_2025_dec
+notes: "Cyber probe bursts against MILSTAR or commercial SATCOM ground stations are an early-warning indicator."
