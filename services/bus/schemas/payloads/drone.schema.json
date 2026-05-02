@@ -7,7 +7,9 @@
   "required": [
     "track_id",
     "platform_type",
-    "activity"
+    "activity",
+    "event_type",
+    "summary"
   ],
   "properties": {
     "track_id": {
@@ -35,6 +37,16 @@
         "payload_release",
         "lost_link"
       ]
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "altitude_m": {
       "type": "number",

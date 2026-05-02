@@ -7,7 +7,9 @@
   "required": [
     "link_id",
     "band",
-    "link_status"
+    "link_status",
+    "event_type",
+    "summary"
   ],
   "properties": {
     "link_id": {
@@ -40,6 +42,16 @@
         "down",
         "intermittent"
       ]
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "snr_db": {
       "type": "number"

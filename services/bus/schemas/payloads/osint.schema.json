@@ -7,6 +7,7 @@
   "required": [
     "report_id",
     "source_uri",
+    "event_type",
     "summary",
     "language"
   ],
@@ -21,6 +22,11 @@
       "format": "uri"
     },
     "publisher": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "event_type": {
       "type": "string",
       "minLength": 1,
       "maxLength": 120

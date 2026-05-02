@@ -7,7 +7,9 @@
   "required": [
     "feature_id",
     "feature_type",
-    "assessment"
+    "assessment",
+    "event_type",
+    "summary"
   ],
   "properties": {
     "feature_id": {
@@ -36,6 +38,16 @@
         "blocked",
         "unknown"
       ]
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "slope_deg": {
       "type": "number",

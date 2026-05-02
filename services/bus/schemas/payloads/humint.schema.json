@@ -8,6 +8,7 @@
     "report_id",
     "reliability",
     "credibility",
+    "event_type",
     "summary"
   ],
   "properties": {
@@ -36,6 +37,11 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 6
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
     },
     "summary": {
       "type": "string",

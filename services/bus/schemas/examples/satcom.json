@@ -5,6 +5,9 @@
   "source": "canopy-satcom-adapter",
   "realism": "mock_operational",
   "confidence": 0.92,
+  "location": {
+    "label": "satcom link footprint"
+  },
   "payload": {
     "link_id": "link-ku-2217",
     "satellite_id": "sat-delta-9",
