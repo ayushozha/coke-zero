@@ -3,7 +3,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 from halo.services.attrib import AttribService
 from halo.services.bus import InProcessBus
@@ -25,12 +28,20 @@ DEFAULT_BEATS = (
 
 def _build_llm(*, live: bool, kb: KB) -> LLMClient:
     if live:
-        from halo.services.llm.anthropic_client import AnthropicLLMClient
+        from halo.services.llm.anthropic_client import (
+            DEFAULT_MODEL,
+            AnthropicLLMClient,
+        )
 
-        return AnthropicLLMClient(kb)
+        model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
+        return AnthropicLLMClient(kb, model=model)
     from halo.services.llm.stub import StubLLMClient
 
     return StubLLMClient(kb)
+
+
+def _live_from_env() -> bool:
+    return bool(os.environ.get("CANOPY_LIVE"))
 
 
 async def main(
@@ -103,14 +114,22 @@ async def main(
 
 
 def cli() -> None:
+    # Load .env if present so ANTHROPIC_API_KEY / CANOPY_LIVE / CANOPY_ANTHROPIC_MODEL
+    # are available before we parse args or build clients. .env values do not
+    # override variables that are already set in the environment.
+    load_dotenv()
+
     parser = argparse.ArgumentParser(
         prog="halo", description="CANOPY engine orchestrator"
     )
     parser.add_argument(
         "--live",
         action="store_true",
-        default=False,
-        help="Use the live Anthropic LLM client (requires ANTHROPIC_API_KEY).",
+        default=_live_from_env(),
+        help=(
+            "Use the live Anthropic LLM client (requires ANTHROPIC_API_KEY). "
+            "Defaults to True if CANOPY_LIVE is set in the environment."
+        ),
     )
     parser.add_argument(
         "--log-level",
