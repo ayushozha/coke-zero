@@ -1,0 +1,29 @@
+{
+  "id": "sig_sda_00000001",
+  "ts": "2026-05-02T15:04:00Z",
+  "domain": "sda",
+  "source": "canopy-sda-adapter",
+  "realism": "real_source",
+  "confidence": 0.86,
+  "location": {
+    "lat": 0,
+    "alt_m": 705000,
+    "ce_m": 1500,
+    "lng": -142.4
+  },
+  "payload": {
+    "object_id": "sat-alpha-7",
+    "catalog_id": "58901",
+    "object_type": "satellite",
+    "event_type": "track_update",
+    "range_km": 1840.2,
+    "relative_velocity_mps": 13.4,
+    "track_quality": 0.91,
+    "summary": "sda signal"
+  },
+  "provenance": {
+    "source_id": "canopy-sda-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

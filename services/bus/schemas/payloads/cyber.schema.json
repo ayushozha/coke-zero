@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/cyber.schema.json",
+  "title": "Cyber Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "severity"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "scan",
+        "intrusion",
+        "malware",
+        "phishing",
+        "data_exfiltration",
+        "denial_of_service",
+        "policy_violation"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "src_ip": {
+      "type": "string",
+      "format": "ipv4"
+    },
+    "dst_ip": {
+      "type": "string",
+      "format": "ipv4"
+    },
+    "protocol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "indicator": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "mitre_technique": {
+      "type": "string",
+      "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"
+    }
+  }
+}

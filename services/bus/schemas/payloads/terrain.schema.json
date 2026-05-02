@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/terrain.schema.json",
+  "title": "Terrain Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feature_id",
+    "feature_type",
+    "assessment"
+  ],
+  "properties": {
+    "feature_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "feature_type": {
+      "type": "string",
+      "enum": [
+        "road",
+        "bridge",
+        "river",
+        "slope",
+        "soil",
+        "vegetation",
+        "obstacle",
+        "landing_zone"
+      ]
+    },
+    "assessment": {
+      "type": "string",
+      "enum": [
+        "trafficable",
+        "restricted",
+        "blocked",
+        "unknown"
+      ]
+    },
+    "slope_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 90
+    },
+    "surface": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "elevation_m": {
+      "type": "number"
+    },
+    "weather_impact": {
+      "type": "string",
+      "enum": [
+        "none",
+        "low",
+        "moderate",
+        "high"
+      ]
+    }
+  }
+}

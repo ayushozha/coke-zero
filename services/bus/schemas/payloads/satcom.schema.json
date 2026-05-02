@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/satcom.schema.json",
+  "title": "SATCOM Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "link_id",
+    "band",
+    "link_status"
+  ],
+  "properties": {
+    "link_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "satellite_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "band": {
+      "type": "string",
+      "enum": [
+        "uhf",
+        "l",
+        "s",
+        "c",
+        "x",
+        "ku",
+        "ka"
+      ]
+    },
+    "link_status": {
+      "type": "string",
+      "enum": [
+        "up",
+        "degraded",
+        "down",
+        "intermittent"
+      ]
+    },
+    "snr_db": {
+      "type": "number"
+    },
+    "throughput_kbps": {
+      "type": "number",
+      "minimum": 0
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

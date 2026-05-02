@@ -1,0 +1,29 @@
+{
+  "id": "sig_rf_ew_000001",
+  "ts": "2026-05-02T15:12:30Z",
+  "domain": "rf_ew",
+  "source": "canopy-rf-ew-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.81,
+  "location": {
+    "lat": 35.221,
+    "ce_m": 750,
+    "lng": -117.421
+  },
+  "payload": {
+    "emitter_id": "emit-9301",
+    "signal_type": "radar",
+    "frequency_mhz": 9450.5,
+    "bandwidth_khz": 1200,
+    "power_dbm": -43.2,
+    "modulation": "pulse",
+    "bearing_deg": 281.4,
+    "event_type": "rf_ew",
+    "summary": "rf_ew signal"
+  },
+  "provenance": {
+    "source_id": "canopy-rf-ew-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}
