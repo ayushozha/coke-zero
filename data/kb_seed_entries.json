@@ -1,0 +1,154 @@
+{
+  "entries": [
+    {
+      "id": "kb-gps-jamming-001",
+      "title": "GPS jamming and spoofing can degrade tactical PNT",
+      "actor": "Russia",
+      "domain": ["rf_ew", "pnt"],
+      "capability_type": "jamming_spoofing",
+      "summary": "Open-source assessments describe widespread GPS jamming and spoofing around conflict zones, including effects on aircraft, ships, drones, and precision-guided systems.",
+      "tactical_relevance": "A brigade relying on GPS-enabled drones, fires, blue-force tracking, and timing needs a fast way to detect PNT confidence collapse and switch to fallback posture.",
+      "decision_implications": [
+        "Flag PNT confidence degradation.",
+        "Recommend alternate navigation mode or multi-constellation fallback.",
+        "Increase confidence only when PNT anomalies correlate with RF or cyber indicators."
+      ],
+      "source_refs": [
+        {
+          "source_id": "csis-space-threat-2025",
+          "locator": "GPS Jamming and Spoofing featured analysis",
+          "claim_supported": "GPS interference is widespread and persistent near conflict regions."
+        },
+        {
+          "source_id": "swf-counterspace-2025",
+          "locator": "Russian Electronic Warfare section",
+          "claim_supported": "Russia fields multiple tactical systems capable of local GPS receiver jamming."
+        }
+      ],
+      "claim_type": "expert_assessment",
+      "confidence": "high",
+      "sensitivity": "public",
+      "escalation_risk": "medium",
+      "time_horizon": "current",
+      "scenario_signal_ids": ["canopy-beat2-001", "canopy-beat2-003", "canopy-beat4-004"],
+      "notes": "Use as attribution support, not proof of actor intent."
+    },
+    {
+      "id": "kb-satcom-jamming-001",
+      "title": "SATCOM interference can target ground terminals and uplinks",
+      "actor": "Russia",
+      "domain": ["rf_ew", "satcom"],
+      "capability_type": "satcom_jamming",
+      "summary": "Public counterspace reporting describes Russian systems and operational patterns for jamming satellite communications, including effects against commercial and broadcast satellites.",
+      "tactical_relevance": "Brigade beyond-line-of-sight communications can degrade during a multi-domain campaign even when the satellite itself remains intact.",
+      "decision_implications": [
+        "Correlate SATCOM retransmits, link-margin drops, and RF spikes.",
+        "Recommend alternate ground route or hardened contact profile.",
+        "Escalate when SATCOM degradation overlaps with orbital proximity events."
+      ],
+      "source_refs": [
+        {
+          "source_id": "swf-counterspace-2025",
+          "locator": "Russian Electronic Warfare / Jamming of Communications Satellites",
+          "claim_supported": "Russia has dedicated capabilities for downlink and uplink jamming of communications satellite signals."
+        }
+      ],
+      "claim_type": "expert_assessment",
+      "confidence": "medium",
+      "sensitivity": "public",
+      "escalation_risk": "medium",
+      "time_horizon": "current",
+      "scenario_signal_ids": ["canopy-beat47-001", "canopy-beat47-003", "canopy-beat47-004"],
+      "notes": "Scenario signals are synthetic operational injects."
+    },
+    {
+      "id": "kb-rpo-ambiguity-001",
+      "title": "RPO behavior is dual-use and intent-ambiguous",
+      "actor": "China",
+      "domain": ["orbit", "sda"],
+      "capability_type": "co_orbital_rpo",
+      "summary": "Rendezvous and proximity operations can support benign inspection or servicing, but the same maneuvering capability can also enable counterspace effects.",
+      "tactical_relevance": "A commander needs proximity events translated into operational risk without pretending public data proves hostile intent.",
+      "decision_implications": [
+        "Score close approach risk by range, range rate, target dependency, and concurrent multi-domain activity.",
+        "Label RPO scenarios as intent-ambiguous unless additional indicators raise confidence.",
+        "Draft higher-authority space-effect requests when friendly mission dependency is high."
+      ],
+      "source_refs": [
+        {
+          "source_id": "csis-space-threat-2025",
+          "locator": "RPOs: Benevolent or Cruel Intentions",
+          "claim_supported": "RPO can be hard to distinguish as benign surveillance, servicing, or weapon-like behavior from orbital tracks alone."
+        },
+        {
+          "source_id": "swf-counterspace-2025",
+          "locator": "Chinese Co-Orbital ASAT / Recent Chinese RPOs",
+          "claim_supported": "Chinese RPO demonstrations include SJ-21 relocation of a defunct Beidou satellite and other GEO/LEO proximity activities."
+        }
+      ],
+      "claim_type": "expert_assessment",
+      "confidence": "high",
+      "sensitivity": "public",
+      "escalation_risk": "high",
+      "time_horizon": "current",
+      "scenario_signal_ids": ["canopy-beat47-002", "canopy-beat47-005", "canopy-beat47-006"],
+      "notes": "Do not phrase the demo RPO object as a real hostile satellite."
+    },
+    {
+      "id": "kb-commercial-space-001",
+      "title": "Commercial space services are part of the contested battlespace",
+      "actor": "Multi-actor",
+      "domain": ["osint", "orbit", "satcom"],
+      "capability_type": "commercial_dependency",
+      "summary": "Commercial imagery, broadband, and communications providers increasingly support military operations and can become targets or sources of operational exposure.",
+      "tactical_relevance": "The brigade must understand when commercial overpass, imagery tasking, or SATCOM dependency changes ground-force risk.",
+      "decision_implications": [
+        "Surface commercial collection windows as operational risk.",
+        "Mark commercial-source claims with provenance and uncertainty.",
+        "Recommend masking or timing changes when overpass and ground activity correlate."
+      ],
+      "source_refs": [
+        {
+          "source_id": "csis-space-threat-2025",
+          "locator": "The Coming Collision of Commercial and Counterspace",
+          "claim_supported": "Commercial space services supporting defense users are increasingly in the crosshairs."
+        }
+      ],
+      "claim_type": "expert_assessment",
+      "confidence": "medium",
+      "sensitivity": "public",
+      "escalation_risk": "medium",
+      "time_horizon": "current",
+      "scenario_signal_ids": ["canopy-beat1-001", "canopy-beat1-002", "canopy-beat1-004"],
+      "notes": "Avoid unsupported claims about a specific commercial provider unless sourced."
+    },
+    {
+      "id": "kb-attribution-uncertainty-001",
+      "title": "Public indicators support fast assessment, not definitive attribution",
+      "actor": "Unknown",
+      "domain": ["osint", "rf_ew", "cyber", "pnt", "orbit"],
+      "capability_type": "attribution_uncertainty",
+      "summary": "Open-source reporting can support fast, doctrine-grounded hypotheses, but it cannot replace classified all-source attribution or prove adversary intent.",
+      "tactical_relevance": "CANOPY should give commanders an actionable confidence-scored assessment while preserving humility and escalation discipline.",
+      "decision_implications": [
+        "Use language like 'consistent with' and 'confidence-scored assessment'.",
+        "Preserve evidence chains for every attribution.",
+        "Fall back to 'insufficient signal' when evidence is thin."
+      ],
+      "source_refs": [
+        {
+          "source_id": "csis-space-threat-2025",
+          "locator": "Counterspace weapons taxonomy / cyber and electronic effects discussion",
+          "claim_supported": "Attribution varies by attack mode and can be limited or uncertain."
+        }
+      ],
+      "claim_type": "inference",
+      "confidence": "high",
+      "sensitivity": "derived",
+      "escalation_risk": "high",
+      "time_horizon": "current",
+      "scenario_signal_ids": ["canopy-beat4-001", "canopy-beat4-006", "canopy-beat47-006"],
+      "notes": "This entry should guide all pitch and UI language."
+    }
+  ]
+}
