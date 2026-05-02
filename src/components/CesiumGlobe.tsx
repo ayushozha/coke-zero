@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  ArcGisMapServerImageryProvider,
   Cartesian2,
   Cartesian3,
   Color,
@@ -259,9 +260,7 @@ export function CesiumGlobe() {
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
-  const [imageryMode, setImageryMode] = useState(
-    token ? 'Ion world imagery' : 'Local fallback imagery',
-  )
+  const [imageryMode, setImageryMode] = useState('Loading imagery')
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -289,15 +288,18 @@ export function CesiumGlobe() {
       skyAtmosphere: false,
       skyBox: false,
       timeline: false,
+      useBrowserRecommendedResolution: false,
       creditContainer: creditRef.current,
     })
     viewerRef.current = viewer
 
+    viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
     viewer.scene.backgroundColor = Color.BLACK
     viewer.scene.globe.baseColor = Color.fromCssColorString('#080808')
     viewer.scene.globe.enableLighting = false
+    viewer.scene.globe.maximumScreenSpaceError = 1
     viewer.scene.globe.showGroundAtmosphere = false
-    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1400000
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 42000000
 
     const addLocalImagery = () => {
@@ -321,6 +323,41 @@ export function CesiumGlobe() {
       })
     }
 
+    const addEsriImagery = () => {
+      const esriLayer = ImageryLayer.fromProviderAsync(
+        ArcGisMapServerImageryProvider.fromUrl(
+          'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+          {
+            enablePickFeatures: false,
+          },
+        ),
+        {
+          alpha: 0.95,
+          brightness: 0.88,
+          contrast: 1.04,
+          gamma: 1,
+          saturation: 0.02,
+        },
+      )
+
+      esriLayer.errorEvent.addEventListener(() => {
+        if (isDisposed || viewer.isDestroyed()) {
+          return
+        }
+
+        viewer.imageryLayers.remove(esriLayer, true)
+        addLocalImagery()
+      })
+
+      esriLayer.readyEvent.addEventListener(() => {
+        if (!isDisposed) {
+          setImageryMode('Esri world imagery')
+        }
+      })
+
+      viewer.imageryLayers.add(esriLayer)
+    }
+
     if (token) {
       Ion.defaultAccessToken = token
       const ionLayer = ImageryLayer.fromProviderAsync(
@@ -342,7 +379,7 @@ export function CesiumGlobe() {
         }
 
         viewer.imageryLayers.remove(ionLayer, true)
-        addLocalImagery()
+        addEsriImagery()
       })
 
       ionLayer.readyEvent.addEventListener(() => {
@@ -353,7 +390,7 @@ export function CesiumGlobe() {
 
       viewer.imageryLayers.add(ionLayer)
     } else {
-      addLocalImagery()
+      addEsriImagery()
     }
 
     viewer.entities.add({
@@ -525,10 +562,10 @@ export function CesiumGlobe() {
       }
 
       viewer.clock.shouldAnimate = true
-      setActiveLayer('vehicle')
+      setActiveLayer('local-aor')
       viewer.camera.flyTo({
-        destination: Cartesian3.fromDegrees(-116.52, 35.02, 95000),
-        duration: 2.8,
+        destination: Cartesian3.fromDegrees(-116.52, 35.02, 22000),
+        duration: 3.2,
         orientation: {
           heading: 6,
           pitch: -1.08,
@@ -550,11 +587,11 @@ export function CesiumGlobe() {
           Satellites
         </button>
         <button
-          className={activeLayer === 'vehicle' ? 'is-active' : ''}
+          className={activeLayer === 'local-aor' ? 'is-active' : ''}
           onClick={loadVehicle}
           type="button"
         >
-          Vehicle
+          Local AOR
         </button>
         <button onClick={resetDynamicSources} type="button">
           Reset
