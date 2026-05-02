@@ -1,0 +1,7 @@
+{"id":"sig-101","time":0,"domain":"drone","source":"drone_01","payload":{"position":[37.87,-122.27],"role":"ISR","status":"nominal"}}
+{"id":"sig-102","time":5,"domain":"drone","source":"drone_02","payload":{"position":[37.871,-122.271],"role":"relay","status":"nominal"}}
+{"id":"sig-103","time":10,"domain":"orbit","source":"satellite_01","payload":{"event":"overpass_detected","satellite":"YAOGAN","risk":0.5}}
+{"id":"sig-104","time":20,"domain":"orbit","source":"satellite_01","payload":{"event":"collection_window_start","satellite":"YAOGAN","risk":0.9}}
+{"id":"sig-105","time":25,"domain":"drone","source":"drone_01","payload":{"event":"behavior_change","mode":"low_observable"}}
+{"id":"sig-106","time":40,"domain":"orbit","source":"satellite_01","payload":{"event":"collection_window_end","satellite":"YAOGAN","risk":0.2}}
+{"id":"sig-107","time":45,"domain":"drone","source":"drone_02","payload":{"event":"behavior_change","mode":"normal"}}
