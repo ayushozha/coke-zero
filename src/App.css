@@ -173,17 +173,6 @@
   display: none;
 }
 
-.map-stage__view-switch {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  z-index: 8;
-  display: flex;
-  gap: 8px;
-  transform: translateX(-50%);
-}
-
-.map-stage__view-switch button,
 .aor-map__basemaps button {
   min-height: 36px;
   border: 1px solid var(--line-bright);
@@ -194,8 +183,6 @@
   text-transform: uppercase;
 }
 
-.map-stage__view-switch button:hover,
-.map-stage__view-switch button.is-active,
 .aor-map__basemaps button:hover,
 .aor-map__basemaps button.is-active {
   border-color: var(--amber);
@@ -657,10 +644,6 @@
     top: 54px;
     right: 10px;
     left: 10px;
-  }
-
-  .map-stage__view-switch {
-    top: 10px;
   }
 
   .cesium-scenario-controls button {
