@@ -3,9 +3,11 @@ import {
   Cartesian2,
   Cartesian3,
   Color,
+  createWorldImageryAsync,
   CzmlDataSource,
   Ion,
   ImageryLayer,
+  IonWorldImageryStyle,
   LabelStyle,
   NearFarScalar,
   PolylineGlowMaterialProperty,
@@ -15,7 +17,7 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
-const token = import.meta.env.VITE_CESIUM_ION_TOKEN
+const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
 
 const contacts = [
   {
@@ -206,11 +208,18 @@ const createVehicleCzml = () => {
   ]
 }
 
-export function CesiumGlobe() {
+type CesiumGlobeProps = {
+  onOpenAor?: () => void
+}
+
+export function CesiumGlobe({ onOpenAor }: CesiumGlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
+  const [imageryMode, setImageryMode] = useState(
+    token ? 'Ion world imagery' : 'Local fallback imagery',
+  )
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -249,23 +258,61 @@ export function CesiumGlobe() {
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1400000
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 42000000
 
-    void TileMapServiceImageryProvider.fromUrl(
-      '/cesiumStatic/Assets/Textures/NaturalEarthII',
-    ).then((provider) => {
-      if (isDisposed || viewer.isDestroyed()) {
-        return
-      }
+    const addLocalImagery = () => {
+      void TileMapServiceImageryProvider.fromUrl(
+        '/cesiumStatic/Assets/Textures/NaturalEarthII',
+      ).then((provider) => {
+        if (isDisposed || viewer.isDestroyed()) {
+          return
+        }
 
-      const layer = new ImageryLayer(provider, {
-        alpha: 0.95,
-        brightness: 0.82,
-        contrast: 1.18,
-        gamma: 1.05,
-        saturation: 0.12,
+        const layer = new ImageryLayer(provider, {
+          alpha: 0.95,
+          brightness: 0.82,
+          contrast: 1.18,
+          gamma: 1.05,
+          saturation: 0.12,
+        })
+        viewer.imageryLayers.add(layer)
+        setImageryMode('Local fallback imagery')
+        viewer.scene.requestRender()
       })
-      viewer.imageryLayers.add(layer)
-      viewer.scene.requestRender()
-    })
+    }
+
+    if (token) {
+      Ion.defaultAccessToken = token
+      const ionLayer = ImageryLayer.fromProviderAsync(
+        createWorldImageryAsync({
+          style: IonWorldImageryStyle.AERIAL,
+        }),
+        {
+          alpha: 0.88,
+          brightness: 0.72,
+          contrast: 1.08,
+          gamma: 1,
+          saturation: 0.18,
+        },
+      )
+
+      ionLayer.errorEvent.addEventListener(() => {
+        if (isDisposed || viewer.isDestroyed()) {
+          return
+        }
+
+        viewer.imageryLayers.remove(ionLayer, true)
+        addLocalImagery()
+      })
+
+      ionLayer.readyEvent.addEventListener(() => {
+        if (!isDisposed) {
+          setImageryMode('Ion world imagery')
+        }
+      })
+
+      viewer.imageryLayers.add(ionLayer)
+    } else {
+      addLocalImagery()
+    }
 
     viewer.entities.add({
       name: 'North Axis AOR',
@@ -383,6 +430,7 @@ export function CesiumGlobe() {
         },
       })
       setActiveLayer('vehicle')
+      onOpenAor?.()
     })
   }
 
@@ -408,6 +456,7 @@ export function CesiumGlobe() {
           Reset
         </button>
       </div>
+      <div className="map-stage__mode">{imageryMode}</div>
       <div className="cesium-credits" ref={creditRef} />
     </>
   )
