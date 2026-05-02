@@ -1,77 +1,101 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
 from halo.services.kb import KB
-from halo.services.kb.loader import load_yaml_dir
+from halo.services.kb.loader import load_kb_json
 from halo.services.kb.models import KBEntry
 
-KB_DIR = Path(__file__).resolve().parent.parent / "kb" / "entries"
+KB_FILE = Path(__file__).resolve().parent.parent / "data" / "kb_seed_entries.json"
 
 
-def test_yaml_dir_loads_all_entries() -> None:
-    entries = load_yaml_dir(KB_DIR)
-    assert len(entries) == 25
+def test_load_canonical_kb_file() -> None:
+    entries = load_kb_json(KB_FILE)
     assert all(isinstance(e, KBEntry) for e in entries)
+    assert len(entries) >= 5
 
 
-def test_no_duplicate_entry_ids() -> None:
-    entries = load_yaml_dir(KB_DIR)
+def test_no_duplicate_ids() -> None:
+    entries = load_kb_json(KB_FILE)
     ids = [e.id for e in entries]
     assert len(ids) == len(set(ids))
 
 
-def test_actors_cover_all_four_countries() -> None:
-    entries = load_yaml_dir(KB_DIR)
-    actors = {e.actor for e in entries}
-    assert actors == {"Russia", "China", "Iran", "DPRK"}
+def test_facade_indexes_by_scenario_signal_id() -> None:
+    kb = KB.load_from_json(KB_FILE)
+    russia = kb.by_scenario_signal_id("canopy-beat2-001")
+    assert russia, "expected at least one KB entry for beat2-001"
+    assert russia[0].actor == "Russia"
+
+    rpo = kb.by_scenario_signal_id("canopy-beat47-002")
+    assert rpo, "expected at least one KB entry for beat47-002"
+    assert rpo[0].capability_type == "co_orbital_rpo"
 
 
-def test_kb_load_from_yaml_then_query(tmp_path: Path) -> None:
-    db = tmp_path / "kb.sqlite"
-    kb = KB.load_from_yaml(KB_DIR, db)
-    assert len(kb) == 25
-    assert {e.actor for e in kb.all_entries()} == {"Russia", "China", "Iran", "DPRK"}
-    russia = kb.by_actor("Russia")
-    assert len(russia) == 9
-    assert all(e.actor == "Russia" for e in russia)
+def test_facade_by_capability_and_actor() -> None:
+    kb = KB.load_from_json(KB_FILE)
+    assert kb.by_capability("jamming_spoofing")
+    assert kb.by_capability("co_orbital_rpo")
+    assert kb.by_actor("Russia")
+    assert kb.by_actor("China")
 
 
-def test_kb_load_is_idempotent(tmp_path: Path) -> None:
-    db = tmp_path / "kb.sqlite"
-    kb1 = KB.load_from_yaml(KB_DIR, db)
-    n1 = len(kb1)
-    kb2 = KB.load_from_yaml(KB_DIR, db)
-    n2 = len(kb2)
-    assert n1 == n2 == 25
-
-
-def test_kb_get_by_id(tmp_path: Path) -> None:
-    kb = KB.load_from_yaml(KB_DIR, tmp_path / "kb.sqlite")
-    entry = kb.get("ru_pole21_rf")
+def test_facade_get_and_membership() -> None:
+    kb = KB.load_from_json(KB_FILE)
+    assert "kb-attribution-uncertainty-001" in kb
+    entry = kb.get("kb-attribution-uncertainty-001")
     assert entry is not None
-    assert entry.actor == "Russia"
-    assert entry.system == "Pole-21"
+    assert entry.capability_type == "attribution_uncertainty"
     assert kb.get("does_not_exist") is None
 
 
 def test_loader_rejects_duplicate_ids(tmp_path: Path) -> None:
-    a = tmp_path / "a.yaml"
-    b = tmp_path / "b.yaml"
-    a.write_text(
-        "id: dup\nactor: Test\nsystem: A\ndomain: cyber\ndoctrine: x\n"
-    )
-    b.write_text(
-        "id: dup\nactor: Test\nsystem: B\ndomain: cyber\ndoctrine: x\n"
+    file = tmp_path / "kb.json"
+    file.write_text(
+        json.dumps(
+            {
+                "entries": [
+                    {
+                        "id": "dup",
+                        "title": "A",
+                        "actor": "X",
+                        "domain": [],
+                        "capability_type": "x",
+                        "summary": "x",
+                    },
+                    {
+                        "id": "dup",
+                        "title": "B",
+                        "actor": "X",
+                        "domain": [],
+                        "capability_type": "x",
+                        "summary": "x",
+                    },
+                ]
+            }
+        )
     )
     with pytest.raises(ValueError, match="duplicate KB entry id"):
-        load_yaml_dir(tmp_path)
+        load_kb_json(file)
 
 
-def test_loader_rejects_malformed_yaml(tmp_path: Path) -> None:
-    bad = tmp_path / "bad.yaml"
-    bad.write_text("id: x\nactor: Test\n# missing required fields\n")
-    with pytest.raises(Exception):
-        load_yaml_dir(tmp_path)
+def test_loader_accepts_bare_list(tmp_path: Path) -> None:
+    file = tmp_path / "kb.json"
+    file.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "x",
+                    "title": "X",
+                    "actor": "Y",
+                    "domain": [],
+                    "capability_type": "x",
+                    "summary": "x",
+                }
+            ]
+        )
+    )
+    assert len(load_kb_json(file)) == 1

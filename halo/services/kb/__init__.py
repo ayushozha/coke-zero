@@ -1,66 +1,61 @@
 from __future__ import annotations
 
-import json
-import sqlite3
+from collections import defaultdict
 from pathlib import Path
 
-from halo.services.kb.loader import init_db, load_yaml_dir, upsert
-from halo.services.kb.models import KBEntry
+from halo.services.kb.loader import load_kb_json
+from halo.services.kb.models import KBEntry, SourceRef
 
-__all__ = ["KB", "KBEntry"]
+__all__ = ["KB", "KBEntry", "SourceRef"]
 
 
 class KB:
-    """Read-side facade over the SQLite-backed knowledge base."""
+    """In-memory knowledge-base facade.
 
-    def __init__(self, conn: sqlite3.Connection) -> None:
-        self._conn = conn
+    Built from data/kb_seed_entries.json. Indexes entries by id, scenario
+    signal id, capability type, actor, and domain so attribution can retrieve
+    relevant context fast.
+    """
+
+    def __init__(self, entries: list[KBEntry]) -> None:
+        self._by_id: dict[str, KBEntry] = {}
+        self._by_scenario_id: dict[str, list[KBEntry]] = defaultdict(list)
+        self._by_capability: dict[str, list[KBEntry]] = defaultdict(list)
+        self._by_actor: dict[str, list[KBEntry]] = defaultdict(list)
+        self._by_domain: dict[str, list[KBEntry]] = defaultdict(list)
+        for entry in entries:
+            self._by_id[entry.id] = entry
+            for sid in entry.scenario_signal_ids:
+                self._by_scenario_id[sid].append(entry)
+            self._by_capability[entry.capability_type].append(entry)
+            self._by_actor[entry.actor].append(entry)
+            for dom in entry.domain:
+                self._by_domain[dom].append(entry)
 
     @classmethod
-    def load_from_yaml(cls, entries_dir: str | Path, db_path: str | Path) -> "KB":
-        entries = load_yaml_dir(Path(entries_dir))
-        conn = init_db(Path(db_path))
-        upsert(conn, entries)
-        return cls(conn)
+    def load_from_json(cls, path: str | Path = "data/kb_seed_entries.json") -> "KB":
+        return cls(load_kb_json(path))
 
     def get(self, entry_id: str) -> KBEntry | None:
-        row = self._conn.execute(
-            "SELECT * FROM kb_entries WHERE id = ?", (entry_id,)
-        ).fetchone()
-        return _row_to_entry(row) if row else None
+        return self._by_id.get(entry_id)
+
+    def by_scenario_signal_id(self, signal_id: str) -> list[KBEntry]:
+        return list(self._by_scenario_id.get(signal_id, ()))
+
+    def by_capability(self, capability_type: str) -> list[KBEntry]:
+        return list(self._by_capability.get(capability_type, ()))
 
     def by_actor(self, actor: str) -> list[KBEntry]:
-        rows = self._conn.execute(
-            "SELECT * FROM kb_entries WHERE actor = ? ORDER BY id", (actor,)
-        ).fetchall()
-        return [_row_to_entry(r) for r in rows]
+        return list(self._by_actor.get(actor, ()))
 
     def by_domain(self, domain: str) -> list[KBEntry]:
-        rows = self._conn.execute(
-            "SELECT * FROM kb_entries WHERE domain = ? ORDER BY id", (domain,)
-        ).fetchall()
-        return [_row_to_entry(r) for r in rows]
+        return list(self._by_domain.get(domain, ()))
 
     def all_entries(self) -> list[KBEntry]:
-        rows = self._conn.execute(
-            "SELECT * FROM kb_entries ORDER BY id"
-        ).fetchall()
-        return [_row_to_entry(r) for r in rows]
+        return list(self._by_id.values())
 
     def __len__(self) -> int:
-        row = self._conn.execute("SELECT COUNT(*) AS n FROM kb_entries").fetchone()
-        return int(row["n"])
+        return len(self._by_id)
 
-
-def _row_to_entry(row: sqlite3.Row) -> KBEntry:
-    return KBEntry(
-        id=row["id"],
-        actor=row["actor"],
-        unit=row["unit"],
-        system=row["system"],
-        domain=row["domain"],
-        signature=json.loads(row["signature_json"]),
-        doctrine=row["doctrine"],
-        sources=json.loads(row["sources_json"]),
-        notes=row["notes"],
-    )
+    def __contains__(self, entry_id: object) -> bool:
+        return isinstance(entry_id, str) and entry_id in self._by_id

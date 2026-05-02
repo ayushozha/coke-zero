@@ -5,11 +5,19 @@ import asyncio
 import pytest
 
 from halo.services.bus import InProcessBus
-from halo.services.schemas.events import Signal
+from halo.services.schemas.events import Location, Provenance, Signal
 
 
 def _signal(domain: str = "cyber", confidence: float = 0.5) -> Signal:
-    return Signal(domain=domain, source="t", payload={}, confidence=confidence)
+    return Signal(
+        domain=domain,
+        source="t",
+        realism="mock_operational",
+        confidence=confidence,
+        location=Location(label="t"),
+        payload={"event_type": "test", "summary": "test"},
+        provenance=Provenance(source_id="t"),
+    )
 
 
 async def _drain(bus: InProcessBus, pattern: str, n: int, timeout: float = 1.0) -> list:

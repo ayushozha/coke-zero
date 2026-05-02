@@ -1,23 +1,29 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Domain = Literal[
-    "rf_ew",
-    "cyber",
+    "sda",
+    "orbit",
     "osint",
     "humint",
-    "sda",
+    "rf_ew",
+    "cyber",
     "pnt",
     "satcom",
     "drone",
+    "terrain",
 ]
 
-Severity = Literal["low", "med", "high"]
+Realism = Literal[
+    "real_source",
+    "mock_operational",
+    "synthetic_orbital_overlay",
+]
 
 Action = Literal[
     "passive_defense",
@@ -32,6 +38,10 @@ Action = Literal[
 
 Authority = Literal["local", "request"]
 
+UIEventType = Literal["threat_updated", "recommendation_created", "status_update"]
+
+UISeverity = Literal["low", "medium", "high", "critical"]
+
 
 def _new_id() -> str:
     return uuid4().hex
@@ -41,41 +51,143 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+# ---- Sub-models for the canonical Signal envelope -------------------------
+
+
+class Location(BaseModel):
+    """Where the signal applies. Must include at least one localizer."""
+
+    model_config = ConfigDict(extra="allow")
+
+    label: str | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+    alt_km: float | None = None
+    alt_m: float | None = None
+    ce_m: float | None = Field(default=None, ge=0)
+    mgrs: str | None = None
+    area_wkt: str | None = None
+
+    @model_validator(mode="after")
+    def _at_least_one_localizer(self) -> "Location":
+        has_point = self.lat is not None and self.lng is not None
+        if not (has_point or self.mgrs or self.area_wkt or self.label):
+            raise ValueError(
+                "Location requires one of: lat+lng, mgrs, area_wkt, or label"
+            )
+        return self
+
+
+class Provenance(BaseModel):
+    """Source traceability for a signal."""
+
+    model_config = ConfigDict(extra="allow")
+
+    source_id: str = Field(min_length=1)
+    citation: str | None = None
+    collector: str | None = None
+    method: str | None = None
+    references: list[str] = Field(default_factory=list)
+    generated_at: datetime | None = None
+    notes: str | None = None
+
+
+class Payload(BaseModel):
+    """Domain-specific observation. Carries the canonical event_type/summary."""
+
+    model_config = ConfigDict(extra="allow")
+
+    event_type: str = Field(min_length=1)
+    summary: str = Field(min_length=1)
+    beat: str | None = None
+    asset: str | None = None
+    observables: dict[str, Any] | None = None
+
+
+# ---- Top-level event models -----------------------------------------------
+
+
 class _Event(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    """Common base for in-bus event models with id + ts defaults."""
+
+    model_config = ConfigDict(extra="allow")
 
     id: str = Field(default_factory=_new_id)
     ts: datetime = Field(default_factory=_now)
 
 
 class Signal(_Event):
+    """Canonical CANOPY Signal — matches services/bus/schemas/signal.schema.json."""
+
     domain: Domain
-    source: str
-    payload: dict
+    source: str = Field(min_length=1)
+    realism: Realism
     confidence: float = Field(ge=0.0, le=1.0)
+    location: Location
+    payload: Payload
+    provenance: Provenance
 
 
 class Anomaly(_Event):
-    signal_ids: list[str]
-    pattern: str
-    severity: Severity
-    summary: str
+    """Canonical CANOPY Anomaly — matches services/bus/schemas/anomaly.schema.json."""
+
+    kind: str = Field(min_length=1)
+    source_signal: str = Field(min_length=1)
+    source_signal_ids: list[str] = Field(default_factory=list)
+    severity: float = Field(ge=0.0, le=1.0)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class Attribution(_Event):
+    """Attribution assessment for an anomaly cluster."""
+
     anomaly_ids: list[str]
-    actor: str
+    actor: str = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
     doctrine_match: str | None = None
     evidence: list[str] = Field(default_factory=list)
     predicted_next: str | None = None
     kb_citations: list[str] = Field(default_factory=list)
+    source_signal_ids: list[str] = Field(default_factory=list)
 
 
 class Decision(_Event):
+    """Recommended action for an attribution."""
+
     attribution_id: str
     action: Action
     target: str
     rationale: str
     authority: Authority
-    request_packet: dict | None = None
+    request_packet: dict[str, Any] | None = None
+    source_signal_ids: list[str] = Field(default_factory=list)
+
+
+class Recommendation(BaseModel):
+    """Optional recommendation surfaced to the operator on a UIEvent."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    summary: str
+    approveLabel: str = "APPROVE"
+
+
+class UIEvent(_Event):
+    """Frontend-facing event — matches data/expected_ui_events.json shape.
+
+    Field names use camelCase where the existing fixture does (demoBeat,
+    approveLabel) so the frontend can read either source interchangeably.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    source_signal_ids: list[str] = Field(default_factory=list)
+    type: UIEventType
+    timestamp: datetime = Field(default_factory=_now)
+    severity: UISeverity
+    title: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+    demoBeat: str | None = Field(default=None, alias="demoBeat")
+    recommendation: Recommendation | None = None

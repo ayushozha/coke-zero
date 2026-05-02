@@ -12,12 +12,12 @@ __all__ = ["DecideService"]
 
 
 class DecideService:
-    """Decision-stage skeleton.
+    """Decision-stage service.
 
-    Subscribes to `attributions.*`, calls the LLMClient (stub by default),
-    and publishes Decision events to `decisions.{authority}`. The hardcoded
-    authority mapping lives inside the stub for foundation; the live agent
-    can override per-call.
+    Subscribes to ``attributions.*``, calls ``LLMClient.decide(...)``, and
+    publishes Decision events to ``decisions.{authority}``. The hardcoded
+    citation→action mapping lives inside the stub for foundation; the live
+    agent overrides per-call via prompts/tool-use.
     """
 
     def __init__(self, bus: Bus, llm: LLMClient) -> None:
@@ -27,9 +27,15 @@ class DecideService:
     async def run(self) -> None:
         async for topic, event in self._bus.subscribe("attributions.*"):
             if not isinstance(event, Attribution):
-                log.warning("decide received non-Attribution on %s: %r", topic, type(event))
+                log.warning(
+                    "decide received non-Attribution on %s: %r", topic, type(event)
+                )
                 continue
-            decision = await self._llm.decide(event)
+            try:
+                decision = await self._llm.decide(event)
+            except Exception:
+                log.exception("decide: LLMClient.decide failed for attribution=%s", event.id)
+                continue
             await self._bus.publish(f"decisions.{decision.authority}", decision)
             log.info(
                 "decide published id=%s action=%s authority=%s",
