@@ -15,6 +15,7 @@ import {
   TileMapServiceImageryProvider,
   Viewer,
 } from 'cesium'
+import { forward as toMgrs } from 'mgrs'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
@@ -46,6 +47,51 @@ const contacts = [
 const arcPositions = Cartesian3.fromDegreesArrayHeights([
   63.4, 31.2, 650000, 70.5, 38.1, 420000, 51.9, 34.8, 360000,
 ])
+
+const localAorBounds = {
+  west: -116.61,
+  south: 34.98,
+  east: -116.43,
+  north: 35.08,
+}
+
+const localRoute = [
+  [-116.57, 35.0, 1200],
+  [-116.55, 35.015, 1225],
+  [-116.52, 35.02, 1210],
+  [-116.49, 35.035, 1235],
+  [-116.46, 35.05, 1240],
+]
+
+const localContacts = [
+  {
+    name: 'RELAY TEAM 2',
+    lon: -116.52,
+    lat: 35.02,
+    height: 1210,
+    color: Color.fromCssColorString('#ffb300'),
+  },
+  {
+    name: 'BLOS RELAY WEST',
+    lon: -116.547,
+    lat: 35.039,
+    height: 1225,
+    color: Color.WHITE,
+  },
+  {
+    name: 'RF HIT 11',
+    lon: -116.485,
+    lat: 35.012,
+    height: 1230,
+    color: Color.RED,
+  },
+]
+
+const formatMgrs = (lon: number, lat: number) =>
+  toMgrs([lon, lat], 4).replace(
+    /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
+    '$1 $2 $3 $4',
+  )
 
 const addMinutes = (date: Date, minutes: number) =>
   new Date(date.getTime() + minutes * 60000).toISOString()
@@ -208,11 +254,7 @@ const createVehicleCzml = () => {
   ]
 }
 
-type CesiumGlobeProps = {
-  onOpenAor?: () => void
-}
-
-export function CesiumGlobe({ onOpenAor }: CesiumGlobeProps) {
+export function CesiumGlobe() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
@@ -325,6 +367,62 @@ export function CesiumGlobe({ onOpenAor }: CesiumGlobeProps) {
       },
     })
 
+    viewer.entities.add({
+      id: 'local-aor-boundary',
+      name: 'Local AOR Boundary',
+      rectangle: {
+        coordinates: Rectangle.fromDegrees(
+          localAorBounds.west,
+          localAorBounds.south,
+          localAorBounds.east,
+          localAorBounds.north,
+        ),
+        fill: true,
+        material: Color.RED.withAlpha(0.06),
+        outline: true,
+        outlineColor: Color.RED.withAlpha(0.75),
+      },
+    })
+
+    viewer.entities.add({
+      id: 'local-aor-route',
+      name: 'Relay Team 2 Route',
+      polyline: {
+        clampToGround: true,
+        material: new PolylineGlowMaterialProperty({
+          color: Color.fromCssColorString('#ffb300').withAlpha(0.85),
+          glowPower: 0.14,
+        }),
+        positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
+        width: 5,
+      },
+    })
+
+    localContacts.forEach((contact) => {
+      viewer.entities.add({
+        id: `local-${contact.name.toLowerCase().replaceAll(' ', '-')}`,
+        name: contact.name,
+        position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
+        point: {
+          color: contact.color,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          outlineColor: Color.BLACK,
+          outlineWidth: 2,
+          pixelSize: 12,
+        },
+        label: {
+          backgroundColor: Color.BLACK.withAlpha(0.76),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          fillColor: Color.WHITE,
+          font: '13px Share Tech Mono',
+          pixelOffset: new Cartesian2(0, -28),
+          showBackground: true,
+          style: LabelStyle.FILL,
+          text: `${contact.name}\n${formatMgrs(contact.lon, contact.lat)}`,
+        },
+      })
+    })
+
     contacts.forEach((contact) => {
       viewer.entities.add({
         name: contact.name,
@@ -385,6 +483,10 @@ export function CesiumGlobe({ onOpenAor }: CesiumGlobeProps) {
     viewer.dataSources.removeAll()
     viewer.clock.shouldAnimate = true
     setActiveLayer('baseline')
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(58, 28, 18500000),
+      duration: 1.1,
+    })
   }
 
   const loadSatellites = () => {
@@ -423,14 +525,16 @@ export function CesiumGlobe({ onOpenAor }: CesiumGlobeProps) {
       }
 
       viewer.clock.shouldAnimate = true
-      viewer.scene.camera.setView({
+      setActiveLayer('vehicle')
+      viewer.camera.flyTo({
         destination: Cartesian3.fromDegrees(-116.52, 35.02, 95000),
+        duration: 2.8,
         orientation: {
           heading: 6,
+          pitch: -1.08,
+          roll: 0,
         },
       })
-      setActiveLayer('vehicle')
-      onOpenAor?.()
     })
   }
 
