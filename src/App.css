@@ -173,6 +173,35 @@
   display: none;
 }
 
+.map-stage__view-switch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.map-stage__view-switch button,
+.aor-map__basemaps button {
+  min-height: 36px;
+  border: 1px solid var(--line-bright);
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--text-primary);
+  font: inherit;
+  padding: 8px 10px;
+  text-transform: uppercase;
+}
+
+.map-stage__view-switch button:hover,
+.map-stage__view-switch button.is-active,
+.aor-map__basemaps button:hover,
+.aor-map__basemaps button.is-active {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
 .cesium-scenario-controls {
   position: absolute;
   top: 14px;
@@ -246,6 +275,152 @@
   font-size: 1.5rem;
   font-weight: 400;
   text-transform: uppercase;
+}
+
+.aor-map,
+.aor-map__canvas,
+.aor-map__canvas .maplibregl-map {
+  position: absolute;
+  inset: 0;
+}
+
+.aor-map {
+  background: #020202;
+}
+
+.aor-map__canvas .maplibregl-canvas {
+  outline: none;
+}
+
+.aor-map .maplibregl-ctrl-bottom-left {
+  bottom: 72px;
+  left: 12px;
+}
+
+.aor-map .maplibregl-ctrl-bottom-right {
+  bottom: 10px;
+  right: 10px;
+  max-width: 32%;
+}
+
+.aor-map .maplibregl-ctrl,
+.aor-map .maplibregl-ctrl-attrib {
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--text-muted);
+  font: 0.7rem/1.2 'Share Tech Mono', 'Courier New', monospace;
+}
+
+.aor-map .maplibregl-ctrl button {
+  border-radius: 0;
+}
+
+.aor-map__hud,
+.aor-map__basemaps,
+.aor-map__scale {
+  position: absolute;
+  z-index: 7;
+  background: rgba(0, 0, 0, 0.74);
+  border: 1px solid var(--line-bright);
+}
+
+.aor-map__hud {
+  top: 62px;
+  left: 14px;
+  min-width: 230px;
+  padding: 12px;
+}
+
+.aor-map__hud span,
+.aor-map__scale span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.aor-map__hud strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.aor-map__hud p {
+  margin-top: 8px;
+  color: var(--amber);
+}
+
+.aor-map__basemaps {
+  top: 62px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
+
+.aor-map__scale {
+  right: 14px;
+  bottom: 82px;
+  display: flex;
+  gap: 14px;
+  padding: 8px 10px;
+}
+
+.aor-marker {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto;
+  justify-items: center;
+  color: var(--text-primary);
+  transform: translateY(-2px);
+  user-select: none;
+}
+
+.aor-marker__dot {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #000;
+  background: currentColor;
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+.aor-marker--friendly {
+  color: var(--amber);
+}
+
+.aor-marker--asset {
+  color: var(--white);
+}
+
+.aor-marker--threat {
+  color: var(--red);
+}
+
+.aor-marker__label,
+.aor-marker__grid {
+  position: absolute;
+  left: 50%;
+  min-width: max-content;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(0, 0, 0, 0.78);
+  padding: 2px 5px;
+  transform: translateX(-50%);
+  text-transform: uppercase;
+}
+
+.aor-marker__label {
+  bottom: 23px;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+}
+
+.aor-marker__grid {
+  top: 23px;
+  color: var(--amber);
+  font-size: 0.66rem;
 }
 
 .narration,
@@ -479,15 +654,47 @@
   }
 
   .cesium-scenario-controls {
-    top: 10px;
+    top: 54px;
     right: 10px;
     left: 10px;
+  }
+
+  .map-stage__view-switch {
+    top: 10px;
   }
 
   .cesium-scenario-controls button {
     flex: 1 1 0;
     min-width: 0;
     padding: 8px 6px;
+  }
+
+  .aor-map__hud,
+  .aor-map__basemaps {
+    top: 54px;
+  }
+
+  .aor-map__hud {
+    right: 10px;
+    left: 10px;
+    min-width: 0;
+  }
+
+  .aor-map__basemaps {
+    top: 146px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .aor-map__basemaps button {
+    flex: 1 1 0;
+  }
+
+  .aor-map__scale {
+    right: 10px;
+    bottom: 82px;
+    left: 10px;
+    justify-content: space-between;
   }
 
   .event-feed__item {
