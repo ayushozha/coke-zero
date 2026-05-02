@@ -1,11 +1,13 @@
 # Iran Conflict Demo Scenarios
 
 These feeds translate public reporting on the 2026 Iran crisis into
-schema-valid CANOPY demo data. The records are fictionalized for the hackathon:
-they are not operational guidance, target lists, or real intelligence.
+schema-valid CANOPY demo data with a space-first focus. The records are
+fictionalized for the hackathon: they are not operational guidance, target
+lists, or real intelligence.
 
-The goal is to show what CANOPY would do for an Army or joint tactical user at
-a specific time when public-source-relevant events happen.
+The goal is to show what CANOPY would do for an Army or joint tactical user
+when space-enabled services degrade: PNT, SATCOM, satellite ISR, overhead
+warning, space-support workflows, and RPO/counterspace risk.
 
 ## Source Anchors
 
@@ -30,52 +32,54 @@ a specific time when public-source-relevant events happen.
 ### `scenarios/iran_hormuz_convoy_resilience.jsonl`
 
 Question: what would CANOPY do at 10:00 a.m. ET on April 13, when the blockade
-timeline hits and a theater sustainment convoy is about to move?
+timeline hits and a theater sustainment convoy depends on space-enabled
+navigation, SATCOM, UAS relay, and satellite maritime awareness?
 
 Demo answer:
 
-1. Start a sustainment risk clock from the public blockade time.
-2. Detect traffic collapse around Hormuz.
-3. Flag GNSS interference on the convoy corridor.
+1. Start a theater space-support watch window from the public blockade time.
+2. Use satellite AIS / imagery context to detect maritime picture collapse.
+3. Flag GPS interference on the convoy corridor.
 4. Hold convoy departure after shared GPS bias appears.
-5. Preserve UAS overwatch by switching relay from a spoofed drone.
-6. Freeze dispatch changes during credential probes.
-7. Move command traffic to low-bandwidth fallback.
-8. Recommend a 20-minute hold while degraded-mode navigation and comms are
-   confirmed.
+5. Preserve UAS overwatch as a local relay for space-derived ISR products.
+6. Move command traffic to low-bandwidth SATCOM fallback.
+7. Request SAR refresh over the convoy-linked route.
+8. Recommend a hold until SAR refresh, alternate PNT confidence, and SATCOM
+   fallback are confirmed.
 
 ### `scenarios/iran_proxy_uas_base_defense.jsonl`
 
 Question: what would CANOPY do at 0130Z when a base in Iraq sees proxy UAS
-warning signs?
+warning signs and its space-support chain starts degrading?
 
 Demo answer:
 
-1. Load public militia/UAS risk context.
-2. Detect control-link bursts.
-3. Detect two inbound low-altitude UAS tracks.
-4. Notice PNT degradation affecting perimeter sensors.
+1. Load public militia/UAS risk context tied to base space-support nodes.
+2. Use an overhead IR cue to start the warning chain.
+3. Correlate the overhead cue with local RF control-link bursts.
+4. Notice GPS timing degradation affecting perimeter sensor fusion.
 5. Shift coordination from SATCOM to local radio fallback.
-6. Lock alerting systems during cyber probes.
-7. Confirm defensive posture and personnel warning.
-8. Emit a confidence-scored base-defense assessment without overclaiming
-   attribution.
+6. Lock the space-support request portal during cyber probes.
+7. Preserve cached overhead products and local sensor custody.
+8. Emit a confidence-scored space-enabled base-defense assessment without
+   overclaiming attribution.
 
 ### `scenarios/iran_counter_c5isr_brigade.jsonl`
 
-Question: what would CANOPY do when a brigade's drone mesh, SATCOM, cyber
-systems, and space support all degrade inside the same short window?
+Question: what would CANOPY do when a brigade's space support stack degrades
+inside the same short window: GPS, SATCOM, satellite-product distribution,
+cyber access, and RPO risk?
 
 Demo answer:
 
 1. Preload Iran missile/UAS and counterspace context from public sources.
-2. Detect drone-link EW.
+2. Detect drone-link EW disrupting satellite-product distribution.
 3. Detect GNSS spoofing across multiple drones.
-4. Autonomously preserve ISR through relay handoff.
+4. Autonomously preserve local relay of satellite-derived ISR products.
 5. Shift commander traffic to degraded SATCOM fallback.
-6. Freeze automated fires cueing during cyber probes.
+6. Freeze automated fires cueing during cyber probes against space-fed data.
 7. Request space support options after an RPO close-approach overlay.
-8. Report "consistent with counter-C5ISR pressure, not proof."
+8. Report "consistent with counterspace-enabled C5ISR pressure, not proof."
 
 ## Run
 
@@ -91,7 +95,8 @@ Use:
 
 ```txt
 CANOPY is not claiming proof of attribution. It is showing the commander a
-confidence-scored assessment that the pattern is consistent with known Iranian
-and Iran-backed modes of pressure: drones, missiles, PNT disruption, cyber
-probing, SATCOM degradation, and space-risk indicators.
+confidence-scored assessment that the pattern is consistent with pressure on
+space-enabled warfighting functions: GPS/PNT trust, SATCOM reachback,
+satellite ISR distribution, overhead warning, cyber access to space-support
+workflows, and RPO/counterspace risk.
 ```

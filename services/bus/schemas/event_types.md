@@ -50,6 +50,8 @@ osint:
 - `uas_base_defense_assessment`
 - `missile_uas_capability_context`
 - `iran_counter_c5isr_assessment`
+- `space_support_hold_recommendation`
+- `space_enabled_base_defense_assessment`
 - `fdir_assessment`
 - `relay_resilience_assessment`
 - `collection_risk_assessment`
@@ -62,6 +64,8 @@ humint:
 
 sda:
 - `sda_catalog_match`
+- `maritime_space_picture_shift`
+- `overhead_ir_cue`
 
 terrain:
 - `terrain_masking_risk`
