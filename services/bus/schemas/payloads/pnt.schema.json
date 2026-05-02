@@ -7,7 +7,9 @@
   "required": [
     "system",
     "effect_type",
-    "integrity"
+    "integrity",
+    "event_type",
+    "summary"
   ],
   "properties": {
     "system": {
@@ -35,6 +37,16 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "position_error_m": {
       "type": "number",

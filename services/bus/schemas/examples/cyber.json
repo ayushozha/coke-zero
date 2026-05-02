@@ -5,6 +5,9 @@
   "source": "canopy-cyber-adapter",
   "realism": "mock_operational",
   "confidence": 0.89,
+  "location": {
+    "label": "cyber adapter observation"
+  },
   "payload": {
     "event_id": "cyber-event-20260502-001",
     "event_type": "intrusion",

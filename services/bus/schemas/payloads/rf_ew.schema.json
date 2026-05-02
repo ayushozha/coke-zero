@@ -7,7 +7,9 @@
   "required": [
     "emitter_id",
     "signal_type",
-    "frequency_mhz"
+    "frequency_mhz",
+    "event_type",
+    "summary"
   ],
   "properties": {
     "emitter_id": {
@@ -28,6 +30,16 @@
     "frequency_mhz": {
       "type": "number",
       "minimum": 0
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "bandwidth_khz": {
       "type": "number",

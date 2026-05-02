@@ -7,7 +7,8 @@
   "required": [
     "event_id",
     "event_type",
-    "severity"
+    "severity",
+    "summary"
   ],
   "properties": {
     "event_id": {
@@ -35,6 +36,11 @@
         "high",
         "critical"
       ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
     },
     "src_ip": {
       "type": "string",

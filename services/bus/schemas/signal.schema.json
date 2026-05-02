@@ -12,6 +12,7 @@
     "source",
     "realism",
     "confidence",
+    "location",
     "payload",
     "provenance"
   ],
@@ -60,10 +61,36 @@
     },
     "location": {
       "type": "object",
+      "minProperties": 1,
       "additionalProperties": true,
+      "anyOf": [
+        {
+          "required": [
+            "lat",
+            "lng"
+          ]
+        },
+        {
+          "required": [
+            "mgrs"
+          ]
+        },
+        {
+          "required": [
+            "area_wkt"
+          ]
+        },
+        {
+          "required": [
+            "label"
+          ]
+        }
+      ],
       "properties": {
         "label": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
         },
         "lat": {
           "type": "number",
@@ -77,6 +104,22 @@
         },
         "alt_km": {
           "type": "number"
+        },
+        "alt_m": {
+          "type": "number"
+        },
+        "ce_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "mgrs": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "area_wkt": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -89,18 +132,24 @@
       ],
       "properties": {
         "beat": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
         },
         "event_type": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 120
         },
         "asset": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
         },
         "summary": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 2000
         },
         "observables": {
           "type": "object"
@@ -124,8 +173,30 @@
             "null"
           ]
         },
+        "collector": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
         "notes": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 2000
         }
       }
     }

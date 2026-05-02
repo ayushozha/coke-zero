@@ -5,6 +5,9 @@
   "source": "canopy-orbit-adapter",
   "realism": "real_source",
   "confidence": 0.94,
+  "location": {
+    "label": "LEO orbital state"
+  },
   "payload": {
     "object_id": "sat-bravo-2",
     "orbit_regime": "leo",
