@@ -1,8 +1,8 @@
 """Prompt scaffolds for the live Anthropic attribution agent.
 
-Foundation-pass content. Real prompt engineering — calibrated confidence
-language, doctrine-citation discipline, evidence-chain formatting — is the
-next iteration's work and lands as a single-file change here.
+The schema and system prompt enforce the data lane's discipline: cite KB
+entries by id, use "consistent with"/"confidence-scored" language, and use
+"Unknown" when signal is insufficient.
 """
 from __future__ import annotations
 
@@ -17,7 +17,9 @@ ATTRIBUTION_TOOL: dict[str, Any] = {
     "name": "submit_attribution",
     "description": (
         "Submit the attribution assessment for the supplied anomaly cluster. "
-        "Always cite KB entry ids that you actually consulted in `kb_citations`."
+        "Cite KB entry ids you actually consulted in `kb_citations`. Use "
+        '"consistent with" and "confidence-scored assessment" language; do '
+        'not say "proves".'
     ),
     "input_schema": {
         "type": "object",
@@ -27,8 +29,9 @@ ATTRIBUTION_TOOL: dict[str, Any] = {
             "actor": {
                 "type": "string",
                 "description": (
-                    "Named adversary, e.g., 'Russia / GRU 26165' or 'China / PLA Aerospace Force'. "
-                    "Use 'Unknown' when signal is insufficient."
+                    "Named adversary, e.g., 'Russia', 'China', 'Iran', 'DPRK', "
+                    "'Multi-actor', or 'Unknown'. Use 'Unknown' when signal is "
+                    "insufficient."
                 ),
             },
             "confidence": {
@@ -39,7 +42,7 @@ ATTRIBUTION_TOOL: dict[str, Any] = {
             },
             "doctrine_match": {
                 "type": ["string", "null"],
-                "description": "KB entry id of the closest matching doctrinal precedent, if any.",
+                "description": "KB entry id of the closest matching precedent, if any.",
             },
             "evidence": {
                 "type": "array",
@@ -62,11 +65,17 @@ ATTRIBUTION_TOOL: dict[str, Any] = {
 
 def attribution_system_prompt() -> str:
     return (
-        "You are CANOPY's attribution agent. Given a cluster of anomalies and a "
-        "knowledge base of adversary systems and doctrine, return a calibrated "
-        "attribution assessment via the submit_attribution tool. Cite the KB entries "
-        "you consulted by id in kb_citations. Use 'Unknown' as the actor when signal "
-        "is insufficient — do not invent attribution."
+        "You are CANOPY's attribution agent. Given a cluster of canonical "
+        "anomalies and a knowledge base of doctrinally grounded threat "
+        "concepts, return a calibrated attribution via the submit_attribution "
+        "tool.\n\n"
+        "Discipline:\n"
+        "- Cite the KB entries you consulted by id in kb_citations.\n"
+        "- Always include kb-attribution-uncertainty-001 as a caveat anchor.\n"
+        '- Use "consistent with" or "confidence-scored assessment"; do not '
+        'say "proves".\n'
+        "- When signal is insufficient, set actor to 'Unknown' and lower "
+        "confidence rather than inventing attribution."
     )
 
 
@@ -74,10 +83,10 @@ def attribution_user_prompt(
     anomalies: list[Anomaly], kb_entries: Iterable[KBEntry]
 ) -> str:
     anomalies_blob = json.dumps(
-        [a.model_dump(mode="json") for a in anomalies], indent=2
+        [a.model_dump(mode="json") for a in anomalies], indent=2, default=str
     )
     kb_blob = json.dumps(
-        [e.model_dump(mode="json") for e in kb_entries], indent=2
+        [e.model_dump(mode="json") for e in kb_entries], indent=2, default=str
     )
     return (
         f"## Anomalies\n```json\n{anomalies_blob}\n```\n\n"

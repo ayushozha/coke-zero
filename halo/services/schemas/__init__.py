@@ -5,8 +5,15 @@ from halo.services.schemas.events import (
     Authority,
     Decision,
     Domain,
-    Severity,
+    Location,
+    Payload,
+    Provenance,
+    Realism,
+    Recommendation,
     Signal,
+    UIEvent,
+    UIEventType,
+    UISeverity,
 )
 
 __all__ = [
@@ -16,6 +23,13 @@ __all__ = [
     "Authority",
     "Decision",
     "Domain",
-    "Severity",
+    "Location",
+    "Payload",
+    "Provenance",
+    "Realism",
+    "Recommendation",
     "Signal",
+    "UIEvent",
+    "UIEventType",
+    "UISeverity",
 ]
