@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CANOPY Scenario Runner</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #151b23;
+      --panel-2: #1c232d;
+      --line: #303a46;
+      --text: #eef3f8;
+      --muted: #9aa9b8;
+      --green: #55d17a;
+      --amber: #e8b44e;
+      --red: #ee6a5f;
+      --blue: #62a8f7;
+      --cyan: #4ccdd8;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: #10161d;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select, button {
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      min-width: 80px;
+    }
+
+    button:hover, select:hover { border-color: var(--blue); }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) 1fr;
+      min-height: calc(100vh - 69px);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .stage {
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .metric, .assessment, .lane, .event-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .metric {
+      padding: 12px;
+      min-height: 74px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .assessment {
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .assessment h2, aside h2 {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+
+    .assessment p {
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 12px;
+      overflow: auto;
+      padding-bottom: 8px;
+    }
+
+    .lane {
+      min-height: 220px;
+      padding: 12px;
+    }
+
+    .lane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .lane-title {
+      font-size: 13px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .mini-event {
+      border-left: 3px solid var(--blue);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 9px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+    }
+
+    .mini-event strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .mini-event p {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .event-card {
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .event-card:first-of-type { margin-top: 0; }
+
+    .event-card.active {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 1px rgba(232, 180, 78, 0.25);
+    }
+
+    .event-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      font-size: 11px;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .pill.space { border-color: var(--cyan); color: var(--cyan); }
+    .pill.mock { border-color: var(--amber); color: var(--amber); }
+    .pill.real { border-color: var(--green); color: var(--green); }
+
+    .event-card h3 {
+      margin: 0 0 7px;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .event-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .action {
+      color: var(--green);
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .timeline {
+      height: 8px;
+      background: var(--panel-2);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: var(--blue);
+      transition: width 180ms linear;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 42vh; }
+      .summary { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CANOPY Scenario Runner</h1>
+    </div>
+    <div class="controls">
+      <select id="scenario"></select>
+      <button id="play">Play</button>
+      <button id="reset">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <h2>Signal Feed</h2>
+      <div id="feed"></div>
+    </aside>
+    <section class="stage">
+      <div class="summary">
+        <div class="metric"><span>Scenario Time</span><strong id="clock">--:--:--Z</strong></div>
+        <div class="metric"><span>Signals Seen</span><strong id="seen">0</strong></div>
+        <div class="metric"><span>Space Services</span><strong id="space">0</strong></div>
+        <div class="metric"><span>Top Severity</span><strong id="severity">None</strong></div>
+      </div>
+      <div class="timeline"><div class="bar" id="bar"></div></div>
+      <div class="assessment">
+        <h2>Commander View</h2>
+        <p id="commander">Load a scenario, then press Play.</p>
+      </div>
+      <div class="grid" id="lanes"></div>
+    </section>
+  </main>
+
+  <script>
+    const SCENARIOS = [
+      ["Iran Counter-C5ISR Space Support", "../scenarios/iran_counter_c5isr_brigade.jsonl"],
+      ["Iran Hormuz Space-Enabled Logistics", "../scenarios/iran_hormuz_convoy_resilience.jsonl"],
+      ["Iran Proxy Base Space Defense", "../scenarios/iran_proxy_uas_base_defense.jsonl"],
+      ["Army Multi-Domain Attack Chain", "../scenarios/army_multidomain_attack_chain.jsonl"],
+      ["Army Drone FDIR", "../scenarios/army_drone_fdir.jsonl"],
+      ["Army Relay Reconfiguration", "../scenarios/army_relay_reconfig.jsonl"],
+      ["Army Satellite Collection Risk", "../scenarios/army_satellite_collection_risk.jsonl"],
+      ["Canonical Beat 1 Setup", "../scenarios/beat1.jsonl"],
+      ["Canonical Beat 2 RF/Cyber/PNT", "../scenarios/beat2.jsonl"],
+      ["Canonical Beat 4 Convergence", "../scenarios/beat4.jsonl"],
+      ["Canonical Beat 4.7 RPO/SATCOM", "../scenarios/beat47.jsonl"]
+    ];
+
+    const DOMAIN_LABELS = {
+      sda: "SDA / Satellite Awareness",
+      orbit: "Orbit / RPO",
+      satcom: "SATCOM",
+      pnt: "PNT / GPS",
+      rf_ew: "RF / EW",
+      cyber: "Cyber",
+      drone: "Drone / UAS",
+      osint: "OSINT / Assessment",
+      humint: "HUMINT",
+      terrain: "Terrain"
+    };
+
+    const SPACE_DOMAINS = new Set(["sda", "orbit", "satcom", "pnt"]);
+    const select = document.getElementById("scenario");
+    const playButton = document.getElementById("play");
+    const resetButton = document.getElementById("reset");
+    const feed = document.getElementById("feed");
+    const lanes = document.getElementById("lanes");
+    const clock = document.getElementById("clock");
+    const seen = document.getElementById("seen");
+    const space = document.getElementById("space");
+    const severity = document.getElementById("severity");
+    const commander = document.getElementById("commander");
+    const bar = document.getElementById("bar");
+
+    let records = [];
+    let current = 0;
+    let timer = null;
+
+    for (const [label, path] of SCENARIOS) {
+      const option = document.createElement("option");
+      option.value = path;
+      option.textContent = label;
+      select.appendChild(option);
+    }
+
+    select.addEventListener("change", loadScenario);
+    playButton.addEventListener("click", togglePlay);
+    resetButton.addEventListener("click", () => render(0));
+
+    function parseJsonl(text) {
+      return text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(JSON.parse);
+    }
+
+    async function loadScenario() {
+      stop();
+      const response = await fetch(select.value);
+      records = parseJsonl(await response.text());
+      current = 0;
+      render(0);
+    }
+
+    function togglePlay() {
+      if (timer) {
+        stop();
+        return;
+      }
+      playButton.textContent = "Pause";
+      timer = setInterval(() => {
+        if (current >= records.length) {
+          stop();
+          return;
+        }
+        render(current + 1);
+      }, 950);
+    }
+
+    function stop() {
+      clearInterval(timer);
+      timer = null;
+      playButton.textContent = "Play";
+    }
+
+    function render(count) {
+      current = Math.max(0, Math.min(count, records.length));
+      const active = records.slice(0, current);
+      const last = active[active.length - 1];
+      clock.textContent = last ? last.ts.replace("T", " ").replace(".000", "") : "--:--:--Z";
+      seen.textContent = active.length;
+      space.textContent = active.filter(r => SPACE_DOMAINS.has(r.domain) || String(r.payload.summary).toLowerCase().includes("space")).length;
+      severity.textContent = topSeverity(active);
+      bar.style.width = records.length ? `${(current / records.length) * 100}%` : "0%";
+      commander.textContent = commanderText(active);
+      renderFeed(active, last);
+      renderLanes(active);
+    }
+
+    function topSeverity(active) {
+      if (!active.length) return "None";
+      const max = Math.max(...active.map(r => r.confidence || 0));
+      if (max >= 0.88) return "High";
+      if (max >= 0.75) return "Medium";
+      return "Watch";
+    }
+
+    function commanderText(active) {
+      if (!active.length) return "Load a scenario, then press Play.";
+      const final = [...active].reverse().find(r => /assessment|recommendation|hold/.test(r.payload.event_type));
+      const last = final || active[active.length - 1];
+      const obs = last.payload.observables || {};
+      return obs.recommended_response || obs.demo_action || last.payload.summary;
+    }
+
+    function renderFeed(active, last) {
+      feed.innerHTML = "";
+      for (const record of [...active].reverse()) {
+        const card = document.createElement("div");
+        card.className = "event-card" + (last && record.id === last.id ? " active" : "");
+        const realismClass = record.realism === "real_source" ? "real" : "mock";
+        card.innerHTML = `
+          <div class="event-meta">
+            <span class="pill">${record.domain}</span>
+            <span class="pill ${realismClass}">${record.realism}</span>
+            ${SPACE_DOMAINS.has(record.domain) ? '<span class="pill space">space</span>' : ''}
+          </div>
+          <h3>${escapeHtml(record.payload.event_type)} · ${escapeHtml(record.payload.asset || record.source)}</h3>
+          <p>${escapeHtml(record.payload.summary)}</p>
+          ${actionLine(record)}
+        `;
+        feed.appendChild(card);
+      }
+    }
+
+    function actionLine(record) {
+      const action = (record.payload.observables || {}).demo_action || (record.payload.observables || {}).recommended_response;
+      return action ? `<div class="action">${escapeHtml(action)}</div>` : "";
+    }
+
+    function renderLanes(active) {
+      lanes.innerHTML = "";
+      const byDomain = {};
+      for (const record of active) {
+        byDomain[record.domain] ||= [];
+        byDomain[record.domain].push(record);
+      }
+      const domains = Object.keys(DOMAIN_LABELS).filter(d => byDomain[d]?.length);
+      for (const domain of domains) {
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        const items = byDomain[domain];
+        lane.innerHTML = `
+          <div class="lane-head">
+            <div class="lane-title">${DOMAIN_LABELS[domain]}</div>
+            <div class="count">${items.length}</div>
+          </div>
+        `;
+        for (const record of items.slice(-4).reverse()) {
+          const item = document.createElement("div");
+          item.className = "mini-event";
+          item.innerHTML = `<strong>${escapeHtml(record.payload.event_type)}</strong><p>${escapeHtml(record.payload.summary)}</p>`;
+          lane.appendChild(item);
+        }
+        lanes.appendChild(lane);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[c]));
+    }
+
+    loadScenario();
+  </script>
+</body>
+</html>
