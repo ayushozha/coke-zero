@@ -24,5 +24,7 @@ with open(args.path, "r") as f:
             delay = max(0, (t - last_t) / args.speed)
             time.sleep(delay)
 
-        print(json.dumps(event), flush=True)
+        topic = f"signals.{event['domain']}"
+        print(f"{topic} {json.dumps(event)}", flush=True)
+
         last_t = t
