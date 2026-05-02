@@ -1,0 +1,27 @@
+{
+  "id": "sig_satcom_00001",
+  "ts": "2026-05-02T15:06:45Z",
+  "domain": "satcom",
+  "source": "canopy-satcom-adapter",
+  "realism": "mock_operational",
+  "confidence": 0.92,
+  "location": {
+    "label": "satcom link footprint"
+  },
+  "payload": {
+    "link_id": "link-ku-2217",
+    "satellite_id": "sat-delta-9",
+    "band": "ku",
+    "link_status": "degraded",
+    "snr_db": 8.7,
+    "throughput_kbps": 640,
+    "latency_ms": 710,
+    "event_type": "satcom",
+    "summary": "satcom signal"
+  },
+  "provenance": {
+    "source_id": "canopy-satcom-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

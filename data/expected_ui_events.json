@@ -1,0 +1,65 @@
+{
+  "events": [
+    {
+      "id": "uievt-beat1-orbit-watch",
+      "source_signal_ids": ["canopy-beat1-001", "canopy-beat1-003"],
+      "type": "threat_updated",
+      "timestamp": "2026-06-18T14:05:00Z",
+      "severity": "medium",
+      "title": "Orbital watch established",
+      "message": "CANOPY has a baseline pass and a synthetic non-cooperative object inside the monitoring shell.",
+      "confidence": 0.74,
+      "demoBeat": "1"
+    },
+    {
+      "id": "uievt-beat2-cross-domain-probe",
+      "source_signal_ids": [
+        "canopy-beat2-001",
+        "canopy-beat2-002",
+        "canopy-beat2-003",
+        "canopy-beat2-004"
+      ],
+      "type": "threat_updated",
+      "timestamp": "2026-06-18T14:21:10Z",
+      "severity": "high",
+      "title": "Coordinated RF, cyber, PNT, and drone anomaly",
+      "message": "RF interference, gateway probing, GNSS bias, and UAS identity mismatch are occurring inside one operational window.",
+      "confidence": 0.82,
+      "demoBeat": "2"
+    },
+    {
+      "id": "uievt-beat4-campaign-convergence",
+      "source_signal_ids": ["canopy-beat4-001", "canopy-beat4-004", "canopy-beat4-006"],
+      "type": "threat_updated",
+      "timestamp": "2026-06-18T14:37:00Z",
+      "severity": "high",
+      "title": "Convergence assessment raised",
+      "message": "CANOPY assesses the anomaly cluster as a likely coordinated interference campaign and recommends protecting SATCOM while tracking RPO risk.",
+      "confidence": 0.88,
+      "demoBeat": "4"
+    },
+    {
+      "id": "uievt-beat47-space-request",
+      "source_signal_ids": [
+        "canopy-beat47-001",
+        "canopy-beat47-002",
+        "canopy-beat47-003",
+        "canopy-beat47-004",
+        "canopy-beat47-005",
+        "canopy-beat47-006"
+      ],
+      "type": "recommendation_created",
+      "timestamp": "2026-06-18T14:49:30Z",
+      "severity": "high",
+      "title": "Request space-effect review",
+      "message": "SATCOM degradation correlates with a synthetic RPO close-approach inject. Recommend commander approval to route a higher-authority space-effect request.",
+      "confidence": 0.87,
+      "recommendation": {
+        "id": "rec-beat47-space-effect",
+        "summary": "Draft request to preserve brigade BLOS during RPO close-approach window.",
+        "approveLabel": "APPROVE"
+      },
+      "demoBeat": "4.7"
+    }
+  ]
+}

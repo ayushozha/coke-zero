@@ -1,0 +1,28 @@
+{
+  "id": "sig_orbit_0000001",
+  "ts": "2026-05-02T15:10:00Z",
+  "domain": "orbit",
+  "source": "canopy-orbit-adapter",
+  "realism": "real_source",
+  "confidence": 0.94,
+  "location": {
+    "label": "LEO orbital state"
+  },
+  "payload": {
+    "object_id": "sat-bravo-2",
+    "orbit_regime": "leo",
+    "epoch": "2026-05-02T15:10:00Z",
+    "semi_major_axis_km": 6928.4,
+    "eccentricity": 0.0012,
+    "inclination_deg": 51.6,
+    "raan_deg": 122.4,
+    "mean_anomaly_deg": 44.8,
+    "event_type": "orbit",
+    "summary": "orbit signal"
+  },
+  "provenance": {
+    "source_id": "canopy-orbit-adapter",
+    "citation": null,
+    "notes": "CANOPY data-lane signal"
+  }
+}

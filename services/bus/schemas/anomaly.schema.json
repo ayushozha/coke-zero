@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/anomaly.schema.json",
+  "title": "CANOPY Anomaly",
+  "description": "Derived anomaly emitted by fusion services after reading canonical Signals.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "ts", "kind", "source_signal", "severity", "payload"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "time": {"type": "number"},
+    "ts": {"type": "string", "format": "date-time"},
+    "kind": {"type": "string", "minLength": 1},
+    "source_signal": {"type": "string", "minLength": 1},
+    "source_signal_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "severity": {"type": "number", "minimum": 0, "maximum": 1},
+    "payload": {"type": "object"}
+  }
+}

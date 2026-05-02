@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/rf_ew.schema.json",
+  "title": "RF EW Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "emitter_id",
+    "signal_type",
+    "frequency_mhz",
+    "event_type",
+    "summary"
+  ],
+  "properties": {
+    "emitter_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": [
+        "radar",
+        "communications",
+        "navigation",
+        "jammer",
+        "unknown"
+      ]
+    },
+    "frequency_mhz": {
+      "type": "number",
+      "minimum": 0
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "bandwidth_khz": {
+      "type": "number",
+      "minimum": 0
+    },
+    "power_dbm": {
+      "type": "number"
+    },
+    "modulation": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "bearing_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    }
+  }
+}

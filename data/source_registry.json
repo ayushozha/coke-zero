@@ -1,0 +1,54 @@
+{
+  "sources": [
+    {
+      "id": "celestrak-gp",
+      "title": "CelesTrak General Perturbations Catalog",
+      "organization": "CelesTrak",
+      "source_type": "real_source",
+      "url": "https://celestrak.org/NORAD/elements/gp.php",
+      "domains": ["sda", "orbit"],
+      "accessed": "2026-05-02",
+      "notes": "Publicly accessible orbital element catalog used for cached demo TLE/OMM snapshots."
+    },
+    {
+      "id": "csis-space-threat-2025",
+      "title": "Space Threat Assessment 2025",
+      "organization": "Center for Strategic and International Studies",
+      "source_type": "real_source",
+      "path": "/Users/ethan/Downloads/250425_Swope_Space_Threat.pdf",
+      "domains": ["osint", "sda", "rf_ew", "cyber", "satcom"],
+      "accessed": "2026-05-02",
+      "notes": "Open-source assessment used for threat context and citations."
+    },
+    {
+      "id": "swf-counterspace-2025",
+      "title": "Global Counterspace Capabilities 2025",
+      "organization": "Secure World Foundation",
+      "source_type": "real_source",
+      "path": "/Users/ethan/Downloads/69b9cf7dfe068cc552d7d8ee_SWF_Global_Counterspace_Capabilities_2025_web.pdf",
+      "domains": ["osint", "sda", "rf_ew", "cyber", "satcom"],
+      "accessed": "2026-05-02",
+      "notes": "Open-source counterspace capability assessment used for KB entries and caveated attribution."
+    },
+    {
+      "id": "canopy-game-plan",
+      "title": "Hackathon Demo Concepts: Autonomous ISR Relay Network",
+      "organization": "CANOPY Team",
+      "source_type": "mock_operational",
+      "path": "/Users/ethan/Downloads/Hackathon Demo Concepts_ Autonomous ISR Relay Network (1).pdf",
+      "domains": ["drone", "humint", "rf_ew", "cyber", "pnt", "satcom"],
+      "accessed": "2026-05-02",
+      "notes": "Internal hackathon scenario plan. Operational injects derived from it are synthetic demo data."
+    },
+    {
+      "id": "mock-beat-feeds",
+      "title": "CANOPY Deterministic Scenario Feeds",
+      "organization": "CANOPY Team",
+      "source_type": "mock_operational",
+      "path": "scenarios/",
+      "domains": ["humint", "rf_ew", "cyber", "pnt", "satcom", "drone"],
+      "accessed": "2026-05-02",
+      "notes": "Timestamped synthetic operational injects for offline hackathon replay."
+    }
+  ]
+}

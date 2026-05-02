@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/orbit.schema.json",
+  "title": "Orbit Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "object_id",
+    "orbit_regime",
+    "epoch",
+    "event_type",
+    "summary"
+  ],
+  "properties": {
+    "object_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "orbit_regime": {
+      "type": "string",
+      "enum": [
+        "leo",
+        "meo",
+        "geo",
+        "heo",
+        "cislunar",
+        "unknown"
+      ]
+    },
+    "epoch": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "semi_major_axis_km": {
+      "type": "number",
+      "minimum": 0
+    },
+    "eccentricity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "inclination_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 180
+    },
+    "raan_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    },
+    "mean_anomaly_deg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    }
+  }
+}
