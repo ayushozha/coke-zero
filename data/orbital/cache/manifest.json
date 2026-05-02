@@ -1,0 +1,65 @@
+{
+  "cache_version": "canopy-orbital-cache-v1",
+  "created_at": "2026-05-02T18:00:00Z",
+  "mode": "planned_snapshot",
+  "refresh_policy": "Manual refresh only; do not refresh CelesTrak data more often than every 2 hours.",
+  "datasets": [
+    {
+      "id": "geo",
+      "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=GEO&FORMAT=JSON",
+      "realism": "real_source",
+      "fetched_at": null,
+      "sha256": null,
+      "object_count": null,
+      "notes": "GEO/SATCOM environment. Populate before live demo if network is available."
+    },
+    {
+      "id": "gps-ops",
+      "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=GPS-OPS&FORMAT=JSON",
+      "realism": "real_source",
+      "fetched_at": null,
+      "sha256": null,
+      "object_count": null,
+      "notes": "Operational GPS constellation for PNT context."
+    },
+    {
+      "id": "starlink",
+      "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=STARLINK&FORMAT=JSON",
+      "realism": "real_source",
+      "fetched_at": null,
+      "sha256": null,
+      "object_count": null,
+      "notes": "Commercial SATCOM context."
+    },
+    {
+      "id": "planet",
+      "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=PLANET&FORMAT=JSON",
+      "realism": "real_source",
+      "fetched_at": null,
+      "sha256": null,
+      "object_count": null,
+      "notes": "Commercial EO context for overpass scenario."
+    },
+    {
+      "id": "gpz-plus",
+      "url": "https://celestrak.org/NORAD/elements/gp.php?SPECIAL=GPZ-PLUS&FORMAT=JSON",
+      "realism": "real_source",
+      "fetched_at": null,
+      "sha256": null,
+      "object_count": null,
+      "notes": "GEO protected-zone context for RPO-adjacent visualization."
+    }
+  ],
+  "synthetic_overlays": [
+    {
+      "id": "SATCOM-3",
+      "realism": "synthetic_orbital_overlay",
+      "notes": "Fictional friendly SATCOM dependency used for Beat 4.7."
+    },
+    {
+      "id": "CANOPY-RPO-1",
+      "realism": "synthetic_orbital_overlay",
+      "notes": "Fictional inspector object used to demonstrate close-approach detection."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halo.local/schemas/payloads/humint.schema.json",
+  "title": "HUMINT Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "reliability",
+    "credibility",
+    "event_type",
+    "summary"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "source_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "reliability": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    "credibility": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "collection_method": {
+      "type": "string",
+      "enum": [
+        "debrief",
+        "liaison",
+        "field_contact",
+        "interview",
+        "other"
+      ]
+    }
+  }
+}
