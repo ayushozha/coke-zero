@@ -6,19 +6,23 @@ types flow on the bus. Exits 0 on success, 1 with diagnostics on failure.
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from dotenv import load_dotenv  # noqa: E402
 
 from halo.services.attrib import AttribService  # noqa: E402
 from halo.services.bus import InProcessBus  # noqa: E402
 from halo.services.decide import DecideService  # noqa: E402
 from halo.services.fusion import FusionService  # noqa: E402
 from halo.services.kb import KB  # noqa: E402
-from halo.services.llm.stub import StubLLMClient  # noqa: E402
+from halo.services.llm import LLMClient  # noqa: E402
 from halo.services.scenario_replay import ScenarioReplayService  # noqa: E402
 from halo.services.schemas.events import (  # noqa: E402
     Anomaly,
@@ -35,14 +39,30 @@ DEFAULT_SCENARIOS = [
     ROOT / "scenarios" / "beat4.jsonl",
     ROOT / "scenarios" / "beat47.jsonl",
 ]
-TIMEOUT_S = 10.0
-DRAIN_S = 1.0
+TIMEOUT_STUB_S = 10.0
+TIMEOUT_LIVE_S = 180.0
+DRAIN_STUB_S = 1.0
+DRAIN_LIVE_S = 8.0
 
 
-async def _verify(scenarios: list[Path]) -> int:
+def _build_llm(*, live: bool, kb: KB) -> LLMClient:
+    if live:
+        from halo.services.llm.anthropic_client import (
+            DEFAULT_MODEL,
+            AnthropicLLMClient,
+        )
+
+        model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
+        return AnthropicLLMClient(kb, model=model)
+    from halo.services.llm.stub import StubLLMClient
+
+    return StubLLMClient(kb)
+
+
+async def _verify(scenarios: list[Path], *, live: bool = False) -> int:
     bus = InProcessBus()
     kb = KB.load_from_json(ROOT / "data" / "kb_seed_entries.json")
-    llm = StubLLMClient(kb)
+    llm = _build_llm(live=live, kb=kb)
 
     fusion = FusionService(bus)
     # Use a small attribution window so the smoke runs fast.
@@ -82,10 +102,12 @@ async def _verify(scenarios: list[Path]) -> int:
         asyncio.create_task(replay.run(), name="replay"),
     ]
 
+    timeout_s = TIMEOUT_LIVE_S if live else TIMEOUT_STUB_S
+    drain_s = DRAIN_LIVE_S if live else DRAIN_STUB_S
     try:
-        await asyncio.wait_for(replay_done.wait(), timeout=TIMEOUT_S)
+        await asyncio.wait_for(replay_done.wait(), timeout=timeout_s)
         # Allow the pipeline to drain after the last published signal.
-        await asyncio.sleep(DRAIN_S + 0.5)
+        await asyncio.sleep(drain_s)
     except TimeoutError:
         pass
     finally:
@@ -150,12 +172,26 @@ def _summary(collected: dict) -> str:
 
 
 def main() -> int:
+    load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    scenarios = [Path(arg) for arg in sys.argv[1:]] or DEFAULT_SCENARIOS
-    return asyncio.run(_verify(scenarios))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        default=bool(os.environ.get("CANOPY_LIVE")),
+        help="Hit the real Anthropic API (requires ANTHROPIC_API_KEY).",
+    )
+    parser.add_argument(
+        "scenarios",
+        nargs="*",
+        help="Scenario JSONL paths (default: all four canonical beats).",
+    )
+    args = parser.parse_args()
+    scenarios = [Path(p) for p in args.scenarios] or DEFAULT_SCENARIOS
+    return asyncio.run(_verify(scenarios, live=args.live))
 
 
 if __name__ == "__main__":
