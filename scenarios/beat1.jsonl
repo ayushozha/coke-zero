@@ -1,0 +1,4 @@
+{"id":"sig-001","time":0,"domain":"drone","source":"drone_01","payload":{"position":[37.87,-122.27],"battery":0.91,"role":"ISR","status":"nominal"}}
+{"id":"sig-002","time":5,"domain":"drone","source":"drone_02","payload":{"position":[37.871,-122.271],"battery":0.88,"role":"relay","status":"nominal"}}
+{"id":"sig-003","time":10,"domain":"rf","source":"ew_mock","payload":{"event":"rf_anomaly","region":"AOR-East","severity":0.7}}
+{"id":"sig-004","time":15,"domain":"gnss","source":"drone_03","payload":{"event":"gps_spoof","gps_confidence":0.32,"inertial_confidence":0.86}}

@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["id", "time", "domain", "source", "payload"],
+  "properties": {
+    "id": {"type": "string"},
+    "time": {"type": "number"},
+    "domain": {"type": "string"},
+    "source": {"type": "string"},
+    "payload": {"type": "object"}
+  }
+}
