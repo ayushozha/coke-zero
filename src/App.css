@@ -154,76 +154,82 @@
   overflow: hidden;
 }
 
-.map-stage__globe {
-  position: absolute;
-  inset: 24px;
-  display: grid;
-  place-items: center;
+.cesium-globe,
+.cesium-globe .cesium-viewer,
+.cesium-globe .cesium-viewer-cesiumWidgetContainer,
+.cesium-globe .cesium-widget,
+.cesium-globe .cesium-widget canvas {
+  width: 100%;
+  height: 100%;
 }
 
-.map-stage__ring,
-.map-stage__axis,
-.map-stage__contact {
+.cesium-globe {
   position: absolute;
-  display: block;
+  inset: 0;
 }
 
-.map-stage__ring {
+.cesium-globe .cesium-viewer-bottom,
+.cesium-globe .cesium-viewer-toolbar {
+  display: none;
+}
+
+.cesium-scenario-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+.cesium-scenario-controls button {
+  min-height: 36px;
   border: 1px solid var(--line-bright);
-  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--text-primary);
+  font: inherit;
+  padding: 8px 10px;
+  text-transform: uppercase;
 }
 
-.map-stage__ring--outer {
-  width: 360px;
-  height: 360px;
-}
-
-.map-stage__ring--inner {
-  width: 230px;
-  height: 230px;
-  border-color: var(--line);
-}
-
-.map-stage__axis--vertical {
-  width: 1px;
-  height: 390px;
-  background: var(--line);
-}
-
-.map-stage__axis--horizontal {
-  width: 390px;
-  height: 1px;
-  background: var(--line);
-}
-
-.map-stage__contact {
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  background: #000;
-}
-
-.map-stage__contact--satcom {
-  color: var(--red);
-  transform: translate(120px, -92px);
-}
-
-.map-stage__contact--pnt {
+.cesium-scenario-controls button:hover,
+.cesium-scenario-controls button.is-active {
+  border-color: var(--amber);
   color: var(--amber);
-  transform: translate(42px, 118px);
 }
 
-.map-stage__contact--rf {
-  color: var(--white);
-  transform: translate(-142px, -18px);
+.cesium-credits {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 3;
+  max-width: 34%;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  text-align: right;
 }
 
 .map-stage__readout {
   position: absolute;
   left: 16px;
-  bottom: 16px;
+  bottom: 82px;
+  z-index: 4;
   border-left: 4px solid var(--amber);
   padding-left: 12px;
+  pointer-events: none;
+}
+
+.map-stage__mode {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 4;
+  border: 1px solid var(--line-bright);
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--text-muted);
+  padding: 8px 10px;
+  pointer-events: none;
+  text-transform: uppercase;
 }
 
 .map-stage__readout span,
@@ -472,26 +478,16 @@
     min-height: 300px;
   }
 
-  .map-stage__globe {
-    inset: 32px;
+  .cesium-scenario-controls {
+    top: 10px;
+    right: 10px;
+    left: 10px;
   }
 
-  .map-stage__ring--outer {
-    width: 230px;
-    height: 230px;
-  }
-
-  .map-stage__ring--inner {
-    width: 150px;
-    height: 150px;
-  }
-
-  .map-stage__axis--vertical {
-    height: 250px;
-  }
-
-  .map-stage__axis--horizontal {
-    width: 250px;
+  .cesium-scenario-controls button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px;
   }
 
   .event-feed__item {
