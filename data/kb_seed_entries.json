@@ -30,7 +30,20 @@
       "sensitivity": "public",
       "escalation_risk": "medium",
       "time_horizon": "current",
-      "scenario_signal_ids": ["canopy-beat2-001", "canopy-beat2-003", "canopy-beat4-004"],
+      "scenario_signal_ids": [
+        "canopy-beat2-001",
+        "canopy-beat2-003",
+        "canopy-beat4-004",
+        "army-fdir-002",
+        "army-fdir-003",
+        "army-chain-002",
+        "army-chain-003",
+        "iran-hormuz-003",
+        "iran-hormuz-004",
+        "iran-proxy-004",
+        "iran-c5isr-003",
+        "iran-c5isr-004"
+      ],
       "notes": "Use as attribution support, not proof of actor intent."
     },
     {
@@ -58,7 +71,16 @@
       "sensitivity": "public",
       "escalation_risk": "medium",
       "time_horizon": "current",
-      "scenario_signal_ids": ["canopy-beat47-001", "canopy-beat47-003", "canopy-beat47-004"],
+      "scenario_signal_ids": [
+        "canopy-beat47-001",
+        "canopy-beat47-003",
+        "canopy-beat47-004",
+        "army-relay-002",
+        "army-chain-006",
+        "iran-hormuz-006",
+        "iran-proxy-005",
+        "iran-c5isr-006"
+      ],
       "notes": "Scenario signals are synthetic operational injects."
     },
     {
@@ -91,7 +113,14 @@
       "sensitivity": "public",
       "escalation_risk": "high",
       "time_horizon": "current",
-      "scenario_signal_ids": ["canopy-beat47-002", "canopy-beat47-005", "canopy-beat47-006"],
+      "scenario_signal_ids": [
+        "canopy-beat47-002",
+        "canopy-beat47-005",
+        "canopy-beat47-006",
+        "army-chain-001",
+        "army-chain-007",
+        "iran-c5isr-008"
+      ],
       "notes": "Do not phrase the demo RPO object as a real hostile satellite."
     },
     {
@@ -119,7 +148,16 @@
       "sensitivity": "public",
       "escalation_risk": "medium",
       "time_horizon": "current",
-      "scenario_signal_ids": ["canopy-beat1-001", "canopy-beat1-002", "canopy-beat1-004"],
+      "scenario_signal_ids": [
+        "canopy-beat1-001",
+        "canopy-beat1-002",
+        "canopy-beat1-004",
+        "army-space-001",
+        "army-space-002",
+        "army-space-004",
+        "iran-hormuz-002",
+        "iran-hormuz-007"
+      ],
       "notes": "Avoid unsupported claims about a specific commercial provider unless sourced."
     },
     {
@@ -147,7 +185,20 @@
       "sensitivity": "derived",
       "escalation_risk": "high",
       "time_horizon": "current",
-      "scenario_signal_ids": ["canopy-beat4-001", "canopy-beat4-006", "canopy-beat47-006"],
+      "scenario_signal_ids": [
+        "canopy-beat4-001",
+        "canopy-beat4-006",
+        "canopy-beat47-006",
+        "army-fdir-006",
+        "army-relay-006",
+        "army-space-006",
+        "army-chain-008",
+        "iran-hormuz-008",
+        "iran-proxy-006",
+        "iran-proxy-008",
+        "iran-c5isr-007",
+        "iran-c5isr-009"
+      ],
       "notes": "This entry should guide all pitch and UI language."
     }
   ]
