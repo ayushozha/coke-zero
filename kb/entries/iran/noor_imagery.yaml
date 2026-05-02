@@ -1,0 +1,18 @@
+id: ir_noor_imagery
+actor: Iran
+unit: IRGC Aerospace Force
+system: Noor military satellite series
+domain: orbital
+signature:
+  behavior: revisit_imaging
+  band: optical
+  altitude: LEO
+doctrine: >
+  IRGC-operated military imaging satellite series. Limited resolution and
+  revisit cadence by international standards but provides Iran with an
+  organic surveillance capability. Operational tasking is opaque and
+  attribution should rely on overpass-correlation cues.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Lower-confidence attribution prior than Russian/Chinese assets due to limited operational signature."

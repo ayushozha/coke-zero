@@ -1,0 +1,18 @@
+id: cn_tjs3_sigint
+actor: China
+unit: PLA Aerospace Force
+system: TJS-3 (Tongxin Jishu Shiyan)
+domain: orbital
+signature:
+  behavior: rpo_inspector
+  profile: subsatellite_release
+  altitude: GEO
+doctrine: >
+  TJS-series satellites are publicly described as communications technology
+  experiments but exhibit RPO and sub-satellite release behaviors consistent
+  with SIGINT and inspector roles. Frequently observed maneuvering near
+  other Chinese assets; capability translates to adversary GEO targets.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Sub-satellite release at GEO with extended station-keeping near a target is the canonical TJS pattern."

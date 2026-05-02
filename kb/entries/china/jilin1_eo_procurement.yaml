@@ -1,0 +1,18 @@
+id: cn_jilin1_eo_procurement
+actor: China
+unit: Chang Guang Satellite Technology (commercial; CCP-affiliated)
+system: Jilin-1 EO constellation
+domain: orbital
+signature:
+  behavior: revisit_imaging
+  band: optical
+  commercial_dual_use: true
+doctrine: >
+  Commercial Chinese EO constellation with public reporting of imagery sales
+  to actors aligned against US and allied interests. Tasking patterns and
+  commercial procurement records are open-source attribution levers when
+  imagery is purchased ahead of activity in a specific AOR.
+sources:
+  - csis_2025_space_threat_assessment
+  - reuters_jilin1_2024
+notes: "Adversary commercial-imagery procurement hours before AOR activity is a strong attribution cue."

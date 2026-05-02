@@ -1,0 +1,18 @@
+id: cn_dazzling_laser
+actor: China
+unit: PLA Aerospace Force
+system: Ground-based laser dazzler (multiple sites)
+domain: directed_energy
+signature:
+  pattern: ground_laser_dazzle
+  band: visible_or_near_ir
+  target_classes:
+    - eo_imaging_satellite
+doctrine: >
+  Ground-based laser systems publicly assessed to support dazzling and
+  potentially damaging effects against optical imaging satellites. Multiple
+  candidate sites identified in open-source imagery analysis.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Effects are hard to verify from a tactical edge; require corroborating EO health telemetry from the affected sat."

@@ -1,0 +1,21 @@
+id: ir_irgc_cyber
+actor: Iran
+unit: IRGC / MOIS-aligned threat groups
+system: Iranian cyber operations against ground segment
+domain: cyber
+signature:
+  pattern: opportunistic_exploitation_then_destructive_followup
+  ttps:
+    - vpn_appliance_exploitation
+    - credential_spraying
+    - selective_wiper_deployment
+  ground_station_targeting: emerging
+doctrine: >
+  Iranian state-aligned threat groups conduct opportunistic exploitation of
+  internet-exposed infrastructure and have deployed destructive payloads in
+  prior incidents. Ground-segment targeting is publicly assessed as an
+  emerging area of interest rather than established tradecraft.
+sources:
+  - csis_2025_space_threat_assessment
+  - cisa_iran_advisories_public
+notes: "Treat as moderate-confidence attribution unless TTPs match a published Iranian threat-group profile."

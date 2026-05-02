@@ -1,0 +1,22 @@
+id: ru_krasukha4_jam
+actor: Russia
+unit: Russian Aerospace Forces
+system: Krasukha-4
+domain: rf_ew
+signature:
+  band: X / Ku / Ka
+  pattern: broadband_uplink_downlink_jam
+  deployment: ground_mobile_truck
+  target_classes:
+    - airborne_radar
+    - satcom_link
+    - sar_satellite
+doctrine: >
+  Mobile broadband EW system attributed to broad RF disruption against airborne
+  radars, SATCOM links, and SAR-imaging satellites. Publicly reported in
+  Syrian and Ukrainian theaters. Often co-deployed with shorter-range jammers
+  to layer denial across bands.
+sources:
+  - csis_2025_space_threat_assessment
+  - swf_2025_global_counterspace
+notes: "Look for SATCOM link degradation concurrent with adversary SAR overpass windows."

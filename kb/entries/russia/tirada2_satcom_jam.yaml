@@ -1,0 +1,20 @@
+id: ru_tirada2_satcom_jam
+actor: Russia
+unit: Russian Aerospace Forces
+system: Tirada-2
+domain: rf_ew
+signature:
+  band: SATCOM uplink (multi-band)
+  pattern: targeted_uplink_jam
+  deployment: ground_mobile
+  target_classes:
+    - geostationary_comms_satellite
+doctrine: >
+  Anti-satellite communications jammer designed to deny adversary use of
+  commercial and military SATCOM transponders. Public reporting describes
+  Tirada-2 as part of a layered Russian counterspace toolkit alongside
+  Krasukha and Bylina, complementing co-orbital options.
+sources:
+  - swf_2025_global_counterspace
+  - csis_2025_space_threat_assessment
+notes: "Activation correlates with operational windows where adversary SATCOM is the primary BLOS path."

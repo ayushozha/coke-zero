@@ -1,0 +1,26 @@
+[
+  {
+    "name": "SATCOM-3",
+    "line1": "1 25544U 98067A   26122.39338617  .00006924  00000+0  13339-3 0  9995",
+    "line2": "2 25544  51.6309 166.7723 0007240  14.7888 345.3311 15.49060784564657",
+    "_note": "Foundation-pass placeholder backed by an ISS-class LEO TLE. Real GEO SATCOM TLEs land in the next iteration."
+  },
+  {
+    "name": "SJ-21",
+    "line1": "1 48274U 21035A   26122.48729455  .00024924  00000+0  26765-3 0  9992",
+    "line2": "2 48274  41.4673 240.1810 0005738 316.5586  43.4802 15.63173931286023",
+    "_note": "Foundation-pass placeholder backed by a Tianhe-class LEO TLE. Real SJ-21 GEO ephemeris lands in the next iteration."
+  },
+  {
+    "name": "ru_cosmos2576",
+    "line1": "1 53239U 22085A   26121.78636292  .00064662  00000+0  69156-3 0  9997",
+    "line2": "2 53239  41.4673 244.4872 0002651 316.4098  43.6532 15.62947361286255",
+    "_note": "Foundation-pass placeholder backed by a Wentian-class LEO TLE."
+  },
+  {
+    "name": "JILIN-1",
+    "line1": "1 54216U 22143A   26122.48729455  .00024924  00000+0  26765-3 0  9996",
+    "line2": "2 54216  41.4673 240.1810 0005738 316.5586  43.4802 15.63173931286023",
+    "_note": "Foundation-pass placeholder backed by a Mengtian-class LEO TLE."
+  }
+]

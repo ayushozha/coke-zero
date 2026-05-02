@@ -1,0 +1,22 @@
+id: ir_gnss_jamming_regional
+actor: Iran
+unit: IRGC / regular military
+system: Regional GNSS jamming
+domain: rf_ew
+signature:
+  band: GNSS L1/L2
+  pattern: localized_jam_or_spoof
+  deployment: ground_fixed_or_mobile
+  geography:
+    - persian_gulf
+    - strait_of_hormuz
+    - gulf_of_oman
+doctrine: >
+  Persistent and incident-driven GNSS interference in maritime chokepoints.
+  Public reporting documents commercial vessel position spoofing aligned
+  with Iranian operational interests, including masking of small-craft
+  approaches.
+sources:
+  - csis_2025_space_threat_assessment
+  - usni_iran_gps_2024
+notes: "Geographic correlation is the strongest attribution lever for Iranian GNSS interference."

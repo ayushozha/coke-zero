@@ -1,0 +1,21 @@
+id: kp_icbm_launch_rf
+actor: DPRK
+unit: Korean People's Army Strategic Force
+system: ICBM/SLBM launch RF and plume signatures
+domain: rf_ew
+signature:
+  pattern: telemetry_burst_with_plume_correlation
+  geography:
+    - sohae
+    - sinpo
+  observable_window_min: 0
+  observable_window_max: 30
+doctrine: >
+  Launch events from DPRK known sites produce correlated RF telemetry and
+  plume signatures detectable by overhead and regional sensors. Open-source
+  ELINT communities have published characteristic signatures that support
+  rapid identification.
+sources:
+  - csis_2025_space_threat_assessment
+  - dia_2022_challenges_security_in_space
+notes: "High-severity, high-confidence cue when both RF and plume legs are observed."
