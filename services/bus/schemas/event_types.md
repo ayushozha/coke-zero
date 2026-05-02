@@ -11,11 +11,15 @@ drone:
 - `relay_mesh_status`
 - `relay_candidate_ready`
 - `autonomous_relay_handoff`
+- `uas_track_detected`
+- `base_defense_posture_change`
 
 rf_ew:
 - `rf_interference`
 - `satcom_rf_spike`
 - `emission_posture_risk`
+- `gnss_jamming_signature`
+- `uas_control_link_detected`
 
 pnt:
 - `gps_spoof`
@@ -39,6 +43,13 @@ cyber:
 osint:
 - `osint_context`
 - `collection_cue`
+- `blockade_notice`
+- `maritime_traffic_collapse`
+- `convoy_hold_recommendation`
+- `militia_uas_risk_context`
+- `uas_base_defense_assessment`
+- `missile_uas_capability_context`
+- `iran_counter_c5isr_assessment`
 - `fdir_assessment`
 - `relay_resilience_assessment`
 - `collection_risk_assessment`
