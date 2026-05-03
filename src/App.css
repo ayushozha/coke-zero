@@ -260,6 +260,10 @@
     transform 180ms ease;
 }
 
+.scenario-list__item em:empty {
+  display: none;
+}
+
 .scenario-list__item::before {
   position: absolute;
   top: 7px;
@@ -1302,7 +1306,7 @@
 
 @media (min-width: 1081px) {
   .brigade-shell {
-    grid-template-rows: 64px minmax(0, 1fr);
+    grid-template-rows: 48px minmax(0, 1fr);
     gap: 0;
     padding: 0;
     background: #010202;
@@ -1323,7 +1327,7 @@
 
   .app-header {
     z-index: 30;
-    padding: 9px 14px;
+    padding: 6px 10px;
     border-bottom: 1px solid rgba(220, 227, 213, 0.18);
     background:
       linear-gradient(180deg, rgba(9, 10, 10, 0.98), rgba(0, 0, 0, 0.92)),
@@ -1333,30 +1337,30 @@
   }
 
   .app-header h1 {
-    font-size: 1.04rem;
+    font-size: 0.96rem;
     line-height: 1.12;
   }
 
   .app-header__eyebrow {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     margin-bottom: 2px;
   }
 
   .app-header__plain {
-    margin-top: 2px;
-    font-size: 0.76rem;
+    display: none;
   }
 
   .app-header a,
   .app-header__right a,
   .socket-status {
     border-radius: 2px;
-    padding: 8px 10px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
   }
 
   .command-workbench {
     position: relative;
-    grid-template-columns: 318px minmax(0, 1fr) 372px;
+    grid-template-columns: 260px minmax(0, 1fr) 320px;
     grid-template-rows: minmax(0, 1fr);
     gap: 0;
     overflow: hidden;
@@ -1382,7 +1386,7 @@
     z-index: 12;
     grid-column: 1;
     grid-row: 1;
-    margin: 12px 0 12px 12px;
+    margin: 8px 0 8px 8px;
     border-color: rgba(220, 227, 213, 0.22);
     background:
       linear-gradient(180deg, rgba(14, 16, 17, 0.94), rgba(2, 4, 4, 0.88)),
@@ -1396,8 +1400,9 @@
     z-index: 12;
     grid-column: 3;
     grid-row: 1;
+    gap: 8px;
     align-content: start;
-    margin: 12px 12px 12px 0;
+    margin: 8px 8px 8px 0;
     overflow: auto;
   }
 
@@ -1413,16 +1418,16 @@
 
   .status-row {
     position: absolute;
-    top: 12px;
-    right: 396px;
-    left: 342px;
+    top: 8px;
+    right: 336px;
+    left: 276px;
     z-index: 10;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
   .status-card {
-    padding: 8px 10px;
+    padding: 7px 9px;
   }
 
   .status-card h2 {
@@ -1434,24 +1439,57 @@
     display: none;
   }
 
+  .status-card__topline {
+    font-size: 0.66rem;
+  }
+
+  .status-card__metric {
+    font-size: 0.76rem;
+  }
+
+  .scenario-rail__header,
+  .scenario-rail__footer {
+    padding: 10px;
+  }
+
+  .scenario-rail__footer {
+    display: none;
+  }
+
+  .scenario-list {
+    padding: 6px;
+  }
+
+  .scenario-list__item {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .scenario-list__item strong {
+    font-size: 0.78rem;
+  }
+
   .tak-map-chrome {
-    top: 86px;
-    left: 342px;
+    top: 58px;
+    left: 276px;
+    min-width: 0;
+    padding: 7px 9px;
   }
 
   .map-view-toggle {
-    top: 86px;
-    right: 396px;
+    top: 58px;
+    right: 336px;
   }
 
   .cesium-scenario-controls {
-    top: 136px;
-    right: 396px;
+    top: 102px;
+    right: 336px;
   }
 
   .space-hud {
-    top: 140px;
-    left: 342px;
+    top: 104px;
+    left: 276px;
   }
 
   .nav-inset {
@@ -1460,18 +1498,18 @@
   }
 
   .map-stage__readout {
-    left: 342px;
-    bottom: 206px;
-    max-width: min(420px, calc(100% - 760px));
+    left: 276px;
+    bottom: 188px;
+    max-width: min(380px, calc(100% - 632px));
   }
 
   .event-feed {
     position: absolute;
-    right: 396px;
-    bottom: 12px;
-    left: 342px;
+    right: 336px;
+    bottom: 8px;
+    left: 276px;
     z-index: 10;
-    height: 176px;
+    height: 164px;
   }
 
   .event-feed__header {
@@ -1483,7 +1521,7 @@
   }
 
   .event-feed__row {
-    grid-template-columns: 60px 104px minmax(190px, 1.5fr) minmax(110px, 0.8fr) minmax(150px, 1fr) 84px;
+    grid-template-columns: 56px 96px minmax(180px, 1.5fr) minmax(104px, 0.8fr) minmax(140px, 1fr) 76px;
     padding: 8px 12px;
   }
 
@@ -1500,9 +1538,7 @@
   }
 
   .tak-map-strip {
-    right: 396px;
-    bottom: 12px;
-    transform: translateY(calc(-176px - 10px));
+    display: none;
   }
 }
 
@@ -1554,13 +1590,36 @@
 @media (max-width: 760px) {
   .brigade-shell,
   .operator-shell {
-    padding: 16px;
+    padding: 10px;
   }
 
   .app-header,
   .app-header__right {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .app-header {
+    gap: 10px;
+  }
+
+  .app-header h1 {
+    font-size: 1rem;
+  }
+
+  .app-header__eyebrow {
+    font-size: 0.62rem;
+    margin-bottom: 1px;
+  }
+
+  .app-header__right {
+    gap: 6px;
+  }
+
+  .app-header__right a,
+  .socket-status {
+    padding: 6px 7px;
+    font-size: 0.76rem;
   }
 
   .narration__facts,
@@ -1573,13 +1632,15 @@
   }
 
   .map-stage {
-    min-height: 460px;
+    min-height: 360px;
   }
 
   .cesium-scenario-controls {
-    top: 112px;
+    top: auto;
+    bottom: 12px;
     right: 10px;
     left: 10px;
+    z-index: 8;
   }
 
   .cesium-scenario-controls button {
@@ -1624,10 +1685,11 @@
     right: 10px;
     left: 10px;
     min-width: 0;
+    padding: 8px 10px;
   }
 
   .map-view-toggle {
-    top: 76px;
+    top: 64px;
     right: 10px;
     left: 10px;
   }
@@ -1637,7 +1699,7 @@
   }
 
   .space-hud {
-    top: 164px;
+    top: 112px;
     right: 10px;
     left: 10px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1645,12 +1707,12 @@
   }
 
   .tak-map-strip {
-    right: 10px;
-    left: 10px;
-    justify-content: space-between;
+    display: none;
   }
 
-  .tak-map-strip span:nth-child(3) {
-    display: none;
+  .map-stage__readout {
+    bottom: 58px;
+    left: 10px;
+    max-width: calc(100% - 20px);
   }
 }
