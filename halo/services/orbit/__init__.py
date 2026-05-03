@@ -37,7 +37,14 @@ class ManeuverResult:
 _SCRIPTED_MANEUVERS: dict[tuple[str, str], tuple[float, float]] = {
     ("SATCOM-3", "SJ-21"): (8.0, 140.0),
     ("SATCOM-3", "ru_cosmos2576"): (12.0, 95.0),
+    ("CANOPY-LEO-07", "UNKNOWN-RSO-441"): (8.6, 142.0),
 }
+
+# Typical separation gain (km) added to the observed miss distance when no
+# scripted entry exists. A 1–2 m/s impulsive burn over a 6+ hour cycle yields
+# this order of cross-track separation; the value is illustrative, not the
+# output of real propagation.
+_DEFAULT_SEPARATION_GAIN_KM = 130.0
 
 
 class OrbitService:
@@ -101,15 +108,30 @@ class OrbitService:
         return ApproachEvent(sat_a=sat_a, sat_b=sat_b, closest_approach_km=best_km, t_closest=best_t)
 
     def simulate_maneuver(
-        self, sat: str, dv_m_s: float, t_burn: datetime, *, against: str | None = None
+        self,
+        sat: str,
+        dv_m_s: float,
+        t_burn: datetime,
+        *,
+        against: str | None = None,
+        pre_miss_km: float | None = None,
     ) -> ManeuverResult:
         """Foundation-pass scripted maneuver result.
 
-        Returns a hand-authored before/after miss-distance keyed on (sat, against).
-        Falls back to a generic widening of the gap if no script exists.
+        Lookup order: hand-pinned ``_SCRIPTED_MANEUVERS`` for (sat, against)
+        wins. Otherwise, if ``pre_miss_km`` is supplied (typically pulled from
+        the orbital_rpo_risk anomaly's observables), the post-burn distance is
+        ``pre_miss_km + _DEFAULT_SEPARATION_GAIN_KM``. With neither, return
+        a generic (10 km, 100 km) placeholder.
         """
         key = (sat, against or "")
-        pre, post = _SCRIPTED_MANEUVERS.get(key, (10.0, 100.0))
+        if key in _SCRIPTED_MANEUVERS:
+            pre, post = _SCRIPTED_MANEUVERS[key]
+        elif pre_miss_km is not None:
+            pre = float(pre_miss_km)
+            post = round(pre + _DEFAULT_SEPARATION_GAIN_KM, 1)
+        else:
+            pre, post = 10.0, 100.0
         return ManeuverResult(
             sat=sat,
             dv_m_s=dv_m_s,
