@@ -99,7 +99,7 @@ def _maneuver_clause(request_packet: dict | None) -> str | None:
     dv_str = f"{dv} m/s" if dv is not None else "an impulsive"
     return (
         f"Recommended maneuver: {sat} {dv_str} burn, miss "
-        f"{pre:.1f} → {post:.1f} km (+{gain:.0f} km separation)."
+        f"{pre:.1f} → {post:.1f} km (+{gain:.1f} km separation)."
     )
 
 

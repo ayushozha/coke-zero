@@ -7,7 +7,10 @@ from datetime import UTC, datetime, timedelta
 
 from halo.services.bus import Bus
 from halo.services.llm import LLMClient
-from halo.services.orbit import OrbitService
+from halo.services.orbit import (
+    DEFAULT_PLANNING_LEAD_S,
+    OrbitService,
+)
 from halo.services.schemas.events import Action, Anomaly, Attribution, Decision
 
 log = logging.getLogger(__name__)
@@ -23,12 +26,11 @@ _ORBIT_ENRICHED_ACTIONS: set[Action] = {
     "orbital_strike_request",
 }
 
-# Default maneuver magnitude and lead time used by the foundation-pass
-# integration. The lead time is the offset before time-of-closest-approach
-# at which the burn would execute. Values are illustrative; live planning
-# would compute these from the orbital geometry.
-_DEFAULT_DV_M_S = 1.2
-_DEFAULT_BURN_LEAD = timedelta(minutes=6)
+# Time the engine reserves between detecting the threat and executing the
+# burn — represents authorization + maneuver-prep latency. The engine
+# computes burn time as ``anomaly.ts + AUTHORIZATION_LATENCY``.
+_AUTHORIZATION_LATENCY = timedelta(seconds=60)
+
 _ANOMALY_CACHE_SIZE = 256
 
 
@@ -41,8 +43,10 @@ class DecideService:
     When wired with an ``OrbitService`` (the default in :mod:`halo.cli`),
     request-authority Decisions whose attribution chain includes an
     ``orbital_rpo_risk`` anomaly get enriched: the ``request_packet`` gains
-    a ``recommended_burn`` block plus ``pre_miss_km``/``post_miss_km`` so the
-    operator's APPROVE card carries the actual maneuver math, not just words.
+    a ``recommended_burn`` block plus ``pre_miss_km`` / ``post_miss_km``.
+    The Δv is sized by ``OrbitService.recommended_dv`` against the lead time
+    available from the originating signal's TCA observable, and the new miss
+    distance is computed via Clohessy-Wiltshire impulsive math.
     """
 
     def __init__(
@@ -134,19 +138,31 @@ class DecideService:
         pre_miss_km = observables.get("miss_distance_km")
         if pre_miss_km is None:
             pre_miss_km = observables.get("range_km")
+        if pre_miss_km is None:
+            pre_miss_km = 10.0  # placeholder when neither observable is set
 
-        t_burn = _resolve_burn_time(observables.get("time_of_closest_approach"))
+        t_burn = _ensure_utc(rpo.ts) + _AUTHORIZATION_LATENCY
+        t_tca = _parse_tca(observables.get("time_of_closest_approach"))
+        if t_tca is not None:
+            lead_s = max(0.0, (t_tca - t_burn).total_seconds())
+        else:
+            lead_s = DEFAULT_PLANNING_LEAD_S
+
+        dv_m_s = self._orbit.recommended_dv(pre_miss_km, lead_s)
 
         try:
             result = self._orbit.simulate_maneuver(
                 friendly,
-                dv_m_s=_DEFAULT_DV_M_S,
+                dv_m_s=dv_m_s,
                 t_burn=t_burn,
                 against=inspector,
                 pre_miss_km=pre_miss_km,
+                t_tca=t_tca,
             )
         except Exception:
-            log.exception("decide: simulate_maneuver failed for %s vs %s", friendly, inspector)
+            log.exception(
+                "decide: simulate_maneuver failed for %s vs %s", friendly, inspector
+            )
             return decision
 
         packet = dict(decision.request_packet or {})
@@ -154,18 +170,30 @@ class DecideService:
             "sat": result.sat,
             "against": inspector,
             "dv_m_s": result.dv_m_s,
-            "t_burn_utc": result.t_burn.isoformat().replace("+00:00", "Z"),
+            "t_burn_utc": _format_utc(result.t_burn),
+            "lead_seconds": round(result.lead_seconds, 0)
+            if result.lead_seconds is not None
+            else None,
         }
-        packet["pre_miss_km"] = round(result.pre_miss_km, 1)
-        packet["post_miss_km"] = round(result.post_miss_km, 1)
+        packet["pre_miss_km"] = result.pre_miss_km
+        packet["post_miss_km"] = result.post_miss_km
         return decision.model_copy(update={"request_packet": packet})
 
 
-def _resolve_burn_time(tca_str: object) -> datetime:
-    if isinstance(tca_str, str):
-        try:
-            tca = datetime.fromisoformat(tca_str.replace("Z", "+00:00"))
-        except ValueError:
-            return datetime.now(UTC)
-        return tca - _DEFAULT_BURN_LEAD
-    return datetime.now(UTC)
+def _ensure_utc(ts: datetime) -> datetime:
+    return ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
+
+
+def _parse_tca(value: object) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _format_utc(t: datetime) -> str:
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=UTC)
+    return t.astimezone(UTC).isoformat().replace("+00:00", "Z")
