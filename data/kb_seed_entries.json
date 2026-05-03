@@ -200,6 +200,60 @@
         "iran-c5isr-009"
       ],
       "notes": "This entry should guide all pitch and UI language."
+    },
+    {
+      "id": "kb-iran-proxy-uas-001",
+      "title": "Iranian and Iranian-proxy counter-C5ISR pattern",
+      "actor": "Iran",
+      "domain": ["rf_ew", "pnt", "cyber", "drone", "satcom"],
+      "capability_type": "iran_proxy_counter_c5isr",
+      "summary": "Iran and Iran-aligned proxies have repeatedly paired GPS spoofing, UAS C2-link emissions, RF interference on tactical frequencies, and credential-access cyber probing to degrade U.S. and partner C5ISR — most prominently around the Strait of Hormuz, Iraq, Syria, and base-defense layers in CENTCOM.",
+      "tactical_relevance": "When a brigade-level cluster combines GPS spoofing with detected UAS control links and concurrent cyber probing on adjacent infrastructure, the pattern is consistent with Iranian or Iran-proxy tradecraft and should be attributed accordingly with mid-band confidence.",
+      "decision_implications": [
+        "Pair GPS spoofing with UAS C2 detection or maritime denial cues to raise Iran-attribution confidence.",
+        "Cyber credential probing on the same window is a corroborating cue, not standalone attribution.",
+        "Iran-proxy attributions should default to 'Iran' unless the cluster names a specific proxy group with KB support."
+      ],
+      "source_refs": [
+        {
+          "source_id": "csis-space-threat-2025",
+          "locator": "Counterspace and counter-PNT activity by regional powers",
+          "claim_supported": "Iran has demonstrated GNSS interference and UAS-enabled denial in maritime and land theaters."
+        },
+        {
+          "source_id": "swf-counterspace-2025",
+          "locator": "Iranian space and counter-space activity",
+          "claim_supported": "Iran maintains and proliferates electronic warfare and UAS systems used by aligned proxies."
+        }
+      ],
+      "claim_type": "expert_assessment",
+      "confidence": "medium",
+      "sensitivity": "public",
+      "escalation_risk": "medium",
+      "time_horizon": "current",
+      "scenario_signal_ids": [
+        "iran-c5isr-001",
+        "iran-c5isr-002",
+        "iran-c5isr-003",
+        "iran-c5isr-004",
+        "iran-c5isr-005",
+        "iran-c5isr-006",
+        "iran-c5isr-008",
+        "iran-hormuz-001",
+        "iran-hormuz-002",
+        "iran-hormuz-003",
+        "iran-hormuz-004",
+        "iran-hormuz-005",
+        "iran-hormuz-006",
+        "iran-hormuz-007",
+        "iran-proxy-001",
+        "iran-proxy-002",
+        "iran-proxy-003",
+        "iran-proxy-004",
+        "iran-proxy-005",
+        "iran-proxy-007"
+      ],
+      "notes": "Use 'Iran' rather than 'Iranian proxy' as the headline actor unless a specific proxy group is named with KB support."
     }
   ]
 }
