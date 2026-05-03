@@ -47,6 +47,11 @@ KB_FILE = ROOT / "data" / "kb_seed_entries.json"
 EXPECTED_ANOMALY_KINDS_IN_ORDER = [
     "orbital_rpo_risk",
     "rf_anomaly",
+    # army-chain-009 (satcom_queue_pressure) was added when the
+    # raw-signals + reasoning-trace merges introduced new mid-attack
+    # signals; queue pressure rising is a real degradation cue, mapped
+    # to satcom_degradation.
+    "satcom_degradation",
     "gnss_spoof",
     "drone_relay_handoff",
     "cyber_probe_burst",
@@ -58,6 +63,7 @@ EXPECTED_ANOMALY_KINDS_IN_ORDER = [
 EXPECTED_ANOMALY_SOURCE_SIGNALS = [
     "army-chain-001",
     "army-chain-002",
+    "army-chain-009",
     "army-chain-003",
     "army-chain-004",
     "army-chain-005",
@@ -66,7 +72,7 @@ EXPECTED_ANOMALY_SOURCE_SIGNALS = [
     "army-chain-008",
 ]
 
-EXPECTED_ANOMALY_SEVERITIES = [0.81, 0.86, 0.90, 0.88, 0.83, 0.84, 0.82, 0.91]
+EXPECTED_ANOMALY_SEVERITIES = [0.81, 0.86, 0.82, 0.90, 0.88, 0.83, 0.84, 0.82, 0.91]
 
 EXPECTED_ATTRIBUTION_ACTOR = "China"
 # 0.74 (primary) - 0.03 (red-team confidence_delta for orbital_rpo_risk) = 0.71.
@@ -170,7 +176,7 @@ def pipeline_output() -> dict[str, list]:
 
 
 def test_event_counts(pipeline_output) -> None:
-    assert len(pipeline_output["anomaly"]) == 8
+    assert len(pipeline_output["anomaly"]) == 9
     assert len(pipeline_output["attribution"]) == 1
     assert len(pipeline_output["decision"]) == 1
     assert len(pipeline_output["ui_event"]) == 1
