@@ -1,5 +1,6 @@
 import {
   ArcType,
+  CallbackPositionProperty,
   Cartesian2,
   Cartesian3,
   Color,
@@ -283,6 +284,11 @@ const familyColor = (family: N2YOSatelliteFamily) =>
 const MIN_DISPLAY_ALTITUDE_M = 800000
 const MAX_DISPLAY_ALTITUDE_M = 6000000
 const ORBIT_SAMPLE_COUNT = 240
+// Single motion knob: 1 = real-time orbital motion, 45 = 45 seconds of
+// orbital motion per wall-clock second. GEO families remain fixed.
+const ORBIT_MOTION_PLAYBACK_SPEED = 45
+const EARTH_RADIUS_M = 6371000
+const EARTH_GRAVITATIONAL_PARAMETER = 3.986004418e14
 const RESET_CAMERA_LONGITUDE_DEG = 0
 const RESET_CAMERA_LATITUDE_DEG = 0
 const RESET_CAMERA_ALTITUDE_M = 22000000
@@ -409,10 +415,7 @@ const normalize = (v: { x: number; y: number; z: number }) => {
   }
 }
 
-const createSampledMotionOrbitPositions = (
-  track: N2YOTrackPoint[],
-  displayAltitudeM: number,
-) => {
+const latestPointOrbitBasis = (track: N2YOTrackPoint[]) => {
   const selectedPoint = latestTrackPoint({
     fetched_at: '',
     satellite: { id: 0, name: '' },
@@ -443,21 +446,64 @@ const createSampledMotionOrbitPositions = (
     tangent = normalize({ x: -current.y, y: current.x, z: 0 })
   }
 
+  return { current, selectedPoint, tangent }
+}
+
+const cartesianFromOrbitBasis = (
+  current: { x: number; y: number; z: number },
+  tangent: { x: number; y: number; z: number },
+  theta: number,
+  displayAltitudeM: number,
+) => {
+  const sample = normalize({
+    x: current.x * Math.cos(theta) + tangent.x * Math.sin(theta),
+    y: current.y * Math.cos(theta) + tangent.y * Math.sin(theta),
+    z: current.z * Math.cos(theta) + tangent.z * Math.sin(theta),
+  })
+  return Cartesian3.fromRadians(
+    Math.atan2(sample.y, sample.x),
+    Math.asin(sample.z),
+    displayAltitudeM,
+  )
+}
+
+const orbitalPeriodSeconds = (altitudeKm: number) => {
+  const semiMajorAxisM = EARTH_RADIUS_M + altitudeKm * 1000
+  return (
+    2 *
+    Math.PI *
+    Math.sqrt(
+      (semiMajorAxisM * semiMajorAxisM * semiMajorAxisM) /
+        EARTH_GRAVITATIONAL_PARAMETER,
+    )
+  )
+}
+
+const createAnimatedOrbitPosition = (
+  track: N2YOTrackPoint[],
+  displayAltitudeM: number,
+) => {
+  const { current, selectedPoint, tangent } = latestPointOrbitBasis(track)
+  const startedAtMs = Date.now()
+  const periodSeconds = orbitalPeriodSeconds(selectedPoint.alt_km)
+
+  return new CallbackPositionProperty(() => {
+    const elapsedSeconds =
+      ((Date.now() - startedAtMs) / 1000) * ORBIT_MOTION_PLAYBACK_SPEED
+    const theta = ((elapsedSeconds % periodSeconds) / periodSeconds) * Math.PI * 2
+    return cartesianFromOrbitBasis(current, tangent, theta, displayAltitudeM)
+  }, false)
+}
+
+const createSampledMotionOrbitPositions = (
+  track: N2YOTrackPoint[],
+  displayAltitudeM: number,
+) => {
+  const { current, tangent } = latestPointOrbitBasis(track)
   const positions: Cartesian3[] = []
   for (let index = 0; index <= ORBIT_SAMPLE_COUNT; index += 1) {
     const theta = (index / ORBIT_SAMPLE_COUNT) * Math.PI * 2
-    const sample = normalize({
-      x: current.x * Math.cos(theta) + tangent.x * Math.sin(theta),
-      y: current.y * Math.cos(theta) + tangent.y * Math.sin(theta),
-      z: current.z * Math.cos(theta) + tangent.z * Math.sin(theta),
-    })
-    positions.push(
-      Cartesian3.fromRadians(
-        Math.atan2(sample.y, sample.x),
-        Math.asin(sample.z),
-        displayAltitudeM,
-      ),
-    )
+    positions.push(cartesianFromOrbitBasis(current, tangent, theta, displayAltitudeM))
   }
   return positions
 }
@@ -494,8 +540,13 @@ export function addN2YOSatellite(
   const point = latestTrackPoint(cache)
   const satelliteId = cache.satellite.id
   const satelliteName = config.label || cache.satellite.name || `NORAD ${satelliteId}`
-  const position = Cartesian3.fromDegrees(point.lng, point.lat, displayAltitudeM)
-  const footprintPosition = Cartesian3.fromDegrees(point.lng, point.lat, 0)
+  const isGeostationary = isN2YOGeostationaryFamily(config.family)
+  const position = isGeostationary
+    ? Cartesian3.fromDegrees(point.lng, point.lat, displayAltitudeM)
+    : createAnimatedOrbitPosition(cache.track, displayAltitudeM)
+  const footprintPosition = isGeostationary
+    ? Cartesian3.fromDegrees(point.lng, point.lat, 0)
+    : createAnimatedOrbitPosition(cache.track, 0)
   const entityIds = [
     `n2yo-${satelliteId}-satellite`,
     `n2yo-${satelliteId}-footprint`,
