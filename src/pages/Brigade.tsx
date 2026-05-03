@@ -302,7 +302,7 @@ export function Brigade() {
               />
             </CollapsibleStackSection>
           ) : null}
-          <CollapsibleStackSection title="Scenario timeline">
+          <CollapsibleStackSection title="Timeline">
             <ScenarioTimeline
               offsets={playbackTimeline.offsets}
               playback={playbackStatus}
