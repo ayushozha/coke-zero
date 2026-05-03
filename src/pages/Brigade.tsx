@@ -8,8 +8,31 @@ import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 
-const nowMinus = (seconds: number) =>
-  new Date(Date.now() - seconds * 1000).toISOString()
+const playbackCompression = 12
+const minimumBeatDelayMs = 8000
+const maximumBeatDelayMs = 45000
+
+const signalTimeMs = (ts: string) => {
+  const time = Date.parse(ts)
+  return Number.isFinite(time) ? time : null
+}
+
+const nextBeatDelay = (
+  signals: typeof scenarios[number]['signals'],
+  beatIndex: number,
+) => {
+  const currentTime = signalTimeMs(signals[beatIndex - 1]?.ts ?? '')
+  const nextTime = signalTimeMs(signals[beatIndex]?.ts ?? '')
+
+  if (currentTime === null || nextTime === null || nextTime <= currentTime) {
+    return 12000
+  }
+
+  return Math.min(
+    maximumBeatDelayMs,
+    Math.max(minimumBeatDelayMs, (nextTime - currentTime) / playbackCompression),
+  )
+}
 
 export function Brigade() {
   const socketState = useCanopySocket()
@@ -21,14 +44,18 @@ export function Brigade() {
     defaultScenario
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setBeatIndex((current) =>
-        current >= activeScenario.signals.length ? 1 : current + 1,
-      )
-    }, 1500)
+    if (beatIndex >= activeScenario.signals.length) {
+      return
+    }
 
-    return () => window.clearInterval(timer)
-  }, [activeScenario.signals.length])
+    const timer = window.setTimeout(() => {
+      setBeatIndex((current) =>
+        Math.min(current + 1, activeScenario.signals.length),
+      )
+    }, nextBeatDelay(activeScenario.signals, beatIndex))
+
+    return () => window.clearTimeout(timer)
+  }, [activeScenario.signals, beatIndex])
 
   const selectScenario = (scenarioId: string) => {
     setActiveScenarioId(scenarioId)
@@ -40,10 +67,6 @@ export function Brigade() {
     () =>
       activeScenario.signals
         .slice(0, beatIndex)
-        .map((signal, index) => ({
-          ...signal,
-          ts: nowMinus((beatIndex - index) * 4),
-        }))
         .reverse(),
     [activeScenario.signals, beatIndex],
   )
