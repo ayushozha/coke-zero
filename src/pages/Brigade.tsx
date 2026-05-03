@@ -4,157 +4,119 @@ import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
 import { ScenarioRail } from '../components/ScenarioRail'
+import { ScenarioTimeline } from '../components/ScenarioTimeline'
+import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
-import type { Attribution, Decision, Signal } from '../types/canopy'
+import type { PlaybackStatus } from '../types/playback'
+import type { Signal } from '../types/canopy'
 
-const nowMinus = (seconds: number) =>
-  new Date(Date.now() - seconds * 1000).toISOString()
+const fieldDurationFloorMs = 12 * 60 * 1000
+const fieldDurationScale = 1
+const playbackTickMs = 1000
+const simulatedMsPerTick = 60 * 1000
+const playbackScaleLabel = '1 SEC = 1 SIM MIN'
 
-type MockSignalInput = Omit<
-  Signal,
-  'realism' | 'location' | 'payload' | 'provenance'
-> & {
-  location?: Signal['location']
-  payload: Record<string, unknown>
+const signalTimeMs = (signal: Signal | undefined) => {
+  const time = Date.parse(signal?.ts ?? '')
+  return Number.isFinite(time) ? time : null
 }
 
-const makeBeatSignal = (signal: MockSignalInput): Signal => ({
-  ...signal,
-  realism: 'mock_operational',
-  location: signal.location ?? { label: signal.source },
-  payload: {
-    event_type: signal.domain,
-    summary: signal.source,
-    ...signal.payload,
-  } as Signal['payload'],
-  provenance: {
-    source_id: 'frontend-mock-beat',
-    method: 'ui_fallback',
-  },
-})
+const buildPlaybackTimeline = (signals: Signal[]) => {
+  const times = signals
+    .map(signalTimeMs)
+    .filter((time): time is number => time !== null)
+  const startMs = times.length ? Math.min(...times) : 0
+  const endMs = times.length ? Math.max(...times) : startMs
+  const realDurationMs = Math.max(endMs - startMs, 1)
+  const durationMs = Math.max(
+    fieldDurationFloorMs,
+    realDurationMs * fieldDurationScale,
+  )
 
-const beatSignals: Signal[] = [
-  makeBeatSignal({
-    id: 'sig-rf-001',
-    ts: nowMinus(26),
-    domain: 'rf_ew',
-    source: 'EW-17 spectrum sweep',
-    location: { lat: 34.39, lng: 36.32, alt_m: 260, label: 'Route ridgeline' },
-    payload: { band: 'L', bearing: '041', emitter: 'burst uplink' },
-    confidence: 0.82,
-  }),
-  makeBeatSignal({
-    id: 'sig-cy-014',
-    ts: nowMinus(21),
-    domain: 'cyber',
-    source: 'Tactical gateway IDS',
-    location: { lat: 34.51, lng: 36.41, label: 'Brigade C2 gateway' },
-    payload: { vector: 'credential replay', node: 'BLOS relay east' },
-    confidence: 0.77,
-  }),
-  makeBeatSignal({
-    id: 'sig-sda-042',
-    ts: nowMinus(16),
-    domain: 'sda',
-    source: 'LEO custody track',
-    location: { lat: 34.8, lng: 36.8, alt_km: 548, label: 'LEO custody arc' },
-    payload: { object: 'RSO-8841', maneuver: 'proximity drift' },
-    confidence: 0.91,
-  }),
-  makeBeatSignal({
-    id: 'sig-pnt-011',
-    ts: nowMinus(10),
-    domain: 'pnt',
-    source: 'Blue PNT mesh',
-    location: { lat: 34.66, lng: 36.58, alt_m: 285, label: 'PNT drift box' },
-    payload: { error: '42m', trend: 'widening', sector: 'north axis' },
-    confidence: 0.74,
-  }),
-  makeBeatSignal({
-    id: 'sig-sat-023',
-    ts: nowMinus(4),
-    domain: 'satcom',
-    source: 'BLOS waveform monitor',
-    location: { lat: 34.5, lng: 36.4, alt_m: 250, label: 'BLOS relay node' },
-    payload: { link: 'SAT-BRAVO', noise: '+18db', status: 'degrading' },
-    confidence: 0.88,
-  }),
-  makeBeatSignal({
-    id: 'sig-os-108',
-    ts: nowMinus(2),
-    domain: 'osint',
-    source: 'Regional language scrape',
-    location: { lat: 34.6, lng: 36.52, label: 'Brigade operating area' },
-    payload: { phrase: 'window opens', channel: 'gray forum' },
-    confidence: 0.69,
-  }),
-]
+  const offsets = signals.map((signal, index) => {
+    const time = signalTimeMs(signal)
+    if (time === null || realDurationMs <= 1) {
+      return signals.length > 1
+        ? (index / (signals.length - 1)) * durationMs
+        : 0
+    }
 
-const beatAttribution: Attribution = {
-  id: 'att-ghost-lance',
-  ts: nowMinus(1),
-  anomaly_ids: ['ano-cross-domain-07'],
-  actor: 'Ghost Lance cell',
-  confidence: 0.84,
-  doctrine_match: 'counter-C2 isolation before fires window',
-  evidence: [
-    'RF burst timing matches known pre-jam rehearsal pattern',
-    'Credential replay is focused on the same BLOS relay under noise',
-    'SDA custody shift aligns with PNT error widening on the north axis',
-  ],
-  predicted_next: 'open a 9 minute BLOS denial window',
-  kb_citations: ['KB-17-044', 'KB-21-119'],
-  source_signal_ids: ['sig-rf-001', 'sig-cy-014', 'sig-sda-042'],
-}
+    return ((time - startMs) / realDurationMs) * durationMs
+  })
 
-const beatDecision: Decision = {
-  id: 'dec-approve-009',
-  ts: nowMinus(0),
-  attribution_id: 'att-ghost-lance',
-  action: 'Authorize SATCOM hardening package',
-  target: 'SAT-BRAVO / north-axis BLOS relay',
-  rationale:
-    'Preemptive waveform shift and relay isolation are expected to preserve command links during the predicted denial window.',
-  authority: 'request',
-  request_packet: {
-    packet_id: 'REQ-SAT-BRAVO-009',
-    ttl_minutes: 6,
-    commander_intent: 'preserve brigade C2',
-  },
-  source_signal_ids: ['sig-rf-001', 'sig-sat-023'],
+  return { durationMs, offsets }
 }
 
 export function Brigade() {
   const socketState = useCanopySocket()
-  const [beatIndex, setBeatIndex] = useState(1)
+  const [activeScenarioId, setActiveScenarioId] = useState(defaultScenario.id)
+  const [simElapsedMs, setSimElapsedMs] = useState(0)
   const [isApproved, setIsApproved] = useState(false)
+  const activeScenario =
+    scenarios.find((scenario) => scenario.id === activeScenarioId) ??
+    defaultScenario
+  const playbackTimeline = useMemo(
+    () => buildPlaybackTimeline(activeScenario.signals),
+    [activeScenario.signals],
+  )
 
   useEffect(() => {
+    if (
+      socketState.signals.length ||
+      simElapsedMs >= playbackTimeline.durationMs
+    ) {
+      return
+    }
+
     const timer = window.setInterval(() => {
-      setBeatIndex((current) => (current % beatSignals.length) + 1)
-    }, 1500)
+      setSimElapsedMs((current) =>
+        Math.min(current + simulatedMsPerTick, playbackTimeline.durationMs),
+      )
+    }, playbackTickMs)
 
     return () => window.clearInterval(timer)
-  }, [])
+  }, [playbackTimeline.durationMs, simElapsedMs, socketState.signals.length])
+
+  const selectScenario = (scenarioId: string) => {
+    setActiveScenarioId(scenarioId)
+    setSimElapsedMs(0)
+    setIsApproved(false)
+  }
+
+  const revealedSignalCount = useMemo(
+    () =>
+      Math.max(
+        1,
+        playbackTimeline.offsets.filter((offset) => offset <= simElapsedMs)
+          .length,
+      ),
+    [playbackTimeline.offsets, simElapsedMs],
+  )
 
   const mockSignals = useMemo(
     () =>
-      beatSignals
-        .slice(0, beatIndex)
-        .map((signal, index) => ({
-          ...signal,
-          ts: nowMinus((beatIndex - index) * 4),
-        }))
+      activeScenario.signals
+        .slice(0, revealedSignalCount)
         .reverse(),
-    [beatIndex],
+    [activeScenario.signals, revealedSignalCount],
   )
 
   const signals = socketState.signals.length ? socketState.signals : mockSignals
-  const latestAttribution =
-    socketState.attributions[0] ?? (beatIndex >= 4 ? beatAttribution : null)
-  const latestDecision =
-    socketState.decisions[0] ?? (beatIndex >= 5 ? beatDecision : null)
+  const nextInjectMs =
+    playbackTimeline.offsets.find((offset) => offset > simElapsedMs) ?? null
+  const playbackStatus: PlaybackStatus = {
+    durationMs: playbackTimeline.durationMs,
+    elapsedMs: simElapsedMs,
+    nextInjectMs:
+      nextInjectMs === null ? null : Math.max(0, nextInjectMs - simElapsedMs),
+    progress: Math.round(
+      (simElapsedMs / Math.max(playbackTimeline.durationMs, 1)) * 100,
+    ),
+    scaleLabel: playbackScaleLabel,
+  }
+  const latestAttribution = socketState.attributions[0] ?? null
+  const latestDecision = socketState.decisions[0] ?? null
   const latestUiEvent = socketState.uiEvents[0] ?? null
   const missionState = useCanopyMissionState(signals, socketState.uiEvents)
 
@@ -180,22 +142,32 @@ export function Brigade() {
       </header>
 
       <section className="command-workbench">
-        <ScenarioRail />
+        <ScenarioRail
+          activeScenarioId={activeScenario.id}
+          onSelectScenario={selectScenario}
+          scenarios={scenarios}
+        />
 
         <section className="map-workspace" aria-label="Map and incoming reports">
           <MapStage
             correlatedSignalIds={missionState.correlatedSignalIds}
             focusSignalId={missionState.mapFocusSignalId}
+            playback={socketState.signals.length ? null : playbackStatus}
+            scenario={activeScenario}
             signals={signals}
           />
 
-          <EventFeed signals={signals} />
+          <EventFeed
+            playback={socketState.signals.length ? null : playbackStatus}
+            signals={signals}
+          />
         </section>
 
         <aside className="decision-stack" aria-label="Commander decision stack">
           <MissionSummary
             attribution={latestAttribution}
             decision={latestDecision}
+            scenario={activeScenario}
             uiEvent={latestUiEvent}
             signalCount={signals.length}
           />
@@ -204,6 +176,12 @@ export function Brigade() {
             uiEvent={latestUiEvent}
             isApproved={isApproved}
             onApprove={() => setIsApproved(true)}
+          />
+          <ScenarioTimeline
+            offsets={playbackTimeline.offsets}
+            playback={socketState.signals.length ? null : playbackStatus}
+            scenario={activeScenario}
+            signals={signals}
           />
         </aside>
       </section>
