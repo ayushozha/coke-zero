@@ -347,8 +347,40 @@
   position: relative;
   z-index: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   padding: 8px;
+}
+
+/* Make scrollable panel scrollbars visible so users can tell at a glance
+   that the column scrolls — macOS overlay scrollbars hide-on-idle which
+   leaves overflow content effectively unreachable. */
+.scenario-list,
+.decision-stack {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 190, 180, 0.45) transparent;
+}
+
+.scenario-list::-webkit-scrollbar,
+.decision-stack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scenario-list::-webkit-scrollbar-thumb,
+.decision-stack::-webkit-scrollbar-thumb {
+  background: rgba(154, 190, 180, 0.45);
+  border-radius: 4px;
+}
+
+.scenario-list::-webkit-scrollbar-thumb:hover,
+.decision-stack::-webkit-scrollbar-thumb:hover {
+  background: rgba(154, 190, 180, 0.7);
+}
+
+.scenario-list::-webkit-scrollbar-track,
+.decision-stack::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .scenario-list__item {
@@ -3441,9 +3473,14 @@
     z-index: 12;
     grid-column: 3;
     grid-row: 1;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    /* The decision stack accepts an open-ended number of children
+       (MissionSummary, ApproveBanner, ScenarioTimeline, ReasoningPanel,
+       StressMode, …) — let each size to its own content and scroll the
+       whole sidebar vertically when the column overflows. */
+    grid-auto-rows: auto;
+    grid-template-rows: none;
     gap: 8px;
-    align-content: stretch;
+    align-content: start;
     margin: 0;
     border: 1px solid rgba(51, 242, 240, 0.22);
     border-top: 0;
@@ -3458,7 +3495,9 @@
       inset 0 1px 0 rgba(245, 247, 240, 0.045),
       inset 0 0 0 1px rgba(0, 0, 0, 0.45),
       -12px 0 34px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
     padding: 8px;
   }
 
