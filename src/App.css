@@ -3724,14 +3724,13 @@
     z-index: 12;
     grid-column: 3;
     grid-row: 1;
-    /* The decision stack accepts an open-ended number of children
-       (MissionSummary, ApproveBanner, ScenarioTimeline, ReasoningPanel,
-       StressMode, …) — let each size to its own content and scroll the
-       whole sidebar vertically when the column overflows. */
-    grid-auto-rows: auto;
-    grid-template-rows: none;
+    /* Flex column so a single section (the reasoning trace) can claim
+       any leftover vertical space when the others are collapsed. Each
+       section sizes to content by default; the one tagged
+       --grow takes flex: 1 1 auto. */
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    align-content: start;
     margin: 0;
     border: 1px solid rgba(51, 242, 240, 0.22);
     border-top: 0;
@@ -4467,25 +4466,45 @@
 }
 
 .reasoning-line {
+  /* Two-row layout: top row carries the time + stage tag in a compact
+     header; the message gets the full panel width on the row below.
+     Previously a 3-column grid that capped the message at ~80 px when
+     compact, forcing painful word-break wrapping. */
   display: grid;
-  grid-template-columns: 70px 130px 1fr;
-  gap: 8px;
-  align-items: baseline;
-  padding: 1px 0;
+  grid-template-columns: auto auto 1fr;
+  grid-template-areas:
+    "time stage spacer"
+    "msg msg msg";
+  column-gap: 8px;
+  row-gap: 1px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(220, 227, 213, 0.04);
+}
+
+.reasoning-line:last-child {
+  border-bottom: 0;
 }
 
 .reasoning-line__time {
+  grid-area: time;
   color: var(--text-subtle);
   font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
 }
 
 .reasoning-line__stage {
-  font-weight: 600;
+  grid-area: stage;
+  font-weight: 700;
+  font-size: 0.72rem;
 }
 
 .reasoning-line__msg {
+  grid-area: msg;
   color: var(--text-primary);
+  font-size: 0.78rem;
+  line-height: 1.42;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .reasoning-line--decision .reasoning-line__msg {
@@ -4868,6 +4887,106 @@
 .stress-mode__error {
   color: var(--red);
   font-size: 0.74rem;
+}
+
+/* ---- Collapsible decision-stack sections -----------------------------
+   Each child of the right-column decision stack is wrapped in one of
+   these so the operator can collapse individual sections to compress
+   the column. The summary stays visible while collapsed; clicking it
+   toggles open. */
+.stack-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid rgba(220, 227, 213, 0.18);
+  border-radius: 4px;
+  background: rgba(7, 16, 15, 0.86);
+  overflow: hidden;
+}
+
+.stack-section__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.46);
+  border: 0;
+  border-bottom: 1px solid rgba(220, 227, 213, 0.14);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.stack-section__summary:hover {
+  background: rgba(51, 242, 240, 0.08);
+  color: var(--cyan);
+}
+
+.stack-section__chevron {
+  display: inline-block;
+  width: 14px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  transition: transform 0.18s ease;
+}
+
+.stack-section__summary:hover .stack-section__chevron {
+  color: var(--cyan);
+}
+
+.stack-section__title {
+  flex: 1 1 auto;
+}
+
+.stack-section__badge {
+  flex: 0 0 auto;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+}
+
+.stack-section--collapsed .stack-section__summary {
+  border-bottom: 0;
+}
+
+/* Sections marked --grow claim any leftover height in the decision
+   stack (only one per column should be grown). Their body fills
+   whatever space the collapsed sections give back. */
+.stack-section--grow {
+  flex: 1 1 auto;
+  min-height: 220px;
+}
+
+.stack-section--grow .stack-section__body,
+.stack-section--grow .stack-section__body > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.stack-section__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Children inherit their own borders/backgrounds, so trim the inner
+   panel's outer chrome to avoid double borders inside the section. */
+.stack-section__body > * {
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid rgba(220, 227, 213, 0.06);
+}
+
+.stack-section__body > *:first-child {
+  border-top: 0;
 }
 
 /* ---- Foldable panel tab handles --------------------------------------

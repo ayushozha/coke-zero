@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActionLog } from '../components/ActionLog'
 import { ApproveBanner } from '../components/ApproveBanner'
+import { CollapsibleStackSection } from '../components/CollapsibleStackSection'
 import { EmbeddingViz } from '../components/EmbeddingViz'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
@@ -626,29 +627,46 @@ export function Brigade() {
           aria-label="Commander decision stack"
           aria-hidden={decisionStackCollapsed}
         >
-          <MissionSummary
-            attribution={latestAttribution}
-            decision={latestDecision}
-            scenario={activeScenario}
-            uiEvent={latestUiEvent}
-            signalCount={signals.length}
-          />
-          <ApproveBanner
-            decision={latestDecision}
-            uiEvent={latestUiEvent}
-            isApproved={isApproved}
-            onApprove={() => setIsApproved(true)}
-          />
-          <ScenarioTimeline
-            offsets={playbackTimeline.offsets}
-            playback={socketState.signals.length ? null : playbackStatus}
-            scenario={activeScenario}
-            signals={signals}
-          />
-          <ActionLog compact />
-          <EmbeddingViz compact />
-          <ReasoningPanel compact />
-          <StressMode />
+          <CollapsibleStackSection title="Mission summary">
+            <MissionSummary
+              attribution={latestAttribution}
+              decision={latestDecision}
+              scenario={activeScenario}
+              uiEvent={latestUiEvent}
+              signalCount={signals.length}
+            />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection title="Approval">
+            <ApproveBanner
+              decision={latestDecision}
+              uiEvent={latestUiEvent}
+              isApproved={isApproved}
+              onApprove={() => setIsApproved(true)}
+            />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection title="Scenario timeline">
+            <ScenarioTimeline
+              offsets={playbackTimeline.offsets}
+              playback={socketState.signals.length ? null : playbackStatus}
+              scenario={activeScenario}
+              signals={signals}
+            />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection title="System actions">
+            <ActionLog compact />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection
+            title="OSINT embedding space"
+            defaultOpen={false}
+          >
+            <EmbeddingViz compact />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection title="Reasoning trace" flexGrow>
+            <ReasoningPanel />
+          </CollapsibleStackSection>
+          <CollapsibleStackSection title="Stress mode" defaultOpen={false}>
+            <StressMode />
+          </CollapsibleStackSection>
         </aside>
         <button
           type="button"

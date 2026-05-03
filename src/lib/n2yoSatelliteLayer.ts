@@ -510,10 +510,10 @@ export function addN2YOSatellite(
     billboard: {
       color: Color.WHITE,
       disableDepthTestDistance: 0,
-      height: 48,
+      height: 68,
       image: realSatelliteMarker(familyHex),
-      scaleByDistance: new NearFarScalar(1500000, 1, 25000000, 0.5),
-      width: 48,
+      scaleByDistance: new NearFarScalar(1500000, 1, 25000000, 0.62),
+      width: 68,
     },
     label: {
       backgroundColor: MAP_PANEL.withAlpha(0.9),
