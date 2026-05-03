@@ -15,7 +15,7 @@ export function NarrationPanel({
   return (
     <section className="narration" aria-labelledby="narration-title">
       <div className="panel__header">
-        <h2 id="narration-title">Commander Narration</h2>
+        <h2 id="narration-title">Plain-English Readout</h2>
         <span>
           {uiEvent
             ? uiEvent.severity
@@ -30,17 +30,17 @@ export function NarrationPanel({
           <p className="narration__plain">{uiEvent.message}</p>
           <details className="details-panel details-panel--nested">
             <summary>
-              <span>Event Detail</span>
+              <span>Why CANOPY says this</span>
               <span>{Math.round(uiEvent.confidence * 100)}%</span>
             </summary>
             <dl className="narration__facts">
               <div>
-                <dt>Type</dt>
-                <dd>{uiEvent.type}</dd>
+                <dt>Alert type</dt>
+                <dd>{uiEvent.type.replaceAll('_', ' ')}</dd>
               </div>
               <div>
-                <dt>Signals</dt>
-                <dd>{uiEvent.source_signal_ids.join(', ') || 'none'}</dd>
+                <dt>Reports behind it</dt>
+                <dd>{uiEvent.source_signal_ids.length || 'none'}</dd>
               </div>
             </dl>
           </details>
@@ -48,7 +48,7 @@ export function NarrationPanel({
       ) : attribution ? (
         <>
           <p className="narration__plain">
-            CANOPY assesses {attribution.actor} is preparing to{' '}
+            CANOPY sees a pattern consistent with {attribution.actor}. It may{' '}
             {predictedNext.toLowerCase()}.
           </p>
           <details className="details-panel details-panel--nested">

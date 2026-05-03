@@ -126,6 +126,9 @@ const beatDecision: Decision = {
   source_signal_ids: ['sig-rf-001', 'sig-sat-023'],
 }
 
+const commanderFocus =
+  'CANOPY turns raw space, GPS, SATCOM, EW, cyber, and drone reports into a short commander brief: what changed, why it matters, and whether a decision is needed.'
+
 export function Brigade() {
   const socketState = useCanopySocket()
   const [beatIndex, setBeatIndex] = useState(1)
@@ -163,8 +166,9 @@ export function Brigade() {
     <main className="brigade-shell">
       <header className="app-header">
         <div>
-          <p className="app-header__eyebrow">CANOPY / Brigade</p>
-          <h1>Multi-Domain Fusion Dashboard</h1>
+          <p className="app-header__eyebrow">CANOPY / Brigade View</p>
+          <h1>Commander Space-Support Brief</h1>
+          <p className="app-header__plain">{commanderFocus}</p>
         </div>
         <div className="app-header__right">
           <span
@@ -174,9 +178,9 @@ export function Brigade() {
                 : 'socket-status'
             }
           >
-            {socketState.isConnected ? 'socket live' : 'mock beat'}
+            {socketState.isConnected ? 'Live data' : 'Demo data'}
           </span>
-          <a href="/operator">Operator View</a>
+          <a href="/operator">Operator Tools</a>
         </div>
       </header>
 
@@ -189,8 +193,8 @@ export function Brigade() {
 
       <section className="status-row" aria-label="Critical system status">
         <StatusCard {...missionState.statuses.spaceLayer} />
-        <StatusCard {...missionState.statuses.attribution} />
         <StatusCard {...missionState.statuses.blosComms} />
+        <StatusCard {...missionState.statuses.attribution} />
       </section>
 
       <section className="command-layout">
@@ -211,10 +215,9 @@ export function Brigade() {
             isApproved={isApproved}
             onApprove={() => setIsApproved(true)}
           />
+          <EventFeed signals={signals} />
         </div>
       </section>
-
-      <EventFeed signals={signals} />
     </main>
   )
 }

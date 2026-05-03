@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Domain, Signal, UIEvent } from '../types/canopy'
 import type { StatusState } from '../components/StatusCard'
+import { commanderSignalSummary } from '../lib/commanderLanguage'
 
 type MissionStatus = {
   title: string
@@ -93,9 +94,7 @@ const statusForSignals = (
     metric: latest
       ? `${Math.round((highestConfidence ?? latest.confidence) * 100)}% / ${domainSignals.length} live`
       : 'No live hits',
-    detail: latest
-      ? `${latest.domain.toUpperCase()} ${latest.payload.summary}`
-      : emptyDetail,
+    detail: latest ? commanderSignalSummary(latest).detail : emptyDetail,
   }
 }
 
@@ -118,26 +117,26 @@ export function useCanopyMissionState(
         spaceLayer: statusForSignals(
           signals,
           spaceDomains,
-          'Space Layer',
-          'Orbit / SDA',
-          'No orbital or SDA signal has arrived.',
+          'Space Support',
+          'Satellites / Overhead',
+          'No space-support change has arrived.',
           correlatedSignalIds,
         ),
         attribution: {
-          title: 'Attribution',
-          label: latestUiEvent?.type.replaceAll('_', ' ') ?? 'Fusion',
+          title: 'Assessment',
+          label: latestUiEvent?.type.replaceAll('_', ' ') ?? 'Building picture',
           state: attributionState,
           metric: latestUiEvent
             ? `${Math.round(latestUiEvent.confidence * 100)}% confidence`
-            : 'Awaiting package',
-          detail: latestUiEvent?.title ?? 'No commander-facing event yet.',
+            : 'No call yet',
+          detail: latestUiEvent?.title ?? 'No commander-facing assessment yet.',
         },
         blosComms: statusForSignals(
           signals,
           commsDomains,
-          'BLOS Comms',
-          'SATCOM / RF / PNT',
-          'No degraded communications signal has arrived.',
+          'Comms and Navigation',
+          'SATCOM / GPS / Drones',
+          'No communications or navigation degradation has arrived.',
           correlatedSignalIds,
         ),
       },
