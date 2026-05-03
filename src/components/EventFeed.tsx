@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Signal } from '../types/canopy'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
 
@@ -5,11 +6,23 @@ type EventFeedProps = {
   signals: Signal[]
 }
 
+const SIGNAL_STREAM_UPDATE_MS = 5000
+
 export function EventFeed({ signals }: EventFeedProps) {
+  const [visibleSignals, setVisibleSignals] = useState(signals)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setVisibleSignals(signals)
+    }, SIGNAL_STREAM_UPDATE_MS)
+
+    return () => window.clearInterval(timer)
+  }, [signals])
+
   const feedState =
-    signals[0]?.confidence >= 0.86
+    visibleSignals[0]?.confidence >= 0.86
       ? 'PRIORITY'
-      : signals[0]?.confidence >= 0.74
+      : visibleSignals[0]?.confidence >= 0.74
         ? 'WATCH'
         : 'MONITOR'
 
@@ -22,7 +35,7 @@ export function EventFeed({ signals }: EventFeedProps) {
         </div>
         <div className="event-feed__status">
           <span>{feedState}</span>
-          <strong>{signals.length.toString().padStart(2, '0')}</strong>
+          <strong>{visibleSignals.length.toString().padStart(2, '0')}</strong>
         </div>
       </div>
       <div
@@ -31,7 +44,7 @@ export function EventFeed({ signals }: EventFeedProps) {
         aria-label="Live signal stream"
         aria-live="polite"
       >
-        {signals.slice(0, 10).map((signal, index) => {
+        {visibleSignals.slice(0, 10).map((signal, index) => {
           const summary = commanderSignalSummary(signal)
           const priority =
             signal.confidence >= 0.86
