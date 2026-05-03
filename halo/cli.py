@@ -14,6 +14,7 @@ from halo.services.decide import DecideService
 from halo.services.fusion import FusionService
 from halo.services.kb import KB
 from halo.services.llm import LLMClient
+from halo.services.orbit import OrbitService
 from halo.services.scenario_replay import ScenarioReplayService
 from halo.services.ui_events import UIEventService
 
@@ -67,9 +68,12 @@ async def main(
     log.info("KB loaded: %d entries from %s", len(kb), kb_path)
     llm = _build_llm(live=live, kb=kb)
 
+    orbit = OrbitService()
+    log.info("Orbit service loaded with %d cached satellites", len(orbit.known_satellites()))
+
     fusion = FusionService(bus)
     attrib = AttribService(bus, llm, kb, window_s=attrib_window_s)
-    decide = DecideService(bus, llm)
+    decide = DecideService(bus, llm, orbit=orbit)
     ui = UIEventService(bus)
 
     services = [
