@@ -5,20 +5,15 @@ import type { Signal } from '../types/canopy'
 type MapStageProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
-  latestSignal: Signal | null
   signals: Signal[]
 }
 
 export function MapStage({
   correlatedSignalIds,
   focusSignalId,
-  latestSignal,
   signals,
 }: MapStageProps) {
   const [viewMode, setViewMode] = useState<'nav' | 'globe'>('nav')
-  const latestLabel =
-    latestSignal?.location.label ?? latestSignal?.payload.asset ?? 'No focus'
-  const latestDomain = latestSignal?.domain.replaceAll('_', ' ') ?? 'standby'
   const isGlobe = viewMode === 'globe'
 
   return (
@@ -66,41 +61,9 @@ export function MapStage({
             : `${signals.length.toString().padStart(2, '0')} feeds`}
         </em>
       </div>
-      {isGlobe ? (
-        <div className="space-hud" aria-hidden="true">
-          <div>
-            <span>Custody</span>
-            <strong>LEO / MEO</strong>
-          </div>
-          <div>
-            <span>TLE age</span>
-            <strong>cached</strong>
-          </div>
-          <div>
-            <span>Threat layer</span>
-            <strong>RPO + EW</strong>
-          </div>
-        </div>
-      ) : null}
       {!isGlobe ? (
-        <>
-          <div className="nav-crosshair" aria-hidden="true" />
-          <div className="nav-inset" aria-hidden="true">
-            <span>LIVE FEED / UAV-09</span>
-            <strong>5D SECTOR OPS</strong>
-          </div>
-          <div className="nav-tools" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-        </>
+        <div className="nav-crosshair" aria-hidden="true" />
       ) : null}
-      <div className="map-stage__readout">
-        <span>{latestDomain}</span>
-        <strong>{latestLabel}</strong>
-      </div>
     </section>
   )
 }

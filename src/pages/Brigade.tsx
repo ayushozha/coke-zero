@@ -3,9 +3,7 @@ import { ApproveBanner } from '../components/ApproveBanner'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
-import { NarrationPanel } from '../components/NarrationPanel'
 import { ScenarioRail } from '../components/ScenarioRail'
-import { StatusCard } from '../components/StatusCard'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 import type { Attribution, Decision, Signal } from '../types/canopy'
@@ -188,15 +186,8 @@ export function Brigade() {
           <MapStage
             correlatedSignalIds={missionState.correlatedSignalIds}
             focusSignalId={missionState.mapFocusSignalId}
-            latestSignal={missionState.latestSignal}
             signals={signals}
           />
-
-          <section className="status-row" aria-label="Critical system status">
-            <StatusCard {...missionState.statuses.spaceLayer} />
-            <StatusCard {...missionState.statuses.blosComms} />
-            <StatusCard {...missionState.statuses.attribution} />
-          </section>
 
           <EventFeed signals={signals} />
         </section>
@@ -207,10 +198,6 @@ export function Brigade() {
             decision={latestDecision}
             uiEvent={latestUiEvent}
             signalCount={signals.length}
-          />
-          <NarrationPanel
-            attribution={latestAttribution}
-            uiEvent={latestUiEvent}
           />
           <ApproveBanner
             decision={latestDecision}
