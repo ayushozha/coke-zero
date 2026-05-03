@@ -46,7 +46,7 @@ export function EventFeed({ playback, signals }: EventFeedProps) {
         {latestSignal && latestSummary ? (
           <div className="event-feed__update-cue" key={latestSignal.id}>
             <span>New report</span>
-            <strong>{latestSummary.detail}</strong>
+            <strong>{latestSummary.oneLine}</strong>
           </div>
         ) : null}
         <div className="event-feed__status">
@@ -98,13 +98,10 @@ export function EventFeed({ playback, signals }: EventFeedProps) {
                 </span>
               </div>
               <div className="event-feed__meaning">
-                <strong>{summary.headline}</strong>
-                <p>{summary.detail}</p>
-              </div>
-              <div className="event-feed__entry-meta">
-                <span>{summary.sourceLabel}</span>
-                <span>{summary.location}</span>
-                <span>{summary.action}</span>
+                <strong title={summary.oneLine}>{summary.oneLine}</strong>
+                <p title={`${summary.sourceLabel} / ${summary.location}`}>
+                  {summary.sourceLabel} / {summary.location}
+                </p>
               </div>
             </article>
           )
