@@ -127,6 +127,17 @@ const localAorBounds = {
   east: -116.43,
   north: 35.08,
 }
+const LOCAL_AOR_CAMERA_DESTINATION = Rectangle.fromDegrees(
+  localAorBounds.west - 0.28,
+  localAorBounds.south - 0.18,
+  localAorBounds.east + 0.28,
+  localAorBounds.north + 0.18,
+)
+const LOCAL_AOR_CAMERA_ORIENTATION = {
+  heading: 0,
+  pitch: -1.5,
+  roll: 0,
+}
 
 const localRoute = [
   [-116.57, 35.0, 1200],
@@ -774,13 +785,9 @@ export function CesiumGlobe({
       viewer.clock.shouldAnimate = true
       setActiveLayer('local-aor')
       viewer.camera.flyTo({
-        destination: Cartesian3.fromDegrees(-116.52, 35.02, 22000),
+        destination: LOCAL_AOR_CAMERA_DESTINATION,
         duration: 0.8,
-        orientation: {
-          heading: 6,
-          pitch: -1.08,
-          roll: 0,
-        },
+        orientation: LOCAL_AOR_CAMERA_ORIENTATION,
       })
     })
   }

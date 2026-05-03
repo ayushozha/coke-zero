@@ -21,6 +21,11 @@ const aorBounds = {
   east: -116.43,
   north: 35.08,
 }
+const initialAorViewBounds: [[number, number], [number, number]] = [
+  [aorBounds.west - 0.18, aorBounds.south - 0.12],
+  [aorBounds.east + 0.18, aorBounds.north + 0.12],
+]
+const INITIAL_AOR_ZOOM = 10.8
 
 type AorBounds = typeof aorBounds
 
@@ -237,7 +242,7 @@ export function AorMap({
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
-  const [zoomLevel, setZoomLevel] = useState(15.2)
+  const [zoomLevel, setZoomLevel] = useState(INITIAL_AOR_ZOOM)
 
   const coordinateSignals = useMemo(
     () =>
@@ -353,7 +358,7 @@ export function AorMap({
           },
         ],
       },
-      zoom: 15.2,
+      zoom: INITIAL_AOR_ZOOM,
     })
 
     mapRef.current = map
@@ -365,6 +370,11 @@ export function AorMap({
 
     map.on('load', () => {
       setIsMapReady(true)
+      map.fitBounds(initialAorViewBounds, {
+        duration: 0,
+        padding: { bottom: 72, left: 48, right: 48, top: 42 },
+      })
+      setZoomLevel(map.getZoom())
       map.addSource('aor-zone', {
         type: 'geojson',
         data: createAorPolygon(aorBounds),
