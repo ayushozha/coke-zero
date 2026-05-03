@@ -78,6 +78,7 @@ def build_engine(
     kb_path: str | Path = DEFAULT_KB_PATH,
     attrib_window_s: float = 2.0,
     blocked_domains_provider=None,
+    multi_agent: bool = True,
 ) -> Engine:
     """Wire up the in-process bus, KB, LLM, and the four async services."""
     bus = InProcessBus()
@@ -103,6 +104,7 @@ def build_engine(
         window_s=attrib_window_s,
         tracer=tracer,
         blocked_domains=blocked_domains_provider,
+        multi_agent=multi_agent,
     )
     decide = DecideService(
         bus,
