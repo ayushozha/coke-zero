@@ -3,7 +3,9 @@ import { ApproveBanner } from '../components/ApproveBanner'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
+import { ReasoningPanel } from '../components/ReasoningPanel'
 import { ScenarioRail } from '../components/ScenarioRail'
+import { StressMode } from '../components/StressMode'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 import type { Attribution, Decision, Signal } from '../types/canopy'
@@ -205,6 +207,8 @@ export function Brigade() {
             isApproved={isApproved}
             onApprove={() => setIsApproved(true)}
           />
+          <ReasoningPanel compact />
+          <StressMode />
         </aside>
       </section>
     </main>
