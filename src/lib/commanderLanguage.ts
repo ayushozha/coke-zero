@@ -231,7 +231,28 @@ const compactAssetSubject = (assets: string[]) => {
   return assets.length === 1 ? assets[0] : `${assets.length} assets`
 }
 
-const stripFinalPeriod = (value: string) => value.replace(/\.+$/, '')
+const clampOneLine = (value: string, maxLength = 112) => {
+  const trimmed = value.replace(/\s+/g, ' ').trim()
+  if (trimmed.length <= maxLength) {
+    return trimmed
+  }
+
+  const clipped = trimmed.slice(0, maxLength - 1)
+  return `${clipped.slice(0, clipped.lastIndexOf(' '))}.`
+}
+
+const shortActionByDomain: Record<Domain, string> = {
+  orbit: 'watch space support',
+  sda: 'keep custody in view',
+  rf_ew: 'shift to hardened comms',
+  cyber: 'verify access',
+  osint: 'use as context',
+  humint: 'corroborate first',
+  pnt: 'avoid GPS-only decisions',
+  satcom: 'protect backup path',
+  drone: 'preserve ISR relay',
+  terrain: 'adjust geometry',
+}
 
 const friendlySourceLabel = (signal: Signal) => {
   const asset = signal.payload.asset
@@ -242,7 +263,7 @@ const friendlySourceLabel = (signal: Signal) => {
   return sourceAliases[signal.source] ?? signal.source.replaceAll('-', ' ')
 }
 
-const oneLineForSignal = (signal: Signal, action: string) => {
+const oneLineForSignal = (signal: Signal) => {
   const observables = signal.payload.observables ?? {}
   const affectedAssets = stringArray(observables.affected_assets)
   const affectedSystems = stringArray(observables.affected_systems)
@@ -261,42 +282,172 @@ const oneLineForSignal = (signal: Signal, action: string) => {
     typeof observables.new_primary === 'string' ? observables.new_primary : null
   const linkMarginDb = numberValue(observables.link_margin_db)
   const packetLossPct = numberValue(observables.packet_loss_pct)
+  const queueDelaySeconds = numberValue(observables.queue_delay_s)
+  const refreshIntervalSeconds = numberValue(observables.refresh_interval_s)
+  const timeToPerimeterSeconds = numberValue(observables.time_to_perimeter_s)
+  const availableKbps = numberValue(observables.available_kbps)
+  const emissionCount = numberValue(observables.emission_count)
+  const exposureReductionPct = numberValue(observables.exposure_reduction_pct)
 
-  switch (signal.payload.event_type) {
+  const oneLine = (() => {
+    switch (signal.payload.event_type) {
     case 'gps_spoof':
       return `${affectedSubject} ${affectedVerb} GPS drift${deltaMeters ? ` of ${Math.round(deltaMeters)}m` : ''}; verify coordinates before movement or fires.`
     case 'pnt_spoofing':
-      return `GPS time or position is biased${deltaMeters ? ` by about ${Math.round(deltaMeters)}m` : ''}; confirm navigation with non-GPS sources.`
+      return `GPS time or position is biased${deltaMeters ? ` ${Math.round(deltaMeters)}m` : ''}; confirm with non-GPS nav.`
     case 'gnss_jamming_signature':
-      return `GPS jamming is degrading navigation and timing; ${stripFinalPeriod(action)}.`
+      return `GPS jamming is degrading timing; use alternate navigation.`
+    case 'alternate_pnt_check':
+      return 'Non-GPS nav agrees; keep GPS-only coordinates out of fires.'
+    case 'alternate_pnt_restored':
+      return 'Alternate nav is stable; limited movement can continue.'
+    case 'receiver_holdover_active':
+      return 'Gateway timing is on holdover; GPS position remains degraded.'
     case 'rf_interference':
       return `EW interference is degrading ${affectedSubject.toLowerCase()}; shift to hardened comms.`
+    case 'ew_bearing_refined':
+    case 'rf_bearing_crosscheck':
+      return 'EW bearing narrowed the affected corridor; route traffic around it.'
+    case 'emission_cluster_detected':
+      return `${emissionCount ? `${Math.round(emissionCount)} emitters` : 'Emitters'} active in collection footprint; reduce emissions.`
+    case 'emission_posture_risk':
+      return 'Brigade emitters are still active; reduce exposure before the pass.'
     case 'satcom_degradation':
       return `SATCOM is degrading${packetLossPct ? ` with ${packetLossPct.toFixed(1)}% loss` : ''}; prepare alternate BLOS routing.`
     case 'satcom_link_margin_drop':
       return `SATCOM link margin is low${linkMarginDb ? ` at ${linkMarginDb.toFixed(1)} dB` : ''}; protect the backup route.`
+    case 'satcom_queue_pressure':
+      return `SATCOM queue delay${queueDelaySeconds ? ` is ${Math.round(queueDelaySeconds)}s` : ' is rising'}; move bulk data to cache.`
+    case 'satcom_priority_queue':
+      return 'SATCOM is priority-only; keep commander updates moving.'
+    case 'satcom_route_shed':
+      return 'SATCOM shed nonessential traffic; command updates are preserved.'
+    case 'priority_path_confirmed':
+      return 'Priority SATCOM text path works; hold bulk imagery.'
+    case 'backup_link_check':
+      return `${availableKbps ? `${Math.round(availableKbps)} kbps` : 'Low-rate'} backup SATCOM is available for command updates.`
+    case 'low_rate_mode_active':
+      return 'Gateway is in protected low-rate mode; commander updates continue.'
     case 'satcom_rf_spike':
       return 'RF energy is hitting the SATCOM backup window; watch route acquisition.'
     case 'autonomous_relay_handoff':
       return `Drone relay shifted${newPrimary ? ` to ${newPrimary}` : ''}; ISR feed remains connected.`
+    case 'backup_asset_ready':
+      return 'Backup drone is staged; primary ISR can degrade without going blind.'
+    case 'cross_sensor_position_check':
+      return 'Drone sensors agree; GPS is the suspect input.'
+    case 'degraded_telemetry':
+      return 'Drone telemetry is degraded; keep ISR but lower coordinate trust.'
     case 'fdir_recovery_action':
       return `${signal.payload.asset ?? 'Drone'} isolated bad GPS input; ISR continues with reduced coordinate confidence.`
+    case 'fdir_assessment':
+      return 'CANOPY sees spoofing, not drone failure; keep ISR moving.'
+    case 'fdir_mission_update':
+      return 'Continue route ISR on non-GPS nav; backup drone is staged.'
+    case 'observer_feed_quality_drop':
+      return 'Observer video is dropping; relay handoff is needed soon.'
+    case 'relay_candidate_ready':
+      return 'DRONE-06 is a cleaner relay; prepare handoff.'
+    case 'relay_resilience_assessment':
+    case 'relay_commander_update':
+      return 'Relay handoff restored observer video and commander updates.'
+    case 'isr_product_quality_gate':
+      return 'ISR feed is live; target coordinates stay low confidence.'
+    case 'drone_track_custody_split':
+      return 'Radar and EO keep UAS custody after remote ID becomes unreliable.'
+    case 'track_handoff_success':
+      return `${timeToPerimeterSeconds ? `${Math.round(timeToPerimeterSeconds)}s to perimeter; ` : ''}sensor handoff preserved UAS track custody.`
+    case 'base_defense_posture_change':
+      return 'Base warning is out; local sensors hold custody under degraded GPS.'
     case 'credential_probe':
     case 'credential_spray':
       return 'Mission-system logins are being probed; verify access before automated tasking.'
+    case 'gateway_config_probe':
+      return 'Gateway config API is being probed; freeze changes.'
+    case 'maintenance_api_rate_limit':
+      return 'Gateway API rate limits are active; command data is protected.'
+    case 'process_anomaly':
+      return 'Endpoint process looks abnormal; keep gateway hardened.'
     case 'rpo_close_approach':
       return `Object is inside the satellite watch box${missDistanceKm ? ` at ${missDistanceKm.toFixed(1)} km` : ''}; watch support degradation.`
     case 'proximity_operations':
       return 'Nearby space object maneuvered near friendly support; request space-cell attention.'
     case 'close_approach_assessment':
       return 'SATCOM degradation aligns with a close satellite approach; plan protective options.'
+    case 'custody_update':
+    case 'custody_quality_change':
+      return 'Space custody is changing; keep the support asset on watch.'
+    case 'space_support_option':
+      return 'Alternate space-support pass is available; preserve priority traffic.'
+    case 'overhead_warning_quality_drop':
+      return `Warning refresh slowed${refreshIntervalSeconds ? ` to ${Math.round(refreshIntervalSeconds)}s` : ''}; cache products locally.`
     case 'overhead_collection_window':
       return 'Adversary overhead collection window is opening; mask movement and emissions.'
+    case 'sda_catalog_match':
+      return 'Satellite pass supports collection-risk watch.'
+    case 'collection_cue':
+      return 'Collection cue overlaps the operation; reduce visible movement.'
+    case 'collection_risk_assessment':
+      return 'CANOPY recommends pause plus emission reduction.'
+    case 'imagery_request_update':
+      return 'Imagery request urgency increased; delay exposed movement.'
+    case 'post_pass_collection_update':
+      return 'Post-pass check is clean; resume limited movement.'
+    case 'concealment_route_check':
+      return `${exposureReductionPct ? `${Math.round(exposureReductionPct)}% lower exposure; ` : ''}use covered route during the pass.`
+    case 'procurement_report':
+      return 'Human report flags imagery demand; corroborate before moving.'
+    case 'route_chokepoint_check':
+      return 'Route chokepoints make GPS timing riskier; prep alternate route.'
+    case 'local_route_report':
+      return 'Route congestion is building; decide hold or release soon.'
+    case 'convoy_release_update':
+      return 'Limited convoy release is viable on alternate route.'
+    case 'space_support_hold_recommendation':
+      return 'Hold convoy until SAR, backup comms, and non-GPS nav are ready.'
     case 'terrain_masking_risk':
       return 'Terrain may block the relay path; adjust drone altitude or relay geometry.'
+    case 'line_of_sight_forecast':
+      return 'Relay line of sight will degrade; hand off before the feed drops.'
+    case 'approach_masking_check':
+      return 'Low-altitude approach gap found; cue alternate sensor.'
+    case 'local_cache_confirmed':
+      return 'Overhead-warning cache is local; use it while SATCOM is degraded.'
+    case 'attack_chain_correlation':
+      return 'EW, GPS, cyber, and SATCOM now form one attack chain.'
+    case 'multi_domain_attack_assessment':
+    case 'attack_chain_commander_update':
+      return 'Hold automation; preserve ISR and backup comms.'
+    case 'iran_counter_c5isr_assessment':
+    case 'c5isr_commander_update':
+      return 'Operate degraded: preserve ISR, text comms, and human fires review.'
+    case 'gateway_pressure_assessment':
+      return 'Gateway is under RF, cyber, GPS, and UAS pressure; stay defensive.'
+    case 'gateway_recovery_assessment':
+      return 'Gateway stayed connected; hold protected mode until link recovers.'
+    case 'aor_commander_update':
+      return 'AOR is degraded but manageable; keep priority routing.'
+    case 'base_defense_recovery_update':
+    case 'space_enabled_base_defense_assessment':
+      return 'Base warning and sensor custody held through degraded space support.'
+    case 'commander_orbit_cue':
+      return 'Orbit cue is a watch item, not attribution; protect routing.'
+    case 'missile_uas_capability_context':
+      return 'Missile/UAS threat raises need for warning, GPS, ISR, and SATCOM.'
+    case 'counterspace_capability_context':
+      return 'Counterspace risk is relevant; watch EW, cyber, GPS, and SATCOM.'
+    case 'militia_uas_risk_context':
+      return 'Militia UAS risk raised; cue base defense and space support.'
+    case 'maritime_space_picture_shift':
+      return 'Maritime picture is compressing; refresh space-derived tracking.'
+    case 'blockade_notice':
+      return 'Theater warning starts the convoy space-support clock.'
     default:
-      return signal.payload.summary
-  }
+      return `${plainEventName(signal)}; ${shortActionByDomain[signal.domain]}.`
+    }
+  })()
+
+  return clampOneLine(oneLine)
 }
 
 export function commanderSignalSummary(signal: Signal): {
@@ -326,7 +477,7 @@ export function commanderSignalSummary(signal: Signal): {
   return {
     label: copy.label,
     headline: signal.payload.summary,
-    oneLine: oneLineForSignal(signal, action),
+    oneLine: oneLineForSignal(signal),
     detail: plainEventName(signal),
     whyItMatters: spaceDependency ?? copy.meaning,
     action,
