@@ -4514,3 +4514,20 @@
   color: var(--red);
   font-size: 0.74rem;
 }
+
+/* ---- Cesium overlay controls — desktop offset ------------------------
+   On desktop the decision-stack sidebar overlays the right ~352px of the
+   map workspace. The Cesium floating controls (NAV/GLOBE selector,
+   satellite family filter, Orbitals toggle, satellite detail card) all
+   anchor right:14px which sits behind the sidebar. Shift them past the
+   right rail so they remain reachable. The base right:14px applies on
+   narrower viewports where the sidebar is laid out below rather than
+   overlaid. */
+@media (min-width: 1081px) {
+  .cesium-scenario-controls,
+  .satellite-family-controls,
+  .orbit-toggle,
+  .satellite-detail {
+    right: calc(var(--right-rail, 352px) + 14px);
+  }
+}
