@@ -393,6 +393,21 @@
   font-weight: 500;
 }
 
+.mission-summary__main p:last-child,
+.narration__plain {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.mission-summary__main p:last-child {
+  -webkit-line-clamp: 2;
+}
+
+.narration__plain {
+  -webkit-line-clamp: 4;
+}
+
 .mission-summary__action strong {
   display: block;
   margin-top: 8px;
@@ -454,6 +469,14 @@
   color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 650;
+}
+
+.status-card__label,
+.status-card h2,
+.status-card__metric {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-card__state {
@@ -1415,7 +1438,7 @@
 
   .command-workbench {
     position: relative;
-    grid-template-columns: 260px minmax(0, 1fr) 320px;
+    grid-template-columns: 248px minmax(0, 1fr) 294px;
     grid-template-rows: minmax(0, 1fr);
     gap: 0;
     overflow: hidden;
@@ -1455,7 +1478,7 @@
     z-index: 12;
     grid-column: 3;
     grid-row: 1;
-    gap: 8px;
+    gap: 6px;
     align-content: start;
     margin: 8px 8px 8px 0;
     overflow: auto;
@@ -1489,20 +1512,22 @@
   .status-row {
     position: absolute;
     top: 8px;
-    right: 336px;
-    left: 276px;
+    left: 264px;
     z-index: 10;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(118px, 1fr));
+    gap: 6px;
+    width: min(520px, calc(100% - 590px));
+    min-width: 390px;
   }
 
   .status-card {
-    padding: 7px 9px;
+    min-height: 58px;
+    padding: 7px 9px 7px 10px;
   }
 
   .status-card h2 {
-    margin: 5px 0 3px;
-    font-size: 0.92rem;
+    margin: 4px 0 2px;
+    font-size: 0.82rem;
   }
 
   .status-card__detail {
@@ -1510,11 +1535,12 @@
   }
 
   .status-card__topline {
-    font-size: 0.66rem;
+    gap: 6px;
+    font-size: 0.58rem;
   }
 
   .status-card__metric {
-    font-size: 0.76rem;
+    font-size: 0.68rem;
   }
 
   .scenario-rail__header,
@@ -1542,24 +1568,35 @@
 
   .tak-map-chrome {
     top: 58px;
-    left: 276px;
+    left: 264px;
     min-width: 0;
     padding: 7px 9px;
   }
 
   .map-view-toggle {
     top: 58px;
-    right: 336px;
+    right: 310px;
+    min-width: 176px;
   }
 
   .cesium-scenario-controls {
-    top: 102px;
-    right: 336px;
+    top: 104px;
+    right: 310px;
+    gap: 5px;
+  }
+
+  .cesium-scenario-controls button {
+    min-height: 30px;
+    padding: 6px 8px;
+    font-size: 0.68rem;
   }
 
   .space-hud {
     top: 104px;
-    left: 276px;
+    left: 264px;
+    width: 150px;
+    gap: 6px;
+    padding: 8px;
   }
 
   .nav-inset {
@@ -1568,18 +1605,19 @@
   }
 
   .map-stage__readout {
-    left: 276px;
-    bottom: 188px;
-    max-width: min(380px, calc(100% - 632px));
+    left: 264px;
+    bottom: 176px;
+    max-width: min(330px, calc(100% - 590px));
+    padding: 8px 12px 8px 10px;
   }
 
   .event-feed {
     position: absolute;
-    right: 336px;
+    right: 310px;
     bottom: 8px;
-    left: 276px;
+    left: 264px;
     z-index: 10;
-    height: 164px;
+    height: 150px;
   }
 
   .event-feed__header {
@@ -1587,12 +1625,44 @@
   }
 
   .event-feed__header h2 {
-    font-size: 0.92rem;
+    font-size: 0.84rem;
   }
 
   .event-feed__row {
-    grid-template-columns: 56px 96px minmax(180px, 1.5fr) minmax(104px, 0.8fr) minmax(140px, 1fr) 76px;
-    padding: 8px 12px;
+    grid-template-columns: 52px 82px minmax(170px, 1.5fr) minmax(92px, 0.8fr) minmax(122px, 1fr) 64px;
+    gap: 8px;
+    padding: 7px 10px;
+  }
+
+  .mission-summary {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .mission-summary__main h2 {
+    font-size: 0.96rem;
+  }
+
+  .mission-summary__kicker,
+  .mission-summary__main p:last-child,
+  .mission-summary__action strong,
+  .narration__plain {
+    font-size: 0.78rem;
+    line-height: 1.28;
+  }
+
+  .mission-summary__action strong {
+    margin-top: 5px;
+  }
+
+  .narration,
+  .approve-banner,
+  .panel {
+    padding: 10px;
+  }
+
+  .narration {
+    max-height: 250px;
   }
 
   .nav-crosshair {
