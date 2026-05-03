@@ -1,9 +1,11 @@
 import type { Attribution, Decision, UIEvent } from '../types/canopy'
+import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import { commanderEventSummary } from '../lib/commanderLanguage'
 
 type MissionSummaryProps = {
   attribution: Attribution | null
   decision: Decision | null
+  scenario: ScenarioDefinition
   uiEvent?: UIEvent | null
   signalCount: number
 }
@@ -11,6 +13,7 @@ type MissionSummaryProps = {
 export function MissionSummary({
   attribution,
   decision,
+  scenario,
   uiEvent = null,
   signalCount,
 }: MissionSummaryProps) {
@@ -29,10 +32,10 @@ export function MissionSummary({
     ? commanderBrief.headline
     : attribution
       ? `${attribution.actor} pattern under review`
-      : commanderBrief.headline
+      : scenario.name
   const summary = uiEvent
     ? commanderBrief.body
-    : attribution?.predicted_next ?? commanderBrief.body
+    : attribution?.predicted_next ?? scenario.objective
   const action = uiEvent
     ? commanderBrief.action
     : decision?.action ?? commanderBrief.action
@@ -50,7 +53,7 @@ export function MissionSummary({
       <div className="mission-summary__main">
         <p className="mission-summary__kicker">
           {signalCount.toString().padStart(2, '0')} reports fused / {confidence}{' '}
-          confidence / {commanderBrief.urgency}
+          confidence / {scenario.theater}
         </p>
         <h2>{headline}</h2>
         <p>{summary}</p>
