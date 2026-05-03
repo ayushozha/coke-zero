@@ -261,7 +261,8 @@ const MAP_FONT =
   '12px "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
 const MAP_PANEL = Color.fromCssColorString('#091112')
 const REAL_SATELLITE_COLOR = Color.fromCssColorString('#33f2f0')
-const DISPLAY_ALTITUDE_M = 720000
+const MIN_DISPLAY_ALTITUDE_M = 260000
+const MAX_DISPLAY_ALTITUDE_M = 920000
 const ORBIT_SAMPLE_COUNT = 240
 
 type N2YOTrackPoint = {
@@ -288,6 +289,7 @@ export type N2YOPositionCache = {
 
 export type N2YOLayerState = {
   cache: N2YOPositionCache
+  displayAltitudeM: number
   entityIds: string[]
   point: N2YOTrackPoint
   satelliteFamily: N2YOSatelliteFamily
@@ -316,6 +318,24 @@ const latestTrackPoint = (cache: N2YOPositionCache) =>
   cache.track.reduce((latest, point) =>
     point.timestamp > latest.timestamp ? point : latest,
   )
+
+export const latestN2YOAltitudeKm = (cache: N2YOPositionCache) =>
+  latestTrackPoint(cache).alt_km
+
+export function createN2YODisplayAltitudeScale(caches: N2YOPositionCache[]) {
+  const altitudesKm = caches.map(latestN2YOAltitudeKm)
+  const minAltitudeKm = Math.min(...altitudesKm)
+  const maxAltitudeKm = Math.max(...altitudesKm)
+  const altitudeRangeKm = Math.max(maxAltitudeKm - minAltitudeKm, 1)
+
+  return (altitudeKm: number) => {
+    const normalizedAltitude = (altitudeKm - minAltitudeKm) / altitudeRangeKm
+    return (
+      MIN_DISPLAY_ALTITUDE_M +
+      normalizedAltitude * (MAX_DISPLAY_ALTITUDE_M - MIN_DISPLAY_ALTITUDE_M)
+    )
+  }
+}
 
 const formatUtcTime = (timestampUtc: string) =>
   new Intl.DateTimeFormat('en-US', {
@@ -353,7 +373,10 @@ const normalize = (v: { x: number; y: number; z: number }) => {
   }
 }
 
-const createSampledMotionOrbitPositions = (track: N2YOTrackPoint[]) => {
+const createSampledMotionOrbitPositions = (
+  track: N2YOTrackPoint[],
+  displayAltitudeM: number,
+) => {
   const selectedPoint = latestTrackPoint({
     fetched_at: '',
     satellite: { id: 0, name: '' },
@@ -396,7 +419,7 @@ const createSampledMotionOrbitPositions = (track: N2YOTrackPoint[]) => {
       Cartesian3.fromRadians(
         Math.atan2(sample.y, sample.x),
         Math.asin(sample.z),
-        DISPLAY_ALTITUDE_M,
+        displayAltitudeM,
       ),
     )
   }
@@ -430,11 +453,12 @@ export function addN2YOSatellite(
   viewer: Viewer,
   cache: N2YOPositionCache,
   config: N2YOSatelliteConfig,
+  displayAltitudeM: number,
 ): N2YOLayerState {
   const point = latestTrackPoint(cache)
   const satelliteId = cache.satellite.id
   const satelliteName = config.label || cache.satellite.name || `NORAD ${satelliteId}`
-  const position = Cartesian3.fromDegrees(point.lng, point.lat, DISPLAY_ALTITUDE_M)
+  const position = Cartesian3.fromDegrees(point.lng, point.lat, displayAltitudeM)
   const footprintPosition = Cartesian3.fromDegrees(point.lng, point.lat, 0)
   const entityIds = [
     `n2yo-${satelliteId}-satellite`,
@@ -467,7 +491,7 @@ export function addN2YOSatellite(
       style: LabelStyle.FILL,
       text: `REAL N2YO\n${satelliteName}\nNORAD ${cache.satellite.id}\nTRUE ALT ${Math.round(point.alt_km).toLocaleString()} km\n${formatUtcTime(point.timestamp_utc)}`,
     },
-    description: `N2YO live position for NORAD ${cache.satellite.id}. True altitude ${point.alt_km.toFixed(2)} km; displayed at ${(DISPLAY_ALTITUDE_M / 1000).toFixed(0)} km for scene readability.`,
+    description: `N2YO live position for NORAD ${cache.satellite.id}. True altitude ${point.alt_km.toFixed(2)} km; displayed at ${(displayAltitudeM / 1000).toFixed(0)} km for scene readability.`,
   })
 
   viewer.entities.add({
@@ -485,6 +509,7 @@ export function addN2YOSatellite(
 
   return {
     cache,
+    displayAltitudeM,
     entityIds,
     point,
     satelliteFamily: config.family,
@@ -540,7 +565,10 @@ export function showN2YOOrbit(viewer: Viewer, layer: N2YOLayerState) {
 
   const orbitId = orbitEntityIdForSatellite(layer.satelliteId)
   viewer.entities.removeById(orbitId)
-  const positions = createSampledMotionOrbitPositions(layer.cache.track)
+  const positions = createSampledMotionOrbitPositions(
+    layer.cache.track,
+    layer.displayAltitudeM,
+  )
   if (positions.length <= 1) {
     return
   }

@@ -23,9 +23,11 @@ import 'cesium/Build/Cesium/Widgets/widgets.css'
 import {
   addN2YOSatellite,
   clearN2YOSatelliteLayers,
+  createN2YODisplayAltitudeScale,
   deselectN2YOSatellite,
   fetchN2YOPositionCache,
   isN2YOGeostationaryFamily,
+  latestN2YOAltitudeKm,
   N2YO_SATELLITES,
   selectN2YOSatellite,
   setN2YOSatelliteLayerVisible,
@@ -848,9 +850,17 @@ export function CesiumGlobe({
         if (selectedN2yoLayerRef.current) {
           deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
         }
+        const displayAltitudeFor = createN2YODisplayAltitudeScale(
+          payloads.map(({ cache }) => cache),
+        )
         clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
         n2yoLayersRef.current = payloads.map(({ cache, satellite }) =>
-          addN2YOSatellite(viewer, cache, satellite),
+          addN2YOSatellite(
+            viewer,
+            cache,
+            satellite,
+            displayAltitudeFor(latestN2YOAltitudeKm(cache)),
+          ),
         )
         selectedN2yoLayerRef.current = null
         setSelectedSatellite(null)
