@@ -1,4 +1,4 @@
-import { useEventStore } from '../store/eventStore'
+import { useEventStore, type ManeuverDemo } from '../store/eventStore'
 
 const ACTION_LABELS: Record<string, string> = {
   active_defense_escort: 'Active defense escort',
@@ -9,6 +9,23 @@ const ACTION_LABELS: Record<string, string> = {
   sda_tasking: 'SDA tasking',
   threat_warning: 'Threat warning',
   passive_defense: 'Passive defense',
+}
+
+// Map engine action → which Cesium animation runs on Accept. Evasion is
+// the default since it's the broadest visualisation (shared-orbit threat
+// + plane change) and reads correctly even for actions without a more
+// specific story (threat_warning, passive_defense, sda_tasking).
+const actionToDemoType = (action: string): ManeuverDemo['demoType'] => {
+  if (
+    action === 'orbital_strike_request' ||
+    action === 'active_defense_counterattack'
+  ) {
+    return 'strike'
+  }
+  if (action === 'space_link_interdiction_request') {
+    return 'interdiction'
+  }
+  return 'evasion'
 }
 
 const formatAction = (action: string) =>
@@ -33,6 +50,7 @@ export function OperatorActionPanel() {
   const acceptDecision = useEventStore((s) => s.acceptDecision)
   const deferDecision = useEventStore((s) => s.deferDecision)
   const clearDecisionStatus = useEventStore((s) => s.clearDecisionStatus)
+  const startManeuverDemo = useEventStore((s) => s.startManeuverDemo)
 
   // Render nothing until the engine produces a decision. The empty
   // space stays empty rather than carrying placeholder chrome — the
@@ -76,7 +94,33 @@ export function OperatorActionPanel() {
           <button
             type="button"
             className="operator-action__btn operator-action__btn--accept"
-            onClick={() => acceptDecision(decision.id)}
+            onClick={() => {
+              acceptDecision(decision.id)
+              const packet = (decision.request_packet ?? {}) as Record<
+                string,
+                unknown
+              >
+              const burn = (packet.recommended_burn ?? {}) as Record<
+                string,
+                unknown
+              >
+              const preMissKm = Number(packet.pre_miss_km ?? 0)
+              const postMissKm = Number(packet.post_miss_km ?? preMissKm + 80)
+              const dvMs = Number(burn.dv_m_s ?? 1.5)
+              startManeuverDemo({
+                decisionId: decision.id,
+                startedAt: Date.now(),
+                durationMs: 15000,
+                preMissKm,
+                postMissKm,
+                dvMs,
+                friendlyLabel:
+                  typeof burn.sat === 'string' ? burn.sat : undefined,
+                hostileLabel:
+                  typeof burn.against === 'string' ? burn.against : undefined,
+                demoType: actionToDemoType(decision.action),
+              })
+            }}
           >
             Accept
           </button>

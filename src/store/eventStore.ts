@@ -16,6 +16,35 @@ import type {
 const RING_BUFFER = 200;
 const TRACE_BUFFER = 500;
 
+export type ManeuverDemo = {
+  /** Decision that triggered this animation. */
+  decisionId: string;
+  /** Wall-clock ms when the animation started (Date.now()). */
+  startedAt: number;
+  /** Total animation duration in ms — Cesium uses this to schedule the
+   *  end of the visualization. */
+  durationMs: number;
+  /** Pre-burn miss distance (km) pulled from the engine's request packet. */
+  preMissKm: number;
+  /** Post-burn miss distance (km) — what the operator's accept achieves. */
+  postMissKm: number;
+  /** Δv applied (m/s). Drives the apparent magnitude of the burn vector. */
+  dvMs: number;
+  /** Friendly satellite name (matches an entry in the n2yo catalog). */
+  friendlyLabel?: string;
+  /** Hostile satellite name (matches an entry in the n2yo catalog). */
+  hostileLabel?: string;
+  /** Which Cesium animation runs.
+   *  - `evasion`: friendly executes a plane-change burn off a shared orbit
+   *    (active_defense_escort, active_defense_counterattack, default)
+   *  - `strike`: friendly fires a kinetic kill vehicle on a Bezier arc
+   *    that intercepts the hostile (orbital_strike_request, also fits
+   *    active_defense_counterattack on offensive scenarios)
+   *  - `interdiction`: friendly emits a jamming beam that breaks the
+   *    hostile's link (space_link_interdiction_request, sda_tasking) */
+  demoType?: 'evasion' | 'strike' | 'interdiction';
+};
+
 function pushBounded<T>(buffer: T[], item: T): T[] {
   const next = [item, ...buffer];
   if (next.length > RING_BUFFER) next.length = RING_BUFFER;
@@ -58,6 +87,10 @@ interface EventState {
   acceptedDecisionIds: Set<string>;
   /** Decision ids the operator denied in the left-rail action panel. */
   deferredDecisionIds: Set<string>;
+  /** Live maneuver-demo overlay state. When set, the Cesium globe runs
+   *  the accept-action visualization (hostile approach → friendly burn
+   *  → miss). Cleared automatically when the animation finishes. */
+  maneuverDemo: ManeuverDemo | null;
   takeoverEvent: UIEvent | null;
 
   // Knowledge base resolved by id (loaded once via GET /kb).
@@ -80,6 +113,8 @@ interface EventState {
   acceptDecision: (id: string) => void;
   deferDecision: (id: string) => void;
   clearDecisionStatus: (id: string) => void;
+  startManeuverDemo: (demo: ManeuverDemo) => void;
+  endManeuverDemo: () => void;
   openTakeover: (event: UIEvent) => void;
   closeTakeover: () => void;
   setKB: (entries: KBEntry[]) => void;
@@ -103,6 +138,8 @@ const initialState = (): Omit<
   | "acceptDecision"
   | "deferDecision"
   | "clearDecisionStatus"
+  | "startManeuverDemo"
+  | "endManeuverDemo"
   | "openTakeover"
   | "closeTakeover"
   | "setKB"
@@ -125,6 +162,7 @@ const initialState = (): Omit<
   approvedEventIds: new Set(),
   acceptedDecisionIds: new Set(),
   deferredDecisionIds: new Set(),
+  maneuverDemo: null,
   takeoverEvent: null,
   kb: {},
 });
@@ -223,6 +261,8 @@ export const useEventStore = create<EventState>()(
       deferredDecisionIds.delete(id);
       return { acceptedDecisionIds, deferredDecisionIds };
     }),
+  startManeuverDemo: (demo) => set({ maneuverDemo: demo }),
+  endManeuverDemo: () => set({ maneuverDemo: null }),
   openTakeover: (event) => set({ takeoverEvent: event }),
   closeTakeover: () => set({ takeoverEvent: null }),
       setKB: (entries) =>
