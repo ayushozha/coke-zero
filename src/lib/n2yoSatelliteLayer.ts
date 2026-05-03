@@ -1,4 +1,5 @@
 import {
+  ArcType,
   Cartesian2,
   Cartesian3,
   Color,
@@ -260,9 +261,28 @@ export const N2YO_SATELLITES: N2YOSatelliteConfig[] = [
 const MAP_FONT =
   '12px "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
 const MAP_PANEL = Color.fromCssColorString('#091112')
-const REAL_SATELLITE_COLOR = Color.fromCssColorString('#33f2f0')
-const MIN_DISPLAY_ALTITUDE_M = 260000
-const MAX_DISPLAY_ALTITUDE_M = 920000
+// Per-family palette. Each satellite family gets a distinct hue so the
+// operator can read the orbit cluster at a glance — billboard glyph,
+// footprint ring, and orbit polyline all share the family's color.
+const FAMILY_COLOR_HEX: Record<N2YOSatelliteFamily, string> = {
+  AEHF: '#e05c4f',   // red — protected military comms
+  MUOS: '#8b87c7',   // violet — mobile UHF
+  WGS: '#33f2f0',    // cyan — wideband backbone
+  SBIRS: '#c9a457',  // amber — missile warning
+  GSSAP: '#a7b96f',  // olive — space surveillance
+  'GPS-3': '#77b884', // green — PNT / blue-force timing
+}
+
+const familyColor = (family: N2YOSatelliteFamily) =>
+  Color.fromCssColorString(FAMILY_COLOR_HEX[family])
+// Display-altitude scale. True orbital altitudes span ~400 km (ISS-class
+// LEO) to ~36,000 km (GEO) — a 90× ratio that won't fit on one camera
+// frame. We compress the range linearly into the values below so the
+// scene reads correctly without losing the LEO-vs-MEO-vs-GEO separation.
+// Earlier values (260 km / 920 km) put even GEO satellites visually
+// flush against the limb, so the orbit ring looked surface-clamped.
+const MIN_DISPLAY_ALTITUDE_M = 800000
+const MAX_DISPLAY_ALTITUDE_M = 6000000
 const ORBIT_SAMPLE_COUNT = 240
 
 type N2YOTrackPoint = {
@@ -300,16 +320,16 @@ export type N2YOLayerState = {
 export const orbitEntityIdForSatellite = (satelliteId: number) =>
   `n2yo-${satelliteId}-orbit`
 
-const realSatelliteMarker = () =>
+const realSatelliteMarker = (colorHex: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+    `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52">
       <filter id="g" x="-70%" y="-70%" width="240%" height="240%">
-        <feDropShadow dx="0" dy="1" stdDeviation="1.8" flood-color="#000000" flood-opacity="0.78"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="2.8" flood-color="#33f2f0" flood-opacity="0.42"/>
+        <feDropShadow dx="0" dy="1" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.78"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="3.6" flood-color="${colorHex}" flood-opacity="0.5"/>
       </filter>
-      <g fill="rgba(2,4,4,0.78)" stroke="#33f2f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
-        <path d="M19 4l15 29H4z"/>
-        <path d="M19 12v10M19 27v1"/>
+      <g fill="rgba(2,4,4,0.78)" stroke="${colorHex}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
+        <path d="M26 6l20 39H6z"/>
+        <path d="M26 17v13M26 37v1"/>
       </g>
     </svg>`,
   )}`
@@ -464,6 +484,8 @@ export function addN2YOSatellite(
     `n2yo-${satelliteId}-satellite`,
     `n2yo-${satelliteId}-footprint`,
   ]
+  const familyHex = FAMILY_COLOR_HEX[config.family]
+  const familyColorObj = familyColor(config.family)
 
   clearN2YOSatelliteLayer(viewer, { entityIds })
 
@@ -474,10 +496,10 @@ export function addN2YOSatellite(
     billboard: {
       color: Color.WHITE,
       disableDepthTestDistance: 0,
-      height: 34,
-      image: realSatelliteMarker(),
-      scaleByDistance: new NearFarScalar(1500000, 1, 25000000, 0.42),
-      width: 34,
+      height: 48,
+      image: realSatelliteMarker(familyHex),
+      scaleByDistance: new NearFarScalar(1500000, 1, 25000000, 0.5),
+      width: 48,
     },
     label: {
       backgroundColor: MAP_PANEL.withAlpha(0.9),
@@ -501,9 +523,9 @@ export function addN2YOSatellite(
     ellipse: {
       semiMajorAxis: 160000,
       semiMinorAxis: 160000,
-      material: REAL_SATELLITE_COLOR.withAlpha(0.04),
+      material: familyColorObj.withAlpha(0.05),
       outline: true,
-      outlineColor: REAL_SATELLITE_COLOR.withAlpha(0.45),
+      outlineColor: familyColorObj.withAlpha(0.55),
     },
   })
 
@@ -558,11 +580,14 @@ export function deselectN2YOSatellite(viewer: Viewer, layer: N2YOLayerState) {
 }
 
 export function showN2YOOrbit(viewer: Viewer, layer: N2YOLayerState) {
-  if (isN2YOGeostationaryFamily(layer.satelliteFamily)) {
-    hideN2YOOrbit(viewer, layer)
-    return
-  }
-
+  // Earlier versions skipped orbit rings for the geostationary families
+  // (AEHF/MUOS/WGS/SBIRS/GSSAP) on the theory that a true GEO satellite
+  // doesn't trace a meaningful path. In our compressed display-altitude
+  // scene that left the demo with LEO orbit rings hugging the limb and
+  // GEO satellites floating far out with no rings — exactly the visual
+  // mismatch we hit in testing. Drawing the equatorial ring at the GEO
+  // satellite's display altitude gives the operator a clear "where this
+  // satellite lives" cue so the satellites and rings line up.
   const orbitId = orbitEntityIdForSatellite(layer.satelliteId)
   viewer.entities.removeById(orbitId)
   const positions = createSampledMotionOrbitPositions(
@@ -577,9 +602,14 @@ export function showN2YOOrbit(viewer: Viewer, layer: N2YOLayerState) {
     id: orbitId,
     name: `${layer.satelliteName} orbital path`,
     polyline: {
+      // ArcType.NONE = straight 3D line segments between Cartesian3 points.
+      // Default GEODESIC interpolates along the surface ellipsoid, which
+      // collapses altitude-bearing points down to ground level even when
+      // clampToGround is false.
+      arcType: ArcType.NONE,
       clampToGround: false,
       material: new PolylineDashMaterialProperty({
-        color: Color.fromCssColorString('#c9a457').withAlpha(0.86),
+        color: familyColor(layer.satelliteFamily).withAlpha(0.86),
         dashLength: 18,
       }),
       positions,

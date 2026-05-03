@@ -23,10 +23,8 @@ import 'cesium/Build/Cesium/Widgets/widgets.css'
 import {
   addN2YOSatellite,
   clearN2YOSatelliteLayers,
-  createN2YODisplayAltitudeScale,
   deselectN2YOSatellite,
   fetchN2YOPositionCache,
-  isN2YOGeostationaryFamily,
   latestN2YOAltitudeKm,
   N2YO_SATELLITES,
   selectN2YOSatellite,
@@ -778,12 +776,16 @@ export function CesiumGlobe({
       (layer) => familyFilter === 'all' || layer.satelliteFamily === familyFilter,
     )
 
+  // Originally this filtered out GEO families on the theory that a
+  // truly stationary satellite has no meaningful orbit to draw. With
+  // the half-scale altitude visualisation we want the operator to see
+  // every satellite's altitude band as a ring, including GEO — the
+  // ring becomes an equatorial circle which is exactly the right
+  // mental model for "this satellite lives at this altitude on the
+  // equator." Pass everything through.
   const visibleOrbitCapableLayers = (
     familyFilter = satelliteFamilyFilterRef.current,
-  ) =>
-    visibleN2yoLayers(familyFilter).filter(
-      (layer) => !isN2YOGeostationaryFamily(layer.satelliteFamily),
-    )
+  ) => visibleN2yoLayers(familyFilter)
 
   const applySatelliteFamilyFilter = (familyFilter: SatelliteFamilyFilter) => {
     const viewer = viewerRef.current
@@ -848,18 +850,29 @@ export function CesiumGlobe({
         if (selectedN2yoLayerRef.current) {
           deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
         }
-        const displayAltitudeFor = createN2YODisplayAltitudeScale(
-          payloads.map(({ cache }) => cache),
-        )
+        // Display each satellite at half its true altitude. We're after
+        // *relative* spacing (LEO < MEO < GEO is what the operator
+        // reads) — true scale puts GEO at 36,000 km which dominates the
+        // frame. Half-scale keeps the band ordering intact while
+        // pulling the rings in tight enough for a readable demo. The
+        // multiplier is the only knob: 1.0 = true altitude, 0.5 = half
+        // altitude, etc.
+        const ALTITUDE_SCALE = 0.5
         clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
         n2yoLayersRef.current = payloads.map(({ cache, satellite }) =>
           addN2YOSatellite(
             viewer,
             cache,
             satellite,
-            displayAltitudeFor(latestN2YOAltitudeKm(cache)),
+            latestN2YOAltitudeKm(cache) * 1000 * ALTITUDE_SCALE,
           ),
         )
+        // Camera distance scales with the altitude scale. At 1.0 we'd
+        // need ~85 Mm to fit GEO; at 0.5 ~45 Mm is enough.
+        viewer.camera.flyTo({
+          destination: Cartesian3.fromDegrees(0, 0, 45_000_000),
+          duration: 0.8,
+        })
         selectedN2yoLayerRef.current = null
         setSelectedSatellite(null)
         satelliteFamilyFilterRef.current = 'all'
@@ -957,7 +970,7 @@ export function CesiumGlobe({
             type="button"
           >
             <span className="orbit-toggle__box" aria-hidden="true" />
-            <span>Orbitals</span>
+            <span>Orbits</span>
           </button>
         </>
       ) : null}
