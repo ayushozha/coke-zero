@@ -29,6 +29,7 @@ const MAP_PANEL = Color.fromCssColorString('#091112')
 
 type CesiumGlobeProps = {
   correlatedSignalIds?: string[]
+  displayMode?: 'nav' | 'globe'
   focusSignalId?: string | null
   signals?: Signal[]
 }
@@ -354,6 +355,7 @@ const createVehicleCzml = () => {
 
 export function CesiumGlobe({
   correlatedSignalIds = [],
+  displayMode = 'nav',
   focusSignalId = null,
   signals = [],
 }: CesiumGlobeProps) {
@@ -388,7 +390,6 @@ export function CesiumGlobe({
       sceneModePicker: false,
       selectionIndicator: false,
       shouldAnimate: true,
-      skyAtmosphere: false,
       skyBox: false,
       timeline: false,
       useBrowserRecommendedResolution: false,
@@ -399,9 +400,9 @@ export function CesiumGlobe({
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
     viewer.scene.backgroundColor = Color.fromCssColorString('#07100f')
     viewer.scene.globe.baseColor = Color.fromCssColorString('#0c1514')
-    viewer.scene.globe.enableLighting = false
+    viewer.scene.globe.enableLighting = true
     viewer.scene.globe.maximumScreenSpaceError = 1
-    viewer.scene.globe.showGroundAtmosphere = false
+    viewer.scene.globe.showGroundAtmosphere = true
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 42000000
 
@@ -832,6 +833,15 @@ export function CesiumGlobe({
       })
     })
   }
+
+  useEffect(() => {
+    if (displayMode === 'globe') {
+      loadSatellites()
+      return
+    }
+
+    loadVehicle()
+  }, [displayMode])
 
   return (
     <>
