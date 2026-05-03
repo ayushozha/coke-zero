@@ -24,6 +24,7 @@ import 'cesium/Build/Cesium/Widgets/widgets.css'
 import {
   addN2YOSatellite,
   clearN2YOSatelliteLayers,
+  currentN2YODisplayPoint,
   deselectN2YOSatellite,
   fetchN2YOPositionCache,
   FAMILY_COLOR_HEX,
@@ -35,6 +36,7 @@ import {
   setN2YOSatelliteLayerVisible,
   setN2YOOrbitsVisible,
   type N2YOLayerState,
+  type N2YODisplayPoint,
   type N2YOSatelliteFamily,
 } from '../lib/n2yoSatelliteLayer'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
@@ -377,6 +379,8 @@ export function CesiumGlobe({
   const [satelliteFamilySelection, setSatelliteFamilySelection] =
     useState<SatelliteFamilySelection>('all')
   const [selectedSatellite, setSelectedSatellite] = useState<N2YOLayerState | null>(null)
+  const [selectedSatellitePoint, setSelectedSatellitePoint] =
+    useState<N2YODisplayPoint | null>(null)
   const [showAllOrbits, setShowAllOrbits] = useState(false)
   const showAllOrbitsRef = useRef(false)
   const satelliteFamilySelectionRef = useRef<SatelliteFamilySelection>('all')
@@ -388,6 +392,21 @@ export function CesiumGlobe({
   useEffect(() => {
     satelliteFamilySelectionRef.current = satelliteFamilySelection
   }, [satelliteFamilySelection])
+
+  useEffect(() => {
+    if (!selectedSatellite) {
+      setSelectedSatellitePoint(null)
+      return
+    }
+
+    const updateSelectedSatellitePoint = () => {
+      setSelectedSatellitePoint(currentN2YODisplayPoint(selectedSatellite))
+    }
+
+    updateSelectedSatellitePoint()
+    const interval = window.setInterval(updateSelectedSatellitePoint, 500)
+    return () => window.clearInterval(interval)
+  }, [selectedSatellite])
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -1103,14 +1122,17 @@ export function CesiumGlobe({
             <div>
               <dt>Lat / Lon</dt>
               <dd>
-                {selectedSatellite.point.lat.toFixed(2)} /{' '}
-                {selectedSatellite.point.lng.toFixed(2)}
+                {(selectedSatellitePoint?.lat ?? selectedSatellite.point.lat).toFixed(2)} /{' '}
+                {(selectedSatellitePoint?.lng ?? selectedSatellite.point.lng).toFixed(2)}
               </dd>
             </div>
             <div>
               <dt>Fix</dt>
               <dd>
-                {new Date(selectedSatellite.point.timestamp_utc).toLocaleTimeString([], {
+                {new Date(
+                  selectedSatellitePoint?.timestampUtc ??
+                    selectedSatellite.point.timestamp_utc,
+                ).toLocaleTimeString([], {
                   hour12: false,
                   hour: '2-digit',
                   minute: '2-digit',
