@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { AorMap } from './AorMap'
 import { CesiumGlobe } from './CesiumGlobe'
+import { MissionAlert } from './MissionAlert'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { signalEffectState } from '../lib/signalEffects'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
@@ -22,10 +24,18 @@ export function MapStage({
 }: MapStageProps) {
   const [viewMode, setViewMode] = useState<'nav' | 'globe'>('nav')
   const isGlobe = viewMode === 'globe'
+  const latestSignal = signals[0] ?? null
+  const effectState = signalEffectState(latestSignal)
 
   return (
     <section
-      className={isGlobe ? 'map-stage map-stage--globe' : 'map-stage'}
+      className={[
+        'map-stage',
+        isGlobe ? 'map-stage--globe' : '',
+        `map-stage--${effectState}`,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-label="Operational map"
     >
       {isGlobe ? (
@@ -44,6 +54,7 @@ export function MapStage({
           signals={signals}
         />
       )}
+      <MissionAlert playback={playback} signal={latestSignal} />
       <div
         className={
           isGlobe

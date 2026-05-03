@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { signalEffectState } from '../lib/signalEffects'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
@@ -560,6 +561,8 @@ export function AorMap({
       marker.className = [
         'aor-signal',
         `aor-signal--${priority}`,
+        `aor-signal--effect-${signalEffectState(signal)}`,
+        `aor-signal--domain-${signal.domain}`,
         signal.id === newestSignalId ? 'aor-signal--newest' : '',
         signal.id === focusSignalId ? 'aor-signal--focus' : '',
         correlatedSignalIds.includes(signal.id) ? 'aor-signal--correlated' : '',

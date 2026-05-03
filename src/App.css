@@ -729,6 +729,128 @@
   pointer-events: none;
 }
 
+.map-stage--watch::after {
+  border-color: rgba(201, 164, 87, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(201, 164, 87, 0.08);
+}
+
+.map-stage--danger::after {
+  border-color: rgba(224, 92, 79, 0.48);
+  box-shadow:
+    inset 0 0 0 1px rgba(224, 92, 79, 0.14),
+    inset 0 0 34px rgba(224, 92, 79, 0.08);
+  animation: mission-red-flash 1100ms ease-out both;
+}
+
+.mission-alert {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  width: min(620px, calc(100% - 720px));
+  min-width: 320px;
+  border: 1px solid rgba(201, 164, 87, 0.42);
+  border-left: 4px solid var(--amber);
+  background:
+    linear-gradient(90deg, rgba(201, 164, 87, 0.16), transparent 72%),
+    rgba(5, 9, 9, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 247, 240, 0.06),
+    0 16px 36px rgba(0, 0, 0, 0.26);
+  padding: 8px 12px;
+  transform: translateX(-50%);
+  backdrop-filter: blur(9px);
+  pointer-events: none;
+}
+
+.mission-alert::after {
+  position: absolute;
+  right: 10px;
+  bottom: 4px;
+  left: 10px;
+  height: 1px;
+  background:
+    linear-gradient(90deg, transparent, currentColor, transparent);
+  color: rgba(201, 164, 87, 0.5);
+  content: '';
+  opacity: 0.7;
+  animation: mission-telemetry-sweep 1000ms linear infinite;
+}
+
+.mission-alert--danger {
+  border-color: rgba(224, 92, 79, 0.54);
+  border-left-color: var(--red);
+  background:
+    linear-gradient(90deg, rgba(224, 92, 79, 0.22), transparent 72%),
+    rgba(13, 5, 5, 0.88);
+  animation: mission-alert-hit 900ms ease-out both;
+}
+
+.mission-alert span {
+  display: block;
+  color: var(--amber);
+  font-size: 0.58rem;
+  font-weight: 820;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.mission-alert--danger span {
+  color: #ff9d92;
+}
+
+.mission-alert strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-alert p {
+  max-width: 190px;
+  margin: 0;
+  overflow: hidden;
+  color: rgba(220, 227, 213, 0.72);
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-alert__telemetry {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: rgba(220, 227, 213, 0.7);
+  font-size: 0.58rem;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.mission-alert__telemetry b,
+.mission-alert__telemetry i {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(220, 227, 213, 0.14);
+  background: rgba(2, 4, 4, 0.42);
+  color: inherit;
+  font-style: normal;
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+
 .tak-map-chrome,
 .tak-map-strip,
 .map-view-toggle,
@@ -1445,6 +1567,7 @@
     0 0 0 1px rgba(0, 0, 0, 0.72),
     0 0 14px rgba(51, 242, 240, 0.22);
   transform: rotate(45deg);
+  animation: contact-live 1100ms ease-in-out infinite alternate;
 }
 
 .aor-signal__glyph::before,
@@ -1506,6 +1629,53 @@
   color: var(--red);
 }
 
+.aor-signal--effect-watch .aor-signal__glyph {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 0 0 5px rgba(201, 164, 87, 0.1),
+    0 0 18px rgba(201, 164, 87, 0.34);
+}
+
+.aor-signal--effect-danger .aor-signal__glyph {
+  border-width: 2px;
+  background: rgba(34, 7, 6, 0.78);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.82),
+    0 0 0 7px rgba(224, 92, 79, 0.13),
+    0 0 24px rgba(224, 92, 79, 0.52);
+  animation:
+    contact-live 700ms ease-in-out infinite alternate,
+    contact-danger-ring 1200ms ease-out infinite;
+}
+
+.aor-signal--domain-orbit .aor-signal__glyph,
+.aor-signal--domain-sda .aor-signal__glyph {
+  border-radius: 50%;
+}
+
+.aor-signal--domain-orbit .aor-signal__glyph::before,
+.aor-signal--domain-sda .aor-signal__glyph::before {
+  inset: -8px;
+  height: auto;
+  border: 1px dashed currentColor;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0.58;
+  transform: none;
+  animation: satellite-orbit-ring 2400ms linear infinite;
+}
+
+.aor-signal--domain-orbit .aor-signal__glyph::after,
+.aor-signal--domain-sda .aor-signal__glyph::after {
+  display: none;
+}
+
+.aor-signal--domain-rf_ew .aor-signal__glyph::before,
+.aor-signal--domain-pnt .aor-signal__glyph::before {
+  left: -13px;
+  right: -13px;
+}
+
 .aor-map--wide .aor-signal {
   width: 22px;
   height: 22px;
@@ -1555,6 +1725,7 @@
     0 0 0 5px rgba(201, 164, 87, 0.1),
     0 0 18px rgba(201, 164, 87, 0.26);
   transform: rotate(45deg);
+  animation: mission-track-live 1000ms ease-in-out infinite alternate;
 }
 
 .aor-sim-cursor__glyph::before,
@@ -2179,6 +2350,101 @@
   }
 }
 
+@keyframes mission-red-flash {
+  0%,
+  18% {
+    background: rgba(224, 92, 79, 0.18);
+    opacity: 1;
+  }
+
+  100% {
+    background: transparent;
+    opacity: 1;
+  }
+}
+
+@keyframes mission-alert-hit {
+  0% {
+    box-shadow:
+      inset 0 1px 0 rgba(245, 247, 240, 0.08),
+      0 0 0 0 rgba(224, 92, 79, 0.4),
+      0 16px 36px rgba(0, 0, 0, 0.26);
+  }
+
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(245, 247, 240, 0.06),
+      0 0 0 12px rgba(224, 92, 79, 0),
+      0 16px 36px rgba(0, 0, 0, 0.26);
+  }
+}
+
+@keyframes mission-telemetry-sweep {
+  from {
+    transform: translateX(-34%);
+  }
+
+  to {
+    transform: translateX(34%);
+  }
+}
+
+@keyframes mission-track-live {
+  from {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.76),
+      0 0 0 4px rgba(201, 164, 87, 0.08),
+      0 0 14px rgba(201, 164, 87, 0.22);
+    transform: rotate(45deg) scale(0.96);
+  }
+
+  to {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.76),
+      0 0 0 8px rgba(201, 164, 87, 0.16),
+      0 0 24px rgba(201, 164, 87, 0.36);
+    transform: rotate(45deg) scale(1.04);
+  }
+}
+
+@keyframes contact-live {
+  from {
+    filter: brightness(0.92);
+    transform: rotate(45deg) scale(0.96);
+  }
+
+  to {
+    filter: brightness(1.18);
+    transform: rotate(45deg) scale(1.04);
+  }
+}
+
+@keyframes contact-danger-ring {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.82),
+      0 0 0 0 rgba(224, 92, 79, 0.28),
+      0 0 24px rgba(224, 92, 79, 0.52);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.82),
+      0 0 0 16px rgba(224, 92, 79, 0),
+      0 0 24px rgba(224, 92, 79, 0.42);
+  }
+}
+
+@keyframes satellite-orbit-ring {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes contact-step {
   0% {
     box-shadow:
@@ -2198,7 +2464,12 @@
 @media (prefers-reduced-motion: reduce) {
   .event-feed__update-cue,
   .event-feed__entry[data-newest='true'],
-  .aor-signal--newest .aor-signal__glyph {
+  .aor-signal--newest .aor-signal__glyph,
+  .aor-signal__glyph,
+  .aor-sim-cursor__glyph,
+  .mission-alert,
+  .mission-alert::after,
+  .map-stage--danger::after {
     animation: none;
   }
 }
@@ -2507,6 +2778,14 @@
     top: 12px;
     right: calc(var(--right-rail) + 8px);
     min-width: 176px;
+  }
+
+  .mission-alert {
+    top: 12px;
+    left: calc(var(--left-rail) + 18px);
+    width: min(520px, calc(100% - var(--left-rail) - var(--right-rail) - 230px));
+    min-width: 360px;
+    transform: none;
   }
 
   .cesium-scenario-controls {

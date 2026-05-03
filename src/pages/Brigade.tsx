@@ -11,8 +11,8 @@ import { useCanopySocket } from '../hooks/useCanopySocket'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
-const fieldDurationFloorMs = 4 * 60 * 60 * 1000
-const fieldDurationScale = 18
+const fieldDurationFloorMs = 12 * 60 * 1000
+const fieldDurationScale = 1
 const playbackTickMs = 1000
 const simulatedMsPerTick = 60 * 1000
 const playbackScaleLabel = '1 SEC = 1 SIM MIN'
