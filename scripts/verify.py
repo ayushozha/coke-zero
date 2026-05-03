@@ -54,8 +54,11 @@ RECOMMENDATION_SCENARIOS = {
 }
 
 
-def _build_llm(*, live: bool, kb: KB) -> LLMClient:
-    if live:
+LLM_PROVIDERS = ("stub", "anthropic", "ollama")
+
+
+def _build_llm(*, provider: str, kb: KB) -> LLMClient:
+    if provider == "anthropic":
         from halo.services.llm.anthropic_client import (
             DEFAULT_MODEL,
             AnthropicLLMClient,
@@ -63,9 +66,24 @@ def _build_llm(*, live: bool, kb: KB) -> LLMClient:
 
         model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
         return AnthropicLLMClient(kb, model=model)
+    if provider == "ollama":
+        from halo.services.llm.ollama_client import OllamaLLMClient
+
+        return OllamaLLMClient(kb)
     from halo.services.llm.stub import StubLLMClient
 
     return StubLLMClient(kb)
+
+
+def _resolve_provider(*, llm_flag: str | None, live_flag: bool) -> str:
+    if llm_flag:
+        return llm_flag
+    env_llm = os.environ.get("CANOPY_LLM")
+    if env_llm:
+        return env_llm.lower()
+    if live_flag or os.environ.get("CANOPY_LIVE"):
+        return "anthropic"
+    return "stub"
 
 
 def _should_require_recommendation(
@@ -86,14 +104,15 @@ def _should_require_recommendation(
 async def _verify(
     scenarios: list[Path],
     *,
-    live: bool = False,
+    provider: str = "stub",
     require_recommendation: bool = True,
     timeout_s: float | None = None,
     drain_s: float | None = None,
 ) -> int:
     bus = InProcessBus()
     kb = KB.load_from_json(ROOT / "data" / "kb_seed_entries.json")
-    llm = _build_llm(live=live, kb=kb)
+    llm = _build_llm(provider=provider, kb=kb)
+    is_external = provider != "stub"
 
     orbit = OrbitService()
 
@@ -135,10 +154,10 @@ async def _verify(
     ]
 
     overall_budget_s = timeout_s if timeout_s is not None else (
-        TIMEOUT_LIVE_S if live else TIMEOUT_STUB_S
+        TIMEOUT_LIVE_S if is_external else TIMEOUT_STUB_S
     )
     quiescent_drain_s = drain_s if drain_s is not None else (
-        DRAIN_LIVE_S if live else DRAIN_STUB_S
+        DRAIN_LIVE_S if is_external else DRAIN_STUB_S
     )
 
     try:
@@ -222,13 +241,21 @@ def main() -> int:
     )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--llm",
+        choices=LLM_PROVIDERS,
+        default=None,
+        help=(
+            "LLM provider: 'stub' (default, no network), 'anthropic' "
+            "(requires ANTHROPIC_API_KEY), or 'ollama' (requires "
+            "CANOPY_OLLAMA_URL). Falls back to CANOPY_LLM env var, "
+            "then to --live/CANOPY_LIVE, then to stub."
+        ),
+    )
+    parser.add_argument(
         "--live",
         action="store_true",
         default=bool(os.environ.get("CANOPY_LIVE")),
-        help=(
-            "Hit the real Anthropic API (requires ANTHROPIC_API_KEY). "
-            "Defaults to true when CANOPY_LIVE is set."
-        ),
+        help="Deprecated alias for --llm anthropic.",
     )
     parser.add_argument(
         "--require-recommendation",
@@ -262,13 +289,15 @@ def main() -> int:
         help="Scenario JSONL paths (default: all four canonical beats).",
     )
     args = parser.parse_args()
+    provider = _resolve_provider(llm_flag=args.llm, live_flag=args.live)
+    is_external = provider != "stub"
     scenarios = [Path(path) for path in args.scenarios] or DEFAULT_SCENARIOS
     return asyncio.run(
         _verify(
             scenarios,
-            live=args.live,
+            provider=provider,
             require_recommendation=_should_require_recommendation(
-                scenarios, args.require_recommendation, live=args.live
+                scenarios, args.require_recommendation, live=is_external
             ),
             timeout_s=args.timeout_s,
             drain_s=args.drain_s,
