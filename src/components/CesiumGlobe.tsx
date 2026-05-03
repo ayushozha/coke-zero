@@ -22,7 +22,7 @@ import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
 const MAP_FONT =
-  '12px Aptos, "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
+  '12px Geist, "Aptos Display", Aptos, "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
 const MAP_RED = Color.fromCssColorString('#d05f58')
 const MAP_AMBER = Color.fromCssColorString('#d8a63a')
 const MAP_PANEL = Color.fromCssColorString('#091112')
@@ -233,8 +233,9 @@ const createSatelliteCzml = () => {
         text: 'SAT-BRAVO',
         font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [23, 30, 38, 220] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
@@ -271,8 +272,9 @@ const createSatelliteCzml = () => {
         text: 'PNT-CUSTODY',
         font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [23, 30, 38, 220] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
@@ -331,8 +333,9 @@ const createVehicleCzml = () => {
         text: 'RELAY TEAM 2',
         font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [23, 30, 38, 220] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -26] },
       },
       path: {
@@ -553,6 +556,7 @@ export function CesiumGlobe({
           fillColor: Color.WHITE,
           font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -28),
+          show: false,
           showBackground: true,
           style: LabelStyle.FILL,
           text: `${contact.name}\n${formatMgrs(contact.lon, contact.lat)}`,
@@ -578,6 +582,7 @@ export function CesiumGlobe({
           fillColor: Color.WHITE,
           font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -22),
+          show: false,
           showBackground: true,
           style: LabelStyle.FILL,
           text: contact.name,
@@ -631,6 +636,16 @@ export function CesiumGlobe({
       )
     const focusSignalPoint =
       signalPoints.find((item) => item.signal.id === focusSignalId) ?? null
+    const labeledSignalIds = new Set<string>()
+    if (focusSignalId) {
+      labeledSignalIds.add(focusSignalId)
+    }
+    correlatedSignalIds.slice(0, signals.length > 16 ? 1 : 3).forEach((id) =>
+      labeledSignalIds.add(id),
+    )
+    signals.slice(0, signals.length > 16 ? 1 : 4).forEach((signal) => {
+      labeledSignalIds.add(signal.id)
+    })
 
     signals.forEach((signal) => {
       const entityId = `signal-${signal.id}`
@@ -639,6 +654,7 @@ export function CesiumGlobe({
       const polygon = signalPolygon(signal)
       const isFocus = signal.id === focusSignalId
       const isCorrelated = correlatedIds.has(signal.id)
+      const shouldLabel = labeledSignalIds.has(signal.id)
       const prefix = isFocus ? 'FOCUS ' : isCorrelated ? 'FUSED ' : ''
 
       if (point) {
@@ -660,9 +676,11 @@ export function CesiumGlobe({
             fillColor: Color.WHITE,
             font: MAP_FONT,
             pixelOffset: new Cartesian2(0, -28),
+            scaleByDistance: new NearFarScalar(800000, 1, 22000000, 0.62),
+            show: shouldLabel,
             showBackground: true,
             style: LabelStyle.FILL,
-            text: `${prefix}${point.label}\n${signal.domain.toUpperCase()} ${Math.round(
+            text: `${prefix}${signal.domain.toUpperCase()} ${Math.round(
               signal.confidence * 100,
             )}%`,
           },

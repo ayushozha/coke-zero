@@ -18,11 +18,12 @@
   --ambient-cyan: rgba(79, 181, 178, 0.18);
   --ambient-olive: rgba(145, 166, 92, 0.15);
   --ambient-violet: rgba(111, 101, 173, 0.12);
+  --font-sans:
+    Geist, "Aptos Display", Aptos, "IBM Plex Sans", "SF Pro Text",
+    "Helvetica Neue", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  font-family:
-    Aptos, "IBM Plex Sans", "SF Pro Text", "Helvetica Neue", ui-sans-serif,
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.45;
   color: var(--text-primary);
