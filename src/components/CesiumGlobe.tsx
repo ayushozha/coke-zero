@@ -798,6 +798,8 @@ export function CesiumGlobe({
         ),
         duration: 0.6,
       })
+    } else if (!focusSignalId) {
+      focusFlightSignalIdRef.current = null
     }
 
     viewer.scene.requestRender()

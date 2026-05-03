@@ -24,6 +24,11 @@ export type CanopyMissionState = {
   latestUiEvent: UIEvent | null
 }
 
+type MissionStateOptions = {
+  enableMapAutoFocus?: boolean
+  mapFocusMinConfidence?: number
+}
+
 const spaceDomains = new Set<Domain>(['orbit', 'sda'])
 const commsDomains = new Set<Domain>([
   'satcom',
@@ -101,14 +106,25 @@ const statusForSignals = (
 export function useCanopyMissionState(
   signals: Signal[],
   uiEvents: UIEvent[],
+  {
+    enableMapAutoFocus = true,
+    mapFocusMinConfidence = 0.86,
+  }: MissionStateOptions = {},
 ): CanopyMissionState {
   return useMemo(() => {
     const latestUiEvent = uiEvents[0] ?? null
     const correlatedSignalIds = new Set(latestUiEvent?.source_signal_ids ?? [])
     const latestSignal = signals[0] ?? null
+    const highPrioritySignals = signals.filter(
+      (signal) => signal.confidence >= mapFocusMinConfidence,
+    )
     const correlatedSignal =
-      signals.find((signal) => correlatedSignalIds.has(signal.id)) ?? null
-    const mapFocusSignal = correlatedSignal ?? latestSignal
+      highPrioritySignals.find((signal) => correlatedSignalIds.has(signal.id)) ??
+      null
+    const latestHighPrioritySignal = highPrioritySignals[0] ?? null
+    const mapFocusSignal = enableMapAutoFocus
+      ? correlatedSignal ?? latestHighPrioritySignal
+      : null
     const attributionState = stateFromUiEvent(latestUiEvent)
 
     return {
@@ -145,5 +161,5 @@ export function useCanopyMissionState(
       latestSignal,
       latestUiEvent,
     }
-  }, [signals, uiEvents])
+  }, [enableMapAutoFocus, mapFocusMinConfidence, signals, uiEvents])
 }
