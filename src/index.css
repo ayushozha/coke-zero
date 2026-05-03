@@ -1,10 +1,10 @@
 :root {
   --black: #07100f;
   --white: #f5f7f0;
-  --amber: #d8a63a;
-  --red: #d05f58;
+  --amber: #c9a457;
+  --red: #e05c4f;
   --green: #77b884;
-  --cyan: #63c7c0;
+  --cyan: #33f2f0;
   --olive: #a7b96f;
   --violet: #8b87c7;
   --panel: rgba(13, 23, 24, 0.9);
@@ -19,11 +19,11 @@
   --ambient-olive: rgba(145, 166, 92, 0.15);
   --ambient-violet: rgba(111, 101, 173, 0.12);
   --font-sans:
-    "IBM Plex Sans", Geist, "Aptos Display", Aptos, "SF Pro Text",
+    "IBM Plex Sans Condensed", "IBM Plex Sans", Geist, "Aptos Display", Aptos, "SF Pro Text",
     "Helvetica Neue", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display:
-    "IBM Plex Sans", "Aptos Display", Geist, "SF Pro Display", "Helvetica Neue",
+    "IBM Plex Sans Condensed", "IBM Plex Sans", "Aptos Display", Geist, "SF Pro Display", "Helvetica Neue",
     ui-sans-serif, system-ui, sans-serif;
 
   font-family: var(--font-sans);

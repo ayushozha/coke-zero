@@ -75,6 +75,21 @@ export function MapStage({
           </div>
         </div>
       ) : null}
+      {!isGlobe ? (
+        <>
+          <div className="nav-crosshair" aria-hidden="true" />
+          <div className="nav-inset" aria-hidden="true">
+            <span>LIVE FEED / UAV-09</span>
+            <strong>5D SECTOR OPS</strong>
+          </div>
+          <div className="nav-tools" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        </>
+      ) : null}
       <div className="tak-map-strip" aria-hidden="true">
         <span>{isGlobe ? 'TEME / ECEF custody overlay' : 'MGRS 38S MB 4287 7319'}</span>
         <span>{isGlobe ? 'TLE cache live' : 'Link live'}</span>
