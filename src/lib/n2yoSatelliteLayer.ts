@@ -324,12 +324,26 @@ const realSatelliteMarker = (colorHex: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52">
       <filter id="g" x="-70%" y="-70%" width="240%" height="240%">
-        <feDropShadow dx="0" dy="1" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.78"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="3.6" flood-color="${colorHex}" flood-opacity="0.5"/>
+        <feDropShadow dx="0" dy="1" stdDeviation="2.0" flood-color="#000000" flood-opacity="0.82"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="${colorHex}" flood-opacity="0.55"/>
       </filter>
-      <g fill="rgba(2,4,4,0.78)" stroke="${colorHex}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
-        <path d="M26 6l20 39H6z"/>
-        <path d="M26 17v13M26 37v1"/>
+      <!-- Stylised spacecraft side-profile: bus body (rectangle) flanked
+           by two solar-panel arrays, with a high-gain antenna rising
+           from the top. Cell dividers on the panels read as a satellite
+           rather than a generic chevron. -->
+      <g stroke="${colorHex}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)" fill="none">
+        <!-- left solar array -->
+        <rect x="3" y="22" width="14" height="8" />
+        <line x1="10" y1="22" x2="10" y2="30" />
+        <!-- right solar array -->
+        <rect x="35" y="22" width="14" height="8" />
+        <line x1="42" y1="22" x2="42" y2="30" />
+        <!-- bus / spacecraft body (filled so the wings read as separate) -->
+        <rect x="20" y="19" width="12" height="14" fill="rgba(2,4,4,0.86)" />
+        <line x1="20" y1="26" x2="32" y2="26" />
+        <!-- antenna stem + dish -->
+        <line x1="26" y1="19" x2="26" y2="11" />
+        <circle cx="26" cy="9" r="2.2" fill="rgba(2,4,4,0.86)" />
       </g>
     </svg>`,
   )}`

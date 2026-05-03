@@ -850,14 +850,14 @@ export function CesiumGlobe({
         if (selectedN2yoLayerRef.current) {
           deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
         }
-        // Display each satellite at half its true altitude. We're after
-        // *relative* spacing (LEO < MEO < GEO is what the operator
-        // reads) — true scale puts GEO at 36,000 km which dominates the
-        // frame. Half-scale keeps the band ordering intact while
-        // pulling the rings in tight enough for a readable demo. The
-        // multiplier is the only knob: 1.0 = true altitude, 0.5 = half
-        // altitude, etc.
-        const ALTITUDE_SCALE = 0.5
+        // Display each satellite at a fraction of its true altitude.
+        // We're after *relative* spacing (LEO < MEO < GEO is what the
+        // operator reads); true scale puts GEO at 36,000 km which
+        // dominates the frame. Lower scale keeps the band ordering
+        // intact while pulling the rings in tight enough for a readable
+        // demo. 0.1 = 10% of true. Single knob — bump back up if rings
+        // look too flat or too tight.
+        const ALTITUDE_SCALE = 0.1
         clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
         n2yoLayersRef.current = payloads.map(({ cache, satellite }) =>
           addN2YOSatellite(
@@ -867,10 +867,11 @@ export function CesiumGlobe({
             latestN2YOAltitudeKm(cache) * 1000 * ALTITUDE_SCALE,
           ),
         )
-        // Camera distance scales with the altitude scale. At 1.0 we'd
-        // need ~85 Mm to fit GEO; at 0.5 ~45 Mm is enough.
+        // Camera distance scales with the altitude scale so the GEO
+        // ring still frames comfortably. At 1.0 → ~85 Mm; at 0.5 →
+        // ~45 Mm; at 0.2 → ~18 Mm; at 0.1 → ~9 Mm.
         viewer.camera.flyTo({
-          destination: Cartesian3.fromDegrees(0, 0, 45_000_000),
+          destination: Cartesian3.fromDegrees(0, 0, 9_000_000),
           duration: 0.8,
         })
         selectedN2yoLayerRef.current = null
