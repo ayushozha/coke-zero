@@ -15,14 +15,6 @@ type AorMapProps = {
 
 const aorCenter: [number, number] = [-116.52, 35.02]
 
-const relayRoute: [number, number][] = [
-  [-116.57, 35.0],
-  [-116.55, 35.015],
-  [-116.52, 35.02],
-  [-116.49, 35.035],
-  [-116.46, 35.05],
-]
-
 const aorBounds = {
   west: -116.61,
   south: 34.98,
@@ -172,16 +164,19 @@ const createAorPolygon = (bounds: AorBounds) =>
 const createRoute = (points: [number, number][]) =>
   ({
     type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: points.length > 1 ? points : relayRoute,
-        },
-      },
-    ],
+    features:
+      points.length > 1
+        ? [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: points,
+              },
+            },
+          ]
+        : [],
   }) as GeoJSON.FeatureCollection
 
 const createGrid = (bounds: AorBounds) => {
@@ -268,6 +263,10 @@ export function AorMap({
     () => scenarioCoordinateSignals.map(({ point }) => point),
     [scenarioCoordinateSignals],
   )
+  const activeRoutePoints = useMemo(
+    () => coordinateSignals.map(({ point }) => point).reverse(),
+    [coordinateSignals],
+  )
   const operationalBounds = useMemo(
     () => boundsFromPoints(scenarioCoordinateSignals.map(({ point }) => point)),
     [scenarioCoordinateSignals],
@@ -293,9 +292,13 @@ export function AorMap({
   )
   const leadSignal = visibleSignals[0]?.signal
   const leadPriority = leadSignal ? priorityForSignal(leadSignal) : 'low'
+  const newestSignalId = signals[0]?.id ?? null
   const highSignalCount = visibleSignals.filter(
     ({ signal }) => priorityForSignal(signal) === 'high',
   ).length
+  const scenarioProgress = Math.round(
+    (signals.length / Math.max(scenario.signals.length, 1)) * 100,
+  )
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -307,7 +310,7 @@ export function AorMap({
       center: centerFromBounds(aorBounds),
       container: containerRef.current,
       maxZoom: 19,
-      minZoom: 12,
+      minZoom: 5,
       pitch: 0,
       style: {
         version: 8,
@@ -415,6 +418,21 @@ export function AorMap({
         type: 'geojson',
         data: createRoute([]),
       })
+      map.addSource('scenario-route', {
+        type: 'geojson',
+        data: createRoute([]),
+      })
+      map.addLayer({
+        id: 'scenario-route-line',
+        type: 'line',
+        source: 'scenario-route',
+        paint: {
+          'line-color': '#f5f7f0',
+          'line-opacity': 0.16,
+          'line-width': 1.2,
+          'line-dasharray': [1, 2.2],
+        },
+      })
       map.addLayer({
         id: 'relay-route-line',
         type: 'line',
@@ -459,7 +477,7 @@ export function AorMap({
     ;(map.getSource('mgrs-grid') as maplibregl.GeoJSONSource | undefined)?.setData(
       createGrid(operationalBounds),
     )
-    ;(map.getSource('relay-route') as maplibregl.GeoJSONSource | undefined)?.setData(
+    ;(map.getSource('scenario-route') as maplibregl.GeoJSONSource | undefined)?.setData(
       createRoute(routePoints),
     )
     map.fitBounds(
@@ -477,6 +495,17 @@ export function AorMap({
       return
     }
 
+    ;(map.getSource('relay-route') as maplibregl.GeoJSONSource | undefined)?.setData(
+      createRoute(activeRoutePoints),
+    )
+  }, [activeRoutePoints, isMapReady])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !isMapReady) {
+      return
+    }
+
     signalMarkersRef.current.forEach((marker) => marker.remove())
     signalMarkersRef.current = visibleSignals.map(({ point, signal }) => {
       const priority = priorityForSignal(signal)
@@ -484,6 +513,7 @@ export function AorMap({
       marker.className = [
         'aor-signal',
         `aor-signal--${priority}`,
+        signal.id === newestSignalId ? 'aor-signal--newest' : '',
         signal.id === focusSignalId ? 'aor-signal--focus' : '',
         correlatedSignalIds.includes(signal.id) ? 'aor-signal--correlated' : '',
       ]
@@ -514,7 +544,7 @@ export function AorMap({
         .setLngLat(point)
         .addTo(map)
     })
-  }, [correlatedSignalIds, focusSignalId, isMapReady, visibleSignals])
+  }, [correlatedSignalIds, focusSignalId, isMapReady, newestSignalId, visibleSignals])
 
   const switchBasemap = (nextBasemap: Basemap) => {
     const map = mapRef.current
@@ -566,6 +596,7 @@ export function AorMap({
       </div>
       <div className="aor-map__ops-strip" aria-hidden="true">
         <span>LIVE CONTACTS {visibleSignals.length}</span>
+        <span>SIM {scenarioProgress}%</span>
         <span>THREAT {highSignalCount}</span>
         <span>FUSED {correlatedSignalIds.length}</span>
         <span>{scenario.domains.length} DOMAINS</span>
@@ -589,6 +620,7 @@ export function AorMap({
       </div>
       <div className="aor-map__scale">
         <span>Zoom {zoom}</span>
+        <span>SIM {scenarioProgress}%</span>
         <span>10m MGRS labels</span>
       </div>
     </div>
