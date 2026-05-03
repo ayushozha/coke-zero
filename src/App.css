@@ -1091,22 +1091,61 @@
 
 .aor-marker {
   position: relative;
-  display: grid;
-  grid-template-columns: auto;
-  justify-items: center;
+  display: block;
+  width: 26px;
+  height: 26px;
   color: var(--text-primary);
-  transform: translateY(-2px);
+  transform: translateY(4px);
   user-select: none;
 }
 
 .aor-marker__dot {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #07100f;
-  background: currentColor;
+  position: absolute;
+  inset: 5px;
+  display: block;
+  border: 1.6px solid currentColor;
+  background: rgba(2, 4, 4, 0.64);
   box-shadow:
-    0 0 0 1px currentColor,
-    0 0 18px currentColor;
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 1px 5px rgba(0, 0, 0, 0.75);
+  transform: rotate(45deg);
+}
+
+.aor-marker__dot::before,
+.aor-marker__dot::after {
+  position: absolute;
+  content: '';
+  background: currentColor;
+}
+
+.aor-marker__dot::before {
+  top: 50%;
+  left: 2px;
+  right: 2px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.aor-marker__dot::after {
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.aor-marker--friendly .aor-marker__dot {
+  border-radius: 2px;
+}
+
+.aor-marker--asset .aor-marker__dot {
+  border-radius: 50%;
+  transform: none;
+}
+
+.aor-marker--threat .aor-marker__dot {
+  border-color: currentColor;
+  background: rgba(34, 7, 6, 0.58);
 }
 
 .aor-marker--friendly {
@@ -1128,22 +1167,22 @@
   min-width: max-content;
   border: 1px solid rgba(220, 227, 213, 0.32);
   border-radius: 2px;
-  background: rgba(9, 17, 18, 0.86);
-  padding: 2px 5px;
+  background: rgba(9, 17, 18, 0.78);
+  padding: 2px 4px;
   transform: translateX(-50%);
   font-weight: 650;
 }
 
 .aor-marker__label {
-  bottom: 23px;
+  bottom: 28px;
   color: var(--text-primary);
-  font-size: 0.76rem;
+  font-size: 0.66rem;
 }
 
 .aor-marker__grid {
-  top: 23px;
+  top: 28px;
   color: var(--amber);
-  font-size: 0.66rem;
+  font-size: 0.58rem;
 }
 
 .narration,

@@ -31,21 +31,21 @@ const MAP_PANEL = Color.fromCssColorString('#091112')
 const markerSvg = (
   kind: 'satellite' | 'drone' | 'signal',
   stroke: string,
-  fill = '#020404',
+  fill = 'rgba(2,4,4,0.72)',
 ) => {
   const inner =
     kind === 'satellite'
-      ? '<path d="M18 4l14 14-14 14L4 18z"/><path d="M18 8v5M18 23v5M8 18h5M23 18h5"/><circle cx="18" cy="18" r="4"/><path d="M2 10V2h8M26 2h8v8M34 26v8h-8M10 34H2v-8"/>'
+      ? '<path d="M13 13h10v10H13z"/><path d="M5 16h6M25 16h6M5 20h6M25 20h6M18 7v4M18 25v4"/><circle cx="18" cy="18" r="2.4" fill="currentColor" stroke="none"/>'
       : kind === 'drone'
-        ? '<path d="M18 4l12 14-12 14L6 18z"/><path d="M18 10v16M10 18h16"/><circle cx="18" cy="18" r="3"/><path d="M3 15v-6h6M27 9h6v6M33 21v6h-6M9 27H3v-6"/>'
-        : '<path d="M18 5l13 13-13 13L5 18z"/><circle cx="18" cy="18" r="4"/><path d="M18 1v6M18 29v6M1 18h6M29 18h6"/><path d="M4 4h7M4 4v7M32 4h-7M32 4v7M32 32h-7M32 32v-7M4 32h7M4 32v-7"/>'
+        ? '<path d="M18 6l10 20-10-5-10 5z"/><path d="M18 11v10M13 20h10"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
+        : '<path d="M18 7l11 11-11 11L7 18z"/><path d="M18 12v12M12 18h12"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 36 36">
       <filter id="g" x="-60%" y="-60%" width="220%" height="220%">
-        <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="${stroke}" flood-opacity="0.45"/>
+        <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.72"/>
       </filter>
-      <g fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
+      <g color="${stroke}" fill="${fill}" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
         ${inner}
       </g>
     </svg>`,
@@ -262,10 +262,10 @@ const createSatelliteCzml = () => {
         ],
       },
       billboard: {
-        height: 24,
+        height: 20,
         image: markerSvg('satellite', '#e05c4f'),
         scale: 1,
-        width: 24,
+        width: 20,
       },
       label: {
         text: 'SAT-BRAVO',
@@ -279,10 +279,10 @@ const createSatelliteCzml = () => {
       path: {
         leadTime: 0,
         trailTime: 900,
-        width: 1.4,
+        width: 1.1,
         material: {
           solidColor: {
-            color: { rgba: [201, 164, 87, 145] },
+            color: { rgba: [201, 164, 87, 116] },
           },
         },
       },
@@ -301,10 +301,10 @@ const createSatelliteCzml = () => {
         ],
       },
       billboard: {
-        height: 22,
+        height: 20,
         image: markerSvg('satellite', '#33f2f0'),
         scale: 1,
-        width: 22,
+        width: 20,
       },
       label: {
         text: 'PNT-CUSTODY',
@@ -318,10 +318,10 @@ const createSatelliteCzml = () => {
       path: {
         leadTime: 0,
         trailTime: 900,
-        width: 1.2,
+        width: 1,
         material: {
           solidColor: {
-            color: { rgba: [245, 247, 240, 110] },
+            color: { rgba: [245, 247, 240, 84] },
           },
         },
       },
@@ -362,10 +362,10 @@ const createVehicleCzml = () => {
         ],
       },
       billboard: {
-        height: 22,
+        height: 20,
         image: markerSvg('drone', '#c9a457'),
         scale: 1,
-        width: 22,
+        width: 20,
       },
       label: {
         text: 'RELAY TEAM 2',
@@ -379,10 +379,10 @@ const createVehicleCzml = () => {
       path: {
         leadTime: 0,
         trailTime: 240,
-        width: 2,
+        width: 1.6,
         material: {
           solidColor: {
-            color: { rgba: [201, 164, 87, 165] },
+            color: { rgba: [201, 164, 87, 128] },
           },
         },
       },
@@ -584,10 +584,10 @@ export function CesiumGlobe({
         billboard: {
           color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          height: 22,
+          height: 20,
           image: markerSvg('drone', markerColorHex(contact.color)),
-          scaleByDistance: new NearFarScalar(50000, 0.9, 900000, 0.52),
-          width: 22,
+          scaleByDistance: new NearFarScalar(50000, 0.82, 900000, 0.42),
+          width: 20,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -610,10 +610,10 @@ export function CesiumGlobe({
         billboard: {
           color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          height: 22,
+          height: 20,
           image: markerSvg('satellite', markerColorHex(contact.color)),
-          scaleByDistance: new NearFarScalar(1500000, 1.0, 25000000, 0.48),
-          width: 22,
+          scaleByDistance: new NearFarScalar(1500000, 0.86, 25000000, 0.38),
+          width: 20,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -693,10 +693,10 @@ export function CesiumGlobe({
           billboard: {
             color: Color.WHITE,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            height: isFocus ? 28 : isCorrelated ? 24 : 20,
+            height: isFocus ? 24 : isCorrelated ? 21 : 18,
             image: markerSvg(markerKind, markerColorHex(color)),
-            scaleByDistance: new NearFarScalar(1500000, 0.95, 25000000, 0.46),
-            width: isFocus ? 28 : isCorrelated ? 24 : 20,
+            scaleByDistance: new NearFarScalar(1500000, 0.84, 25000000, 0.36),
+            width: isFocus ? 24 : isCorrelated ? 21 : 18,
           },
           label: {
             backgroundColor: MAP_PANEL.withAlpha(0.84),
@@ -723,9 +723,9 @@ export function CesiumGlobe({
             ellipse: {
               semiMajorAxis: isFocus ? 14000 : 9500,
               semiMinorAxis: isFocus ? 14000 : 9500,
-              material: color.withAlpha(isFocus ? 0.055 : 0.035),
+              material: color.withAlpha(isFocus ? 0.03 : 0.018),
               outline: true,
-              outlineColor: color.withAlpha(isFocus ? 0.52 : 0.38),
+              outlineColor: color.withAlpha(isFocus ? 0.42 : 0.26),
             },
           })
           signalEntityIdsRef.current.add(pulseId)

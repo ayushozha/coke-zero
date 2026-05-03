@@ -225,8 +225,8 @@ export function AorMap() {
         type: 'fill',
         source: 'aor-zone',
         paint: {
-          'fill-color': '#ff2222',
-          'fill-opacity': 0.08,
+          'fill-color': '#e05c4f',
+          'fill-opacity': 0.045,
         },
       })
       map.addLayer({
@@ -234,9 +234,9 @@ export function AorMap() {
         type: 'line',
         source: 'aor-zone',
         paint: {
-          'line-color': '#ff2222',
-          'line-opacity': 0.88,
-          'line-width': 2,
+          'line-color': '#e05c4f',
+          'line-opacity': 0.64,
+          'line-width': 1.4,
         },
       })
 
@@ -264,9 +264,10 @@ export function AorMap() {
         type: 'line',
         source: 'relay-route',
         paint: {
-          'line-color': '#ffb300',
-          'line-opacity': 0.95,
-          'line-width': 4,
+          'line-color': '#c9a457',
+          'line-opacity': 0.78,
+          'line-width': 2.2,
+          'line-dasharray': [1.8, 1.2],
         },
       })
 
