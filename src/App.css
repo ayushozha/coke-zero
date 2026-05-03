@@ -2150,6 +2150,13 @@
     display: none;
   }
 
+  .aor-marker__label,
+  .aor-marker__grid,
+  .aor-signal__label,
+  .aor-signal__meta {
+    display: none;
+  }
+
   .event-feed__stream {
     max-height: 280px;
   }
