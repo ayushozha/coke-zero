@@ -11,7 +11,7 @@ import {
   IonWorldImageryStyle,
   LabelStyle,
   NearFarScalar,
-  PolylineGlowMaterialProperty,
+  PolylineDashMaterialProperty,
   Rectangle,
   TileMapServiceImageryProvider,
   Viewer,
@@ -243,7 +243,7 @@ const createSatelliteCzml = () => {
       clock: {
         interval,
         currentTime: epoch,
-        multiplier: 45,
+        multiplier: 8,
         range: 'LOOP_STOP',
         step: 'SYSTEM_CLOCK_MULTIPLIER',
       },
@@ -262,10 +262,10 @@ const createSatelliteCzml = () => {
         ],
       },
       billboard: {
-        height: 32,
+        height: 24,
         image: markerSvg('satellite', '#e05c4f'),
         scale: 1,
-        width: 32,
+        width: 24,
       },
       label: {
         text: 'SAT-BRAVO',
@@ -277,12 +277,12 @@ const createSatelliteCzml = () => {
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
-        leadTime: 160,
-        trailTime: 420,
-        width: 3,
+        leadTime: 0,
+        trailTime: 900,
+        width: 1.4,
         material: {
           solidColor: {
-            color: { rgba: [201, 154, 46, 210] },
+            color: { rgba: [201, 164, 87, 145] },
           },
         },
       },
@@ -301,10 +301,10 @@ const createSatelliteCzml = () => {
         ],
       },
       billboard: {
-        height: 30,
+        height: 22,
         image: markerSvg('satellite', '#33f2f0'),
         scale: 1,
-        width: 30,
+        width: 22,
       },
       label: {
         text: 'PNT-CUSTODY',
@@ -316,12 +316,12 @@ const createSatelliteCzml = () => {
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
-        leadTime: 160,
-        trailTime: 420,
-        width: 2,
+        leadTime: 0,
+        trailTime: 900,
+        width: 1.2,
         material: {
           solidColor: {
-            color: { rgba: [255, 255, 255, 155] },
+            color: { rgba: [245, 247, 240, 110] },
           },
         },
       },
@@ -343,7 +343,7 @@ const createVehicleCzml = () => {
       clock: {
         interval,
         currentTime: epoch,
-        multiplier: 20,
+        multiplier: 4,
         range: 'LOOP_STOP',
         step: 'SYSTEM_CLOCK_MULTIPLIER',
       },
@@ -362,10 +362,10 @@ const createVehicleCzml = () => {
         ],
       },
       billboard: {
-        height: 30,
+        height: 22,
         image: markerSvg('drone', '#c9a457'),
         scale: 1,
-        width: 30,
+        width: 22,
       },
       label: {
         text: 'RELAY TEAM 2',
@@ -377,12 +377,12 @@ const createVehicleCzml = () => {
         pixelOffset: { cartesian2: [0, -26] },
       },
       path: {
-        leadTime: 60,
-        trailTime: 360,
-        width: 4,
+        leadTime: 0,
+        trailTime: 240,
+        width: 2,
         material: {
           solidColor: {
-            color: { rgba: [201, 154, 46, 230] },
+            color: { rgba: [201, 164, 87, 165] },
           },
         },
       },
@@ -567,12 +567,12 @@ export function CesiumGlobe({
       name: 'Relay Team 2 Route',
       polyline: {
         clampToGround: true,
-        material: new PolylineGlowMaterialProperty({
-          color: MAP_AMBER.withAlpha(0.85),
-          glowPower: 0.14,
+        material: new PolylineDashMaterialProperty({
+          color: MAP_AMBER.withAlpha(0.68),
+          dashLength: 18,
         }),
         positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
-        width: 5,
+        width: 2,
       },
     })
 
@@ -584,10 +584,10 @@ export function CesiumGlobe({
         billboard: {
           color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          height: 28,
+          height: 22,
           image: markerSvg('drone', markerColorHex(contact.color)),
-          scaleByDistance: new NearFarScalar(50000, 1.1, 900000, 0.68),
-          width: 28,
+          scaleByDistance: new NearFarScalar(50000, 0.9, 900000, 0.52),
+          width: 22,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -610,10 +610,10 @@ export function CesiumGlobe({
         billboard: {
           color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          height: 28,
+          height: 22,
           image: markerSvg('satellite', markerColorHex(contact.color)),
-          scaleByDistance: new NearFarScalar(1500000, 1.5, 25000000, 0.75),
-          width: 28,
+          scaleByDistance: new NearFarScalar(1500000, 1.0, 25000000, 0.48),
+          width: 22,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -633,12 +633,12 @@ export function CesiumGlobe({
       name: 'Cross-domain correlation',
       polyline: {
         clampToGround: false,
-        material: new PolylineGlowMaterialProperty({
-          color: MAP_AMBER.withAlpha(0.8),
-          glowPower: 0.16,
+        material: new PolylineDashMaterialProperty({
+          color: MAP_AMBER.withAlpha(0.46),
+          dashLength: 28,
         }),
         positions: arcPositions,
-        width: 3,
+        width: 1,
       },
     })
 
@@ -693,10 +693,10 @@ export function CesiumGlobe({
           billboard: {
             color: Color.WHITE,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            height: isFocus ? 34 : isCorrelated ? 30 : 24,
+            height: isFocus ? 28 : isCorrelated ? 24 : 20,
             image: markerSvg(markerKind, markerColorHex(color)),
-            scaleByDistance: new NearFarScalar(1500000, 1.4, 25000000, 0.7),
-            width: isFocus ? 34 : isCorrelated ? 30 : 24,
+            scaleByDistance: new NearFarScalar(1500000, 0.95, 25000000, 0.46),
+            width: isFocus ? 28 : isCorrelated ? 24 : 20,
           },
           label: {
             backgroundColor: MAP_PANEL.withAlpha(0.84),
@@ -721,11 +721,11 @@ export function CesiumGlobe({
             name: `${point.label} focus ring`,
             position: Cartesian3.fromDegrees(point.lon, point.lat, 0),
             ellipse: {
-              semiMajorAxis: isFocus ? 22000 : 14000,
-              semiMinorAxis: isFocus ? 22000 : 14000,
-              material: color.withAlpha(isFocus ? 0.12 : 0.07),
+              semiMajorAxis: isFocus ? 14000 : 9500,
+              semiMinorAxis: isFocus ? 14000 : 9500,
+              material: color.withAlpha(isFocus ? 0.055 : 0.035),
               outline: true,
-              outlineColor: color.withAlpha(isFocus ? 0.9 : 0.65),
+              outlineColor: color.withAlpha(isFocus ? 0.52 : 0.38),
             },
           })
           signalEntityIdsRef.current.add(pulseId)
@@ -758,12 +758,12 @@ export function CesiumGlobe({
         name: 'Live signal thread',
         polyline: {
           clampToGround: false,
-          material: new PolylineGlowMaterialProperty({
-            color: Color.WHITE.withAlpha(0.42),
-            glowPower: 0.12,
+          material: new PolylineDashMaterialProperty({
+            color: Color.WHITE.withAlpha(0.24),
+            dashLength: 20,
           }),
           positions: Cartesian3.fromDegreesArrayHeights(thread),
-          width: 2,
+          width: 1,
         },
       })
       signalEntityIdsRef.current.add(threadId)
@@ -779,12 +779,12 @@ export function CesiumGlobe({
         name: 'Fused signal correlation',
         polyline: {
           clampToGround: false,
-          material: new PolylineGlowMaterialProperty({
-            color: MAP_AMBER.withAlpha(0.92),
-            glowPower: 0.22,
+          material: new PolylineDashMaterialProperty({
+            color: MAP_AMBER.withAlpha(0.5),
+            dashLength: 24,
           }),
           positions: Cartesian3.fromDegreesArrayHeights(correlation),
-          width: 4,
+          width: 1.4,
         },
       })
       signalEntityIdsRef.current.add(correlationId)
@@ -802,7 +802,7 @@ export function CesiumGlobe({
           focusSignalPoint.point.lat,
           cameraHeightForSignal(focusSignalPoint.signal, focusSignalPoint.point),
         ),
-        duration: 1.4,
+        duration: 0.6,
       })
     }
 
@@ -820,7 +820,7 @@ export function CesiumGlobe({
     setActiveLayer('baseline')
     viewer.camera.flyTo({
       destination: Cartesian3.fromDegrees(58, 28, 18500000),
-      duration: 1.1,
+      duration: 0.6,
     })
   }
 
@@ -841,7 +841,7 @@ export function CesiumGlobe({
         viewer.clock.shouldAnimate = true
         viewer.camera.flyTo({
           destination: Cartesian3.fromDegrees(58, 28, 18500000),
-          duration: 0.7,
+          duration: 0.6,
         })
         setActiveLayer('satellites')
       })
@@ -863,7 +863,7 @@ export function CesiumGlobe({
       setActiveLayer('local-aor')
       viewer.camera.flyTo({
         destination: Cartesian3.fromDegrees(-116.52, 35.02, 22000),
-        duration: 3.2,
+        duration: 0.8,
         orientation: {
           heading: 6,
           pitch: -1.08,
