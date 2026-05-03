@@ -5105,6 +5105,205 @@
   font-size: 0.74rem;
 }
 
+/* ---- Operator action panel (left rail) -------------------------------
+   Interactive review surface beneath the scenario list. Renders only
+   when the engine has produced a Decision. Accept / Deny buttons are
+   visually loud (saturated green / red) so they read as the primary
+   action target on the page. */
+.operator-action {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(154, 190, 180, 0.22);
+  border-left: 4px solid var(--amber);
+  background:
+    linear-gradient(180deg, rgba(201, 164, 87, 0.06), transparent 70%),
+    rgba(7, 11, 11, 0.78);
+  padding: 12px 14px 14px;
+}
+
+.operator-action--accepted {
+  border-left-color: #3ee07c;
+  background:
+    linear-gradient(180deg, rgba(62, 224, 124, 0.08), transparent 70%),
+    rgba(7, 11, 11, 0.78);
+}
+
+.operator-action--denied {
+  border-left-color: #ff4f5e;
+  background:
+    linear-gradient(180deg, rgba(255, 79, 94, 0.08), transparent 70%),
+    rgba(7, 11, 11, 0.78);
+}
+
+.operator-action__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.operator-action__eyebrow {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operator-action h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 720;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.operator-action__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.operator-action__meta div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.operator-action__meta dt {
+  color: var(--text-subtle);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.operator-action__meta dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.operator-action__rationale {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.operator-action__buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.operator-action__btn {
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.05s ease;
+}
+
+.operator-action__btn:active {
+  transform: translateY(1px);
+}
+
+/* ACCEPT — saturated green, filled. Reads as the loudest primary
+   action on the page when the engine recommends action. */
+.operator-action__btn--accept {
+  border: 1.5px solid #3ee07c;
+  background: linear-gradient(180deg, #4ff48d 0%, #2bc365 100%);
+  color: #06140b;
+  box-shadow:
+    0 0 0 1px rgba(62, 224, 124, 0.45) inset,
+    0 6px 18px rgba(62, 224, 124, 0.28);
+}
+
+.operator-action__btn--accept:hover {
+  background: linear-gradient(180deg, #62ff9c 0%, #34d36f 100%);
+  border-color: #62ff9c;
+  box-shadow:
+    0 0 0 1px rgba(98, 255, 156, 0.6) inset,
+    0 8px 22px rgba(62, 224, 124, 0.42);
+}
+
+/* DENY — saturated red, filled. Equally loud but unambiguous opposite. */
+.operator-action__btn--deny {
+  border: 1.5px solid #ff4f5e;
+  background: linear-gradient(180deg, #ff6772 0%, #e0303f 100%);
+  color: #1a0507;
+  box-shadow:
+    0 0 0 1px rgba(255, 79, 94, 0.45) inset,
+    0 6px 18px rgba(255, 79, 94, 0.32);
+}
+
+.operator-action__btn--deny:hover {
+  background: linear-gradient(180deg, #ff7e88 0%, #f04050 100%);
+  border-color: #ff7e88;
+  box-shadow:
+    0 0 0 1px rgba(255, 126, 136, 0.6) inset,
+    0 8px 22px rgba(255, 79, 94, 0.46);
+}
+
+.operator-action__btn--undo {
+  border: 1px solid var(--line-bright);
+  background: rgba(7, 11, 11, 0.55);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  box-shadow: none;
+}
+
+.operator-action__btn--undo:hover {
+  background: rgba(154, 190, 180, 0.12);
+  border-color: rgba(51, 242, 240, 0.55);
+  color: var(--cyan);
+}
+
+.operator-action__resolved {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.operator-action__resolved-tag {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.operator-action--accepted .operator-action__resolved-tag {
+  color: #4ff48d;
+}
+
+.operator-action--denied .operator-action__resolved-tag {
+  color: #ff6772;
+}
+
 /* ---- Collapsible decision-stack sections -----------------------------
    Each child of the right-column decision stack is wrapped in one of
    these so the operator can collapse individual sections to compress
