@@ -6,6 +6,13 @@ type EventFeedProps = {
 }
 
 export function EventFeed({ signals }: EventFeedProps) {
+  const feedState =
+    signals[0]?.confidence >= 0.86
+      ? 'PRIORITY'
+      : signals[0]?.confidence >= 0.74
+        ? 'WATCH'
+        : 'MONITOR'
+
   return (
     <section className="event-feed" aria-label="Incoming signals">
       <div className="event-feed__header">
@@ -13,7 +20,10 @@ export function EventFeed({ signals }: EventFeedProps) {
           <span>ISR / EW / CSM</span>
           <h2>Signal Stream</h2>
         </div>
-        <strong>{signals.length.toString().padStart(2, '0')}</strong>
+        <div className="event-feed__status">
+          <span>{feedState}</span>
+          <strong>{signals.length.toString().padStart(2, '0')}</strong>
+        </div>
       </div>
       <div
         className="event-feed__stream"
@@ -23,9 +33,15 @@ export function EventFeed({ signals }: EventFeedProps) {
       >
         {signals.slice(0, 10).map((signal, index) => {
           const summary = commanderSignalSummary(signal)
+          const priority =
+            signal.confidence >= 0.86
+              ? 'high'
+              : signal.confidence >= 0.74
+                ? 'watch'
+                : 'low'
           return (
             <article
-              className="event-feed__entry"
+              className={`event-feed__entry event-feed__entry--${priority}`}
               data-newest={index === 0 ? 'true' : undefined}
               key={signal.id}
             >

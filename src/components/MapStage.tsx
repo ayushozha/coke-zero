@@ -30,7 +30,11 @@ export function MapStage({
           signals={signals}
         />
       ) : (
-        <AorMap />
+        <AorMap
+          correlatedSignalIds={correlatedSignalIds}
+          focusSignalId={focusSignalId}
+          signals={signals}
+        />
       )}
       <div
         className={
