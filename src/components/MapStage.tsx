@@ -10,6 +10,7 @@ import type { Signal } from '../types/canopy'
 type MapStageProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  offsets: number[]
   playback: PlaybackStatus | null
   scenario: ScenarioDefinition
   signals: Signal[]
@@ -18,6 +19,7 @@ type MapStageProps = {
 export function MapStage({
   correlatedSignalIds,
   focusSignalId,
+  offsets,
   playback,
   scenario,
   signals,
@@ -51,6 +53,7 @@ export function MapStage({
           correlatedSignalIds={correlatedSignalIds}
           focusSignalId={focusSignalId}
           focusRequestId={focusRequestId}
+          offsets={offsets}
           playback={playback}
           scenario={scenario}
           signals={signals}

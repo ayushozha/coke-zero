@@ -12,7 +12,6 @@ import {
   IonWorldImageryStyle,
   LabelStyle,
   NearFarScalar,
-  PolylineDashMaterialProperty,
   Rectangle,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
@@ -193,14 +192,6 @@ const LOCAL_AOR_CAMERA_ORIENTATION = {
   roll: 0,
 }
 
-const localRoute = [
-  [-116.57, 35.0, 1200],
-  [-116.55, 35.015, 1225],
-  [-116.52, 35.02, 1210],
-  [-116.49, 35.035, 1235],
-  [-116.46, 35.05, 1240],
-]
-
 const localContacts = [
   {
     name: 'RELAY TEAM 2',
@@ -347,16 +338,6 @@ const createVehicleCzml = () => {
         backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -26] },
       },
-      path: {
-        leadTime: 0,
-        trailTime: 240,
-        width: 1.6,
-        material: {
-          solidColor: {
-            color: { rgba: [201, 164, 87, 128] },
-          },
-        },
-      },
     },
   ]
 }
@@ -382,6 +363,8 @@ export function CesiumGlobe({
   const [selectedSatellitePoint, setSelectedSatellitePoint] =
     useState<N2YODisplayPoint | null>(null)
   const [showAllOrbits, setShowAllOrbits] = useState(false)
+  const [n2yoLayerCount, setN2yoLayerCount] = useState(0)
+  const [orbitCapableLayerCount, setOrbitCapableLayerCount] = useState(0)
   const showAllOrbitsRef = useRef(false)
   const satelliteFamilySelectionRef = useRef<SatelliteFamilySelection>('all')
 
@@ -395,7 +378,6 @@ export function CesiumGlobe({
 
   useEffect(() => {
     if (!selectedSatellite) {
-      setSelectedSatellitePoint(null)
       return
     }
 
@@ -615,20 +597,6 @@ export function CesiumGlobe({
       },
     })
 
-    viewer.entities.add({
-      id: 'local-aor-route',
-      name: 'Relay Team 2 Route',
-      polyline: {
-        clampToGround: true,
-        material: new PolylineDashMaterialProperty({
-          color: MAP_AMBER.withAlpha(0.68),
-          dashLength: 18,
-        }),
-        positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
-        width: 2,
-      },
-    })
-
     localContacts.forEach((contact) => {
       viewer.entities.add({
         id: `local-${contact.name.toLowerCase().replaceAll(' ', '-')}`,
@@ -680,12 +648,6 @@ export function CesiumGlobe({
     signalEntityIdsRef.current.clear()
 
     const correlatedIds = new Set(correlatedSignalIds)
-    const signalPoints = signals
-      .map((signal) => ({ signal, point: signalPoint(signal) }))
-      .filter(
-        (item): item is { signal: Signal; point: MapPoint } =>
-          item.point !== null,
-      )
     signals.forEach((signal) => {
       const entityId = `signal-${signal.id}`
       const color = colorForSignal(signal)
@@ -755,50 +717,6 @@ export function CesiumGlobe({
       }
     })
 
-    const thread = signalPoints.slice(0, 6).flatMap(({ point }) => [
-      point.lon,
-      point.lat,
-      Math.max(point.height, 400),
-    ])
-    if (thread.length >= 6) {
-      const threadId = 'signal-thread'
-      viewer.entities.add({
-        id: threadId,
-        name: 'Live signal thread',
-        polyline: {
-          clampToGround: false,
-          material: new PolylineDashMaterialProperty({
-            color: Color.WHITE.withAlpha(0.24),
-            dashLength: 20,
-          }),
-          positions: Cartesian3.fromDegreesArrayHeights(thread),
-          width: 1,
-        },
-      })
-      signalEntityIdsRef.current.add(threadId)
-    }
-
-    const correlation = signalPoints
-      .filter(({ signal }) => correlatedIds.has(signal.id))
-      .flatMap(({ point }) => [point.lon, point.lat, Math.max(point.height, 400)])
-    if (correlation.length >= 6) {
-      const correlationId = 'signal-correlation'
-      viewer.entities.add({
-        id: correlationId,
-        name: 'Fused signal correlation',
-        polyline: {
-          clampToGround: false,
-          material: new PolylineDashMaterialProperty({
-            color: MAP_AMBER.withAlpha(0.5),
-            dashLength: 24,
-          }),
-          positions: Cartesian3.fromDegreesArrayHeights(correlation),
-          width: 1.4,
-        },
-      })
-      signalEntityIdsRef.current.add(correlationId)
-    }
-
     viewer.scene.requestRender()
   }, [correlatedSignalIds, focusSignalId, signals])
 
@@ -814,6 +732,8 @@ export function CesiumGlobe({
     }
     clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
     n2yoLayersRef.current = []
+    setN2yoLayerCount(0)
+    setOrbitCapableLayerCount(0)
     selectedN2yoLayerRef.current = null
     setSelectedSatellite(null)
     satelliteFamilySelectionRef.current = 'all'
@@ -840,6 +760,8 @@ export function CesiumGlobe({
     }
     clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
     n2yoLayersRef.current = []
+    setN2yoLayerCount(0)
+    setOrbitCapableLayerCount(0)
     selectedN2yoLayerRef.current = null
     setSelectedSatellite(null)
     satelliteFamilySelectionRef.current = 'all'
@@ -920,6 +842,7 @@ export function CesiumGlobe({
     })
 
     const orbitCapableLayers = visibleOrbitCapableLayers(normalizedSelection)
+    setOrbitCapableLayerCount(orbitCapableLayers.length)
 
     if (selectedN2yoLayerRef.current) {
       selectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
@@ -971,6 +894,8 @@ export function CesiumGlobe({
             latestN2YOAltitudeKm(cache) * 1000 * ALTITUDE_SCALE,
           ),
         )
+        setN2yoLayerCount(n2yoLayersRef.current.length)
+        setOrbitCapableLayerCount(visibleOrbitCapableLayers('all').length)
         viewer.camera.flyTo({
           destination: RESET_CAMERA_DESTINATION,
           duration: 0.8,
@@ -1057,7 +982,7 @@ export function CesiumGlobe({
                     ? 'is-active'
                     : ''
                 }
-                disabled={n2yoLayersRef.current.length === 0}
+                disabled={n2yoLayerCount === 0}
                 key={familyFilter}
                 onClick={() => applySatelliteFamilyFilter(familyFilter)}
                 style={
@@ -1090,7 +1015,7 @@ export function CesiumGlobe({
           <button
             aria-pressed={showAllOrbits}
             className={showAllOrbits ? 'orbit-toggle orbit-toggle--active' : 'orbit-toggle'}
-            disabled={visibleOrbitCapableLayers().length === 0}
+            disabled={orbitCapableLayerCount === 0}
             onClick={toggleAllOrbits}
             type="button"
           >

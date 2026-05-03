@@ -133,10 +133,6 @@ export function Brigade() {
     })
     return [...(completedSignals.length ? completedSignals : activeScenario.signals.slice(0, 1))]
       .reverse()
-      .map((signal, index) => ({
-        ...signal,
-        ts: new Date(Date.now() - index * 1000).toISOString(),
-      }))
   }, [activeScenario.signals, playbackTimeline.offsets, simElapsedMs])
 
   useEffect(() => {
@@ -255,6 +251,7 @@ export function Brigade() {
           <MapStage
             correlatedSignalIds={missionState.correlatedSignalIds}
             focusSignalId={missionState.mapFocusSignalId}
+            offsets={playbackTimeline.offsets}
             playback={playbackStatus}
             scenario={activeScenario}
             signals={signals}
