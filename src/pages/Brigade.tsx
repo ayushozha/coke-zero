@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApproveBanner } from '../components/ApproveBanner'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
@@ -10,7 +10,7 @@ import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 import type { PlaybackStatus } from '../types/playback'
-import type { Signal } from '../types/canopy'
+import type { Attribution, Decision, Signal } from '../types/canopy'
 
 const fieldDurationFloorMs = 12 * 60 * 1000
 const fieldDurationScale = 1
@@ -42,10 +42,21 @@ const buildPlaybackTimeline = (signals: Signal[]) => {
         ? (index / (signals.length - 1)) * durationMs
         : 0
     }
+    return ((time - startMs) / realDurationMs) * durationMs
+  })
 
-type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
-  confidence: [number, number]
-  cadence?: 'normal' | 'surge'
+  return { durationMs, offsets }
+}
+
+const nowMinus = (seconds: number) =>
+  new Date(Date.now() - seconds * 1000).toISOString()
+
+type MockSignalInput = Omit<
+  Signal,
+  'realism' | 'location' | 'payload' | 'provenance'
+> & {
+  location?: Signal['location']
+  payload: Record<string, unknown>
 }
 
 type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
@@ -380,7 +391,21 @@ const beatAttribution: Attribution = {
   source_signal_ids: ['sig-rf-001', 'sig-cy-014', 'sig-sda-042'],
 }
 
-  return { durationMs, offsets }
+const beatDecision: Decision = {
+  id: 'dec-approve-009',
+  ts: nowMinus(0),
+  attribution_id: 'att-ghost-lance',
+  action: 'Authorize SATCOM hardening package',
+  target: 'SAT-BRAVO / north-axis BLOS relay',
+  rationale:
+    'Preemptive waveform shift and relay isolation are expected to preserve command links during the predicted denial window.',
+  authority: 'request',
+  request_packet: {
+    packet_id: 'REQ-SAT-BRAVO-009',
+    ttl_minutes: 6,
+    commander_intent: 'preserve brigade C2',
+  },
+  source_signal_ids: ['sig-rf-001', 'sig-sat-023'],
 }
 
 export function Brigade() {
@@ -388,7 +413,7 @@ export function Brigade() {
   const forceDemoStream = new URLSearchParams(window.location.search).has(
     'demoStream',
   )
-  const [beatIndex, setBeatIndex] = useState(1)
+  const [beatIndex] = useState(1)
   const [demoStream, setDemoStream] = useState<Signal[]>(() =>
     beatSignals.map((signal, index) => ({
       ...signal,
@@ -399,6 +424,8 @@ export function Brigade() {
   const demoSequenceRef = useRef(beatSignals.length)
   const [isMapAutoFocusEnabled, setIsMapAutoFocusEnabled] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
+  const [activeScenarioId, setActiveScenarioId] = useState(defaultScenario.id)
+  const [simElapsedMs, setSimElapsedMs] = useState(0)
   const activeScenario =
     scenarios.find((scenario) => scenario.id === activeScenarioId) ??
     defaultScenario
@@ -406,6 +433,21 @@ export function Brigade() {
     () => buildPlaybackTimeline(activeScenario.signals),
     [activeScenario.signals],
   )
+  const playbackStatus: PlaybackStatus = useMemo(() => {
+    const nextOffsetMs =
+      playbackTimeline.offsets.find((offset) => offset > simElapsedMs) ?? null
+    const progress =
+      playbackTimeline.durationMs > 0
+        ? Math.min(1, simElapsedMs / playbackTimeline.durationMs)
+        : 0
+    return {
+      durationMs: playbackTimeline.durationMs,
+      elapsedMs: simElapsedMs,
+      nextInjectMs: nextOffsetMs,
+      progress,
+      scaleLabel: playbackScaleLabel,
+    }
+  }, [playbackTimeline.durationMs, playbackTimeline.offsets, simElapsedMs])
 
   useEffect(() => {
     if (
@@ -429,16 +471,6 @@ export function Brigade() {
     setSimElapsedMs(0)
     setIsApproved(false)
   }
-
-  const revealedSignalCount = useMemo(
-    () =>
-      Math.max(
-        1,
-        playbackTimeline.offsets.filter((offset) => offset <= simElapsedMs)
-          .length,
-      ),
-    [playbackTimeline.offsets, simElapsedMs],
-  )
 
   useEffect(() => {
     if (socketState.isConnected && !forceDemoStream) {
@@ -547,6 +579,7 @@ export function Brigade() {
             scenario={activeScenario}
             signals={signals}
           />
+          <ReasoningPanel compact />
         </aside>
       </section>
     </main>

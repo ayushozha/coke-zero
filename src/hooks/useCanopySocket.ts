@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useEventStore } from '../store/eventStore'
 import type {
   Anomaly,
   Attribution,
@@ -11,7 +12,10 @@ import type {
 } from '../types/canopy'
 
 export const MOCK_URL: string | null = null
-const DEV_BRIDGE_URL = 'ws://127.0.0.1:8000/ws/brigade'
+// Backend gateway exposes /ws (see halo/api/__init__.py). The earlier
+// /ws/brigade URL pointed at a route that doesn't exist, so the socket
+// never connected and everything fell back to the local demo stream.
+const DEV_BRIDGE_URL = 'ws://127.0.0.1:8000/ws'
 const configuredUrl = import.meta.env.VITE_CANOPY_WS_URL?.trim()
 const DEFAULT_URL: string | null =
   configuredUrl || (import.meta.env.DEV ? DEV_BRIDGE_URL : MOCK_URL)
@@ -84,6 +88,10 @@ function reduceMessage(
         uiEvents: prependLimited<UIEvent>(state.uiEvents, message.data, 20),
       }
     case 'trace':
+      // Mirror the trace into the global Zustand store so ReasoningPanel
+      // (which reads from useEventStore) renders in real time. Local
+      // state mirror stays for callers that read state.traces directly.
+      useEventStore.getState().ingestTrace(message.data as ReasoningTrace)
       return {
         ...state,
         traces: [...state.traces, message.data as ReasoningTrace].slice(-500),
