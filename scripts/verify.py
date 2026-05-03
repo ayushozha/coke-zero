@@ -23,6 +23,7 @@ from halo.services.decide import DecideService  # noqa: E402
 from halo.services.fusion import FusionService  # noqa: E402
 from halo.services.kb import KB  # noqa: E402
 from halo.services.llm import LLMClient  # noqa: E402
+from halo.services.orbit import OrbitService  # noqa: E402
 from halo.services.scenario_replay import ScenarioReplayService  # noqa: E402
 from halo.services.schemas.events import (  # noqa: E402
     Anomaly,
@@ -94,9 +95,11 @@ async def _verify(
     kb = KB.load_from_json(ROOT / "data" / "kb_seed_entries.json")
     llm = _build_llm(live=live, kb=kb)
 
+    orbit = OrbitService()
+
     fusion = FusionService(bus)
     attrib = AttribService(bus, llm, kb, window_s=0.2)
-    decide = DecideService(bus, llm)
+    decide = DecideService(bus, llm, orbit=orbit)
     ui = UIEventService(bus)
 
     collected: dict[str, list] = {
