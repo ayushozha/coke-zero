@@ -2189,3 +2189,213 @@
     max-width: calc(100% - 20px);
   }
 }
+
+/* ---- Reasoning trace panel -------------------------------------------- */
+.reasoning-panel {
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 16, 15, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  min-height: 200px;
+}
+
+.reasoning-panel--compact {
+  max-height: 240px;
+}
+
+.reasoning-panel .panel__header {
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reasoning-panel__stream {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  background: #050a0a;
+  scroll-behavior: smooth;
+}
+
+.reasoning-panel__empty {
+  color: var(--text-subtle);
+  font-style: italic;
+  font-size: 0.78rem;
+  padding: 4px 0;
+}
+
+.reasoning-line {
+  display: grid;
+  grid-template-columns: 70px 130px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 1px 0;
+}
+
+.reasoning-line__time {
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.reasoning-line__stage {
+  font-weight: 600;
+}
+
+.reasoning-line__msg {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.reasoning-line--decision .reasoning-line__msg {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.reasoning-line--tool .reasoning-line__msg {
+  color: var(--amber);
+}
+
+.reasoning-line--warn .reasoning-line__msg {
+  color: var(--red);
+}
+
+/* ---- Operator list rows ----------------------------------------------- */
+.operator-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.operator-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(220, 227, 213, 0.06);
+}
+
+.operator-list__kind {
+  color: var(--text-primary);
+}
+
+.operator-list__sev {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.operator-shell__footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Stress mode panel ------------------------------------------------ */
+.stress-mode {
+  background: rgba(13, 23, 24, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.stress-mode .panel__header {
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stress-mode__hint {
+  padding: 8px 12px 0;
+  font-size: 0.74rem;
+  color: var(--text-subtle);
+  line-height: 1.5;
+}
+
+.stress-mode__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.stress-mode__cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--control-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.stress-mode__cell input {
+  accent-color: var(--red);
+  margin: 0;
+}
+
+.stress-mode__cell--blocked {
+  border-color: rgba(224, 92, 79, 0.55);
+  background: rgba(224, 92, 79, 0.12);
+  color: var(--red);
+}
+
+.stress-mode__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.stress-mode__actions button {
+  background: var(--amber);
+  color: var(--black);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stress-mode__actions button:disabled {
+  opacity: 0.4;
+}
+
+.stress-mode__error {
+  color: var(--red);
+  font-size: 0.74rem;
+}
