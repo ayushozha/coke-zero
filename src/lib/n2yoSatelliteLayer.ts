@@ -4,7 +4,6 @@ import {
   Cartesian3,
   Color,
   ConstantProperty,
-  HeadingPitchRange,
   LabelStyle,
   NearFarScalar,
   PolylineDashMaterialProperty,
@@ -284,6 +283,9 @@ const familyColor = (family: N2YOSatelliteFamily) =>
 const MIN_DISPLAY_ALTITUDE_M = 800000
 const MAX_DISPLAY_ALTITUDE_M = 6000000
 const ORBIT_SAMPLE_COUNT = 240
+const RESET_CAMERA_LONGITUDE_DEG = 0
+const RESET_CAMERA_LATITUDE_DEG = 0
+const RESET_CAMERA_ALTITUDE_M = 22000000
 
 type N2YOTrackPoint = {
   timestamp: number
@@ -577,12 +579,18 @@ export function selectN2YOSatellite(
 
   showN2YOOrbit(viewer, layer)
 
-  void viewer.flyTo(entity, {
+  viewer.camera.flyTo({
+    destination: Cartesian3.fromDegrees(
+      RESET_CAMERA_LONGITUDE_DEG,
+      RESET_CAMERA_LATITUDE_DEG,
+      RESET_CAMERA_ALTITUDE_M,
+    ),
     duration: 0.6,
-    offset: new HeadingPitchRange(0, -0.55, 3600000),
   })
 
-  return [orbitEntityIdForSatellite(layer.satelliteId)]
+  return isN2YOGeostationaryFamily(layer.satelliteFamily)
+    ? []
+    : [orbitEntityIdForSatellite(layer.satelliteId)]
 }
 
 export function deselectN2YOSatellite(viewer: Viewer, layer: N2YOLayerState) {
@@ -594,16 +602,13 @@ export function deselectN2YOSatellite(viewer: Viewer, layer: N2YOLayerState) {
 }
 
 export function showN2YOOrbit(viewer: Viewer, layer: N2YOLayerState) {
-  // Earlier versions skipped orbit rings for the geostationary families
-  // (AEHF/MUOS/WGS/SBIRS/GSSAP) on the theory that a true GEO satellite
-  // doesn't trace a meaningful path. In our compressed display-altitude
-  // scene that left the demo with LEO orbit rings hugging the limb and
-  // GEO satellites floating far out with no rings — exactly the visual
-  // mismatch we hit in testing. Drawing the equatorial ring at the GEO
-  // satellite's display altitude gives the operator a clear "where this
-  // satellite lives" cue so the satellites and rings line up.
   const orbitId = orbitEntityIdForSatellite(layer.satelliteId)
   viewer.entities.removeById(orbitId)
+
+  if (isN2YOGeostationaryFamily(layer.satelliteFamily)) {
+    return
+  }
+
   const positions = createSampledMotionOrbitPositions(
     layer.cache.track,
     layer.displayAltitudeM,
