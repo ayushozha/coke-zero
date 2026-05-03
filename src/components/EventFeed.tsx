@@ -6,10 +6,15 @@ type EventFeedProps = {
 }
 
 export function EventFeed({ signals }: EventFeedProps) {
+  const latestSignal = signals[0] ?? null
+  const latestSummary = latestSignal
+    ? commanderSignalSummary(latestSignal)
+    : null
+  const latestConfidence = latestSignal?.confidence ?? 0
   const feedState =
-    signals[0]?.confidence >= 0.86
+    latestConfidence >= 0.86
       ? 'PRIORITY'
-      : signals[0]?.confidence >= 0.74
+      : latestConfidence >= 0.74
         ? 'WATCH'
         : 'MONITOR'
 
@@ -20,6 +25,12 @@ export function EventFeed({ signals }: EventFeedProps) {
           <span>ISR / EW / CSM</span>
           <h2>Signal Stream</h2>
         </div>
+        {latestSignal && latestSummary ? (
+          <div className="event-feed__update-cue" key={latestSignal.id}>
+            <span>New report</span>
+            <strong>{latestSummary.label}</strong>
+          </div>
+        ) : null}
         <div className="event-feed__status">
           <span>{feedState}</span>
           <strong>{signals.length.toString().padStart(2, '0')}</strong>

@@ -32,11 +32,23 @@ const aorBounds = {
 
 type AorBounds = typeof aorBounds
 
-const formatMgrs = ([lon, lat]: [number, number]) =>
-  toMgrs([lon, lat], 4).replace(
+const formatMgrs = ([lon, lat]: [number, number]) => {
+  if (
+    !Number.isFinite(lon) ||
+    !Number.isFinite(lat) ||
+    lat < -80 ||
+    lat > 84
+  ) {
+    const latLabel = `${Math.abs(lat).toFixed(2)}${lat >= 0 ? 'N' : 'S'}`
+    const lonLabel = `${Math.abs(lon).toFixed(2)}${lon >= 0 ? 'E' : 'W'}`
+    return `${latLabel} ${lonLabel}`
+  }
+
+  return toMgrs([lon, lat], 4).replace(
     /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
     '$1 $2 $3 $4',
   )
+}
 
 const signalPoint = (signal: Signal): [number, number] | null => {
   if (
