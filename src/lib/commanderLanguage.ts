@@ -5,22 +5,22 @@ const domainCopy: Record<
   { label: string; meaning: string; commanderQuestion: string }
 > = {
   orbit: {
-    label: 'Space object',
+    label: 'Satellite proximity',
     meaning: 'A satellite or nearby object may affect friendly space support.',
     commanderQuestion: 'Could this disrupt ISR, warning, or communications?',
   },
   sda: {
-    label: 'Space custody',
+    label: 'Space tracking',
     meaning: 'Space tracking or overhead warning changed.',
     commanderQuestion: 'Does the brigade need space support attention?',
   },
   rf_ew: {
-    label: 'Electronic attack',
+    label: 'Radio interference',
     meaning: 'Enemy jamming or interference may be affecting links.',
     commanderQuestion: 'Are radios, drones, or SATCOM starting to degrade?',
   },
   cyber: {
-    label: 'Cyber pressure',
+    label: 'Cyber access probe',
     meaning: 'A command, fires, or space-support system is being probed.',
     commanderQuestion: 'Should automated handoffs be slowed or checked?',
   },
@@ -35,17 +35,17 @@ const domainCopy: Record<
     commanderQuestion: 'Does this support a pause, mask, or emit less order?',
   },
   pnt: {
-    label: 'GPS trust',
+    label: 'GPS / timing warning',
     meaning: 'Position, navigation, or timing may not be trustworthy.',
     commanderQuestion: 'Can we trust coordinates for movement or fires?',
   },
   satcom: {
-    label: 'SATCOM health',
+    label: 'SATCOM degradation',
     meaning: 'Beyond-line-of-sight communications are degrading.',
     commanderQuestion: 'Do we need a backup path or space-link request?',
   },
   drone: {
-    label: 'Drone network',
+    label: 'Drone relay status',
     meaning: 'UAS or relay behavior changed at the edge.',
     commanderQuestion: 'Is ISR still reaching the brigade?',
   },
@@ -99,6 +99,37 @@ const actionByDomain: Record<Domain, string> = {
   terrain: 'Move relay geometry or raise the drone if needed.',
 }
 
+const sourceAliases: Record<string, string> = {
+  'base-gnss-monitor': 'Base GPS monitor',
+  'brigade-pnt-monitor': 'Brigade GPS monitor',
+  'brigade-satcom-controller': 'Brigade SATCOM controller',
+  'brigade-siem': 'Brigade cyber sensor',
+  'brigade-spectrum-team': 'Brigade EW team',
+  'canopy-correlation-engine': 'CANOPY mission cell',
+  'convoy-pnt-health-monitor': 'Convoy GPS monitor',
+  'gnss-integrity-fusion': 'GPS integrity fusion',
+  'gnss-integrity-monitor': 'GPS integrity monitor',
+  'gnss-monitor-luzon': 'Luzon GPS monitor',
+  'joint-spectrum-operations-cell': 'Joint EW cell',
+  'orbit-pass-screen': 'Space tracking cell',
+  'rpo-close-approach-overlay': 'Space tracking cell',
+  'satcom-network-controller': 'SATCOM controller',
+  'spectrum-monitor-guam': 'Guam EW monitor',
+  'telemetry-quality-monitor': 'Telemetry monitor',
+  'uas-swarm-controller': 'UAS swarm controller',
+}
+
+const assetAliases: Record<string, string> = {
+  'BASE-CUAS-SENSOR-NET': 'Base C-UAS sensors',
+  'BDE-C2-GATEWAY': 'Brigade C2 gateway',
+  'BDE-SATCOM-1': 'Brigade SATCOM',
+  'BDE-UAS-MESH': 'Brigade drone mesh',
+  'CANOPY-MISSION-CELL': 'CANOPY mission cell',
+  'GNSS-MON-LUZON-2': 'Luzon GPS monitor',
+  'SPACE-PNT-SUPPORT': 'GPS support cell',
+  'UAS-LINK-GROUP-B': 'UAS link group B',
+}
+
 export function domainLabel(domain: Domain): string {
   return domainCopy[domain].label
 }
@@ -114,9 +145,99 @@ export function plainEventName(signal: Signal): string {
   )
 }
 
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : []
+
+const numberValue = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+
+const compactAssetSubject = (assets: string[]) => {
+  if (!assets.length) {
+    return 'Affected system'
+  }
+
+  const droneCount = assets.filter((asset) => asset.startsWith('DRONE-')).length
+  if (droneCount === assets.length) {
+    return droneCount === 1 ? assets[0] : `${droneCount} drones`
+  }
+
+  return assets.length === 1 ? assets[0] : `${assets.length} assets`
+}
+
+const stripFinalPeriod = (value: string) => value.replace(/\.+$/, '')
+
+const friendlySourceLabel = (signal: Signal) => {
+  const asset = signal.payload.asset
+  if (typeof asset === 'string') {
+    return assetAliases[asset] ?? asset.replaceAll('-', ' ')
+  }
+
+  return sourceAliases[signal.source] ?? signal.source.replaceAll('-', ' ')
+}
+
+const oneLineForSignal = (signal: Signal, action: string) => {
+  const observables = signal.payload.observables ?? {}
+  const affectedAssets = stringArray(observables.affected_assets)
+  const affectedSystems = stringArray(observables.affected_systems)
+  const affectedSubject = compactAssetSubject(
+    affectedAssets.length ? affectedAssets : affectedSystems,
+  )
+  const affectedCount = affectedAssets.length
+    ? affectedAssets.length
+    : affectedSystems.length
+  const affectedVerb = affectedCount <= 1 ? 'shows' : 'show'
+  const deltaMeters =
+    numberValue(observables.delta_meters) ??
+    numberValue(observables.position_shift_m)
+  const missDistanceKm = numberValue(observables.miss_distance_km)
+  const newPrimary =
+    typeof observables.new_primary === 'string' ? observables.new_primary : null
+  const linkMarginDb = numberValue(observables.link_margin_db)
+  const packetLossPct = numberValue(observables.packet_loss_pct)
+
+  switch (signal.payload.event_type) {
+    case 'gps_spoof':
+      return `${affectedSubject} ${affectedVerb} GPS drift${deltaMeters ? ` of ${Math.round(deltaMeters)}m` : ''}; verify coordinates before movement or fires.`
+    case 'pnt_spoofing':
+      return `GPS time or position is biased${deltaMeters ? ` by about ${Math.round(deltaMeters)}m` : ''}; confirm navigation with non-GPS sources.`
+    case 'gnss_jamming_signature':
+      return `GPS jamming is degrading navigation and timing; ${stripFinalPeriod(action)}.`
+    case 'rf_interference':
+      return `EW interference is degrading ${affectedSubject.toLowerCase()}; shift to hardened comms.`
+    case 'satcom_degradation':
+      return `SATCOM is degrading${packetLossPct ? ` with ${packetLossPct.toFixed(1)}% loss` : ''}; prepare alternate BLOS routing.`
+    case 'satcom_link_margin_drop':
+      return `SATCOM link margin is low${linkMarginDb ? ` at ${linkMarginDb.toFixed(1)} dB` : ''}; protect the backup route.`
+    case 'satcom_rf_spike':
+      return 'RF energy is hitting the SATCOM backup window; watch route acquisition.'
+    case 'autonomous_relay_handoff':
+      return `Drone relay shifted${newPrimary ? ` to ${newPrimary}` : ''}; ISR feed remains connected.`
+    case 'fdir_recovery_action':
+      return `${signal.payload.asset ?? 'Drone'} isolated bad GPS input; ISR continues with reduced coordinate confidence.`
+    case 'credential_probe':
+    case 'credential_spray':
+      return 'Mission-system logins are being probed; verify access before automated tasking.'
+    case 'rpo_close_approach':
+      return `Object is inside the satellite watch box${missDistanceKm ? ` at ${missDistanceKm.toFixed(1)} km` : ''}; watch support degradation.`
+    case 'proximity_operations':
+      return 'Nearby space object maneuvered near friendly support; request space-cell attention.'
+    case 'close_approach_assessment':
+      return 'SATCOM degradation aligns with a close satellite approach; plan protective options.'
+    case 'overhead_collection_window':
+      return 'Adversary overhead collection window is opening; mask movement and emissions.'
+    case 'terrain_masking_risk':
+      return 'Terrain may block the relay path; adjust drone altitude or relay geometry.'
+    default:
+      return signal.payload.summary
+  }
+}
+
 export function commanderSignalSummary(signal: Signal): {
   label: string
   headline: string
+  oneLine: string
   detail: string
   whyItMatters: string
   action: string
@@ -135,16 +256,18 @@ export function commanderSignalSummary(signal: Signal): {
     typeof observables?.space_dependency === 'string'
       ? observables.space_dependency
       : null
+  const action = demoAction ?? actionByDomain[signal.domain]
 
   return {
     label: copy.label,
     headline: signal.payload.summary,
+    oneLine: oneLineForSignal(signal, action),
     detail: plainEventName(signal),
     whyItMatters: spaceDependency ?? copy.meaning,
-    action: demoAction ?? actionByDomain[signal.domain],
+    action,
     location: signal.location.label ?? signal.source,
     confidenceLabel: `${confidence}% confidence`,
-    sourceLabel: signal.payload.asset ?? signal.source,
+    sourceLabel: friendlySourceLabel(signal),
   }
 }
 
