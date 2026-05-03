@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AorMap } from './AorMap'
 import { CesiumGlobe } from './CesiumGlobe'
 import type { Signal } from '../types/canopy'
 
@@ -21,12 +22,16 @@ export function MapStage({
       className={isGlobe ? 'map-stage map-stage--globe' : 'map-stage'}
       aria-label="Operational map"
     >
-      <CesiumGlobe
-        correlatedSignalIds={correlatedSignalIds}
-        displayMode={viewMode}
-        focusSignalId={focusSignalId}
-        signals={signals}
-      />
+      {isGlobe ? (
+        <CesiumGlobe
+          correlatedSignalIds={correlatedSignalIds}
+          displayMode="globe"
+          focusSignalId={focusSignalId}
+          signals={signals}
+        />
+      ) : (
+        <AorMap />
+      )}
       <div
         className={
           isGlobe
@@ -61,9 +66,6 @@ export function MapStage({
             : `${signals.length.toString().padStart(2, '0')} feeds`}
         </em>
       </div>
-      {!isGlobe ? (
-        <div className="nav-crosshair" aria-hidden="true" />
-      ) : null}
     </section>
   )
 }

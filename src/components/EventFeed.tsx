@@ -15,37 +15,42 @@ export function EventFeed({ signals }: EventFeedProps) {
         </div>
         <strong>{signals.length.toString().padStart(2, '0')}</strong>
       </div>
-      <div className="event-feed__table" role="table" aria-label="Signal log">
-        <div className="event-feed__row event-feed__row--head" role="row">
-          <span>Time</span>
-          <span>Layer</span>
-          <span>Assessment</span>
-          <span>Grid</span>
-          <span>Action</span>
-          <span>Conf</span>
-        </div>
-        {signals.slice(0, 8).map((signal) => {
+      <div
+        className="event-feed__stream"
+        role="log"
+        aria-label="Live signal stream"
+        aria-live="polite"
+      >
+        {signals.slice(0, 10).map((signal, index) => {
           const summary = commanderSignalSummary(signal)
           return (
-            <div className="event-feed__row" key={signal.id} role="row">
-              <span className="event-feed__time">
-                {new Date(signal.ts).toLocaleTimeString([], {
-                  hour12: false,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-              <span className="event-feed__domain">{summary.label}</span>
-              <span className="event-feed__meaning">
+            <article
+              className="event-feed__entry"
+              data-newest={index === 0 ? 'true' : undefined}
+              key={signal.id}
+            >
+              <div className="event-feed__entry-top">
+                <span className="event-feed__time">
+                  {new Date(signal.ts).toLocaleTimeString([], {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <span className="event-feed__domain">{summary.label}</span>
+                <span className="event-feed__confidence">
+                  {summary.confidenceLabel}
+                </span>
+              </div>
+              <div className="event-feed__meaning">
                 <strong>{summary.headline}</strong>
-                <small>{summary.whyItMatters}</small>
-              </span>
-              <span>{summary.location}</span>
-              <span>{summary.action}</span>
-              <span className="event-feed__confidence">
-                {summary.confidenceLabel}
-              </span>
-            </div>
+                <p>{summary.whyItMatters}</p>
+              </div>
+              <div className="event-feed__entry-meta">
+                <span>{summary.location}</span>
+                <span>{summary.action}</span>
+              </div>
+            </article>
           )
         })}
       </div>
