@@ -4870,6 +4870,140 @@
   font-size: 0.74rem;
 }
 
+/* ---- Foldable panel tab handles --------------------------------------
+   Tab buttons rendered as siblings to the side panels. They follow the
+   panel's outer edge while the panel is open and stick to the screen
+   edge while the panel is collapsed (--at-edge), so the operator can
+   always click them to toggle. */
+
+.panel-tab {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line-bright);
+  background:
+    linear-gradient(180deg, rgba(245, 247, 240, 0.05), rgba(2, 4, 4, 0.78)),
+    rgba(7, 16, 15, 0.94);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(7px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: left 0.28s cubic-bezier(0.5, 0, 0.2, 1),
+              right 0.28s cubic-bezier(0.5, 0, 0.2, 1),
+              bottom 0.28s cubic-bezier(0.5, 0, 0.2, 1),
+              background 0.15s ease,
+              color 0.15s ease,
+              border-color 0.15s ease;
+}
+
+.panel-tab:hover {
+  background:
+    linear-gradient(180deg, rgba(51, 242, 240, 0.14), rgba(2, 4, 4, 0.78)),
+    rgba(7, 16, 15, 0.94);
+  border-color: rgba(51, 242, 240, 0.62);
+  color: var(--cyan);
+}
+
+.panel-tab__arrow {
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.panel-tab__label {
+  font-size: 0.72rem;
+}
+
+/* Left and right edges — vertical tabs anchored to the middle of the
+   viewport. Width 36 / height 168 hugs the rail visually and gives
+   plenty of click area. */
+.panel-tab--left-edge,
+.panel-tab--right-edge {
+  top: 50%;
+  width: 36px;
+  height: 168px;
+  transform: translateY(-50%);
+}
+
+.panel-tab--left-edge .panel-tab__label,
+.panel-tab--right-edge .panel-tab__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+/* Hidden by default on narrow viewports — show only on the desktop
+   overlay layout where the panels actually translate. */
+.panel-tab {
+  display: none;
+}
+@media (min-width: 1081px) {
+  .panel-tab {
+    display: flex;
+  }
+}
+
+/* When the panel is open, tab sits at the panel's outer edge. When
+   collapsed (--at-edge), tab sticks to the screen edge. */
+.panel-tab--left-edge {
+  left: var(--left-rail, 300px);
+  border-radius: 0 4px 4px 0;
+  border-left: 0;
+}
+.panel-tab--left-edge.panel-tab--at-edge {
+  left: 0;
+}
+
+.panel-tab--right-edge {
+  right: var(--right-rail, 352px);
+  border-radius: 4px 0 0 4px;
+  border-right: 0;
+}
+.panel-tab--right-edge.panel-tab--at-edge {
+  right: 0;
+}
+
+/* Bottom edge — horizontal tab at the top of the event feed strip. */
+.panel-tab--bottom-edge {
+  left: 50%;
+  bottom: 208px;
+  width: 220px;
+  height: 32px;
+  transform: translateX(-50%);
+  border-radius: 4px 4px 0 0;
+  border-bottom: 0;
+}
+.panel-tab--bottom-edge.panel-tab--at-edge {
+  bottom: 0;
+}
+
+/* ---- Collapsed states — translate panels off-screen ----------------- */
+
+.scenario-rail,
+.decision-stack,
+.event-feed {
+  transition: transform 0.28s cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.scenario-rail--collapsed {
+  transform: translateX(-100%);
+}
+
+.decision-stack--collapsed {
+  transform: translateX(100%);
+}
+
+.event-feed--collapsed {
+  transform: translateY(100%);
+}
+
 /* ---- Cesium overlay controls — desktop offset ------------------------
    On desktop the decision-stack sidebar overlays the right ~352px of the
    map workspace. The Cesium floating controls (NAV/GLOBE selector,
