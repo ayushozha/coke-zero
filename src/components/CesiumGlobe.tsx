@@ -437,7 +437,7 @@ export function CesiumGlobe({
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
     viewer.scene.backgroundColor = Color.fromCssColorString('#07100f')
     viewer.scene.globe.baseColor = Color.fromCssColorString('#0c1514')
-    viewer.scene.globe.enableLighting = true
+    viewer.scene.globe.enableLighting = false
     viewer.scene.globe.maximumScreenSpaceError = 1
     viewer.scene.globe.showGroundAtmosphere = true
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250
@@ -539,6 +539,7 @@ export function CesiumGlobe({
       rectangle: {
         coordinates: Rectangle.fromDegrees(47, 25, 77, 43),
         fill: true,
+        height: 0,
         material: MAP_RED.withAlpha(0.08),
         outline: true,
         outlineColor: MAP_RED.withAlpha(0.65),
@@ -556,6 +557,7 @@ export function CesiumGlobe({
           localAorBounds.north,
         ),
         fill: true,
+        height: 0,
         material: MAP_RED.withAlpha(0.06),
         outline: true,
         outlineColor: MAP_RED.withAlpha(0.65),
