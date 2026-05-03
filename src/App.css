@@ -133,8 +133,10 @@
 .approve-banner,
 .details-panel,
 .panel {
+  position: relative;
+  overflow: hidden;
   border: 1px solid var(--line-bright);
-  border-radius: 6px;
+  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(245, 247, 240, 0.06), transparent 42%),
     linear-gradient(135deg, rgba(99, 199, 192, 0.055), transparent 55%),
@@ -143,6 +145,41 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 18px 46px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(14px);
+}
+
+.scenario-rail::before,
+.mission-summary::before,
+.event-feed::before,
+.narration::before,
+.approve-banner::before,
+.panel::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(99, 199, 192, 0.11) 18%, transparent 36%),
+    linear-gradient(180deg, rgba(245, 247, 240, 0.05), transparent 22%);
+  content: '';
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.scenario-rail::after,
+.mission-summary::after,
+.event-feed::after,
+.narration::after,
+.approve-banner::after,
+.panel::after {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-top: 1px solid rgba(99, 199, 192, 0.42);
+  border-right: 1px solid rgba(99, 199, 192, 0.42);
+  content: '';
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 .scenario-rail {
@@ -154,6 +191,8 @@
 
 .scenario-rail__header,
 .scenario-rail__footer {
+  position: relative;
+  z-index: 1;
   padding: 14px;
 }
 
@@ -194,12 +233,15 @@
 }
 
 .scenario-list {
+  position: relative;
+  z-index: 1;
   min-height: 0;
   overflow: auto;
   padding: 8px;
 }
 
 .scenario-list__item {
+  position: relative;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto;
   gap: 9px;
@@ -214,7 +256,21 @@
   transition:
     background 180ms ease,
     border-color 180ms ease,
+    box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+.scenario-list__item::before {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--cyan);
+  content: '';
+  opacity: 0;
+  transition: opacity 180ms ease;
 }
 
 .scenario-list__item:hover,
@@ -223,10 +279,15 @@
   background:
     linear-gradient(90deg, rgba(99, 199, 192, 0.11), transparent 78%),
     rgba(245, 247, 240, 0.045);
+  box-shadow: inset 0 1px 0 rgba(245, 247, 240, 0.06);
 }
 
 .scenario-list__item:hover {
   transform: translateX(2px);
+}
+
+.scenario-list__item--active::before {
+  opacity: 1;
 }
 
 .scenario-list__item span {
@@ -285,6 +346,15 @@
     var(--panel);
 }
 
+.mission-summary > *,
+.narration > *,
+.approve-banner > *,
+.event-feed > *,
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
 .mission-summary__topline {
   display: flex;
   align-items: center;
@@ -303,6 +373,7 @@
 }
 
 .mission-summary__main h2 {
+  font-family: var(--font-display);
   color: var(--text-primary);
   font-size: 1.26rem;
   font-weight: 650;
@@ -331,21 +402,42 @@
 }
 
 .status-card {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
   border: 1px solid var(--line-bright);
-  border-radius: 6px;
+  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(245, 247, 240, 0.045), transparent),
     var(--panel-soft);
   padding: 10px 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(245, 247, 240, 0.05),
+    0 12px 28px rgba(0, 0, 0, 0.16);
+}
+
+.status-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--line-bright);
+  content: '';
 }
 
 .status-card--amber {
   border-color: rgba(216, 166, 58, 0.58);
 }
 
+.status-card--amber::before {
+  background: var(--amber);
+}
+
 .status-card--red {
   border-color: rgba(208, 95, 88, 0.6);
+}
+
+.status-card--red::before {
+  background: var(--red);
 }
 
 .status-card__topline {
@@ -387,6 +479,7 @@
 }
 
 .status-card h2 {
+  font-family: var(--font-display);
   margin: 7px 0 4px;
   color: var(--text-primary);
   font-size: 1.04rem;
@@ -409,12 +502,39 @@
   position: relative;
   min-height: 0;
   border: 1px solid var(--line-bright);
-  border-radius: 6px;
+  border-radius: 8px;
   background:
     linear-gradient(160deg, rgba(99, 199, 192, 0.16), transparent 42%),
     radial-gradient(circle at 72% 14%, rgba(216, 166, 58, 0.1), transparent 28%),
     #0c1514;
+  box-shadow:
+    inset 0 0 0 1px rgba(245, 247, 240, 0.035),
+    inset 0 -80px 120px rgba(7, 16, 15, 0.38),
+    0 24px 56px rgba(0, 0, 0, 0.28);
   overflow: hidden;
+}
+
+.map-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(180deg, transparent, rgba(99, 199, 192, 0.05), transparent),
+    linear-gradient(90deg, rgba(245, 247, 240, 0.03) 1px, transparent 1px);
+  background-size: 100% 160px, 96px 96px;
+  content: '';
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.map-stage::after {
+  position: absolute;
+  inset: 12px;
+  z-index: 3;
+  border: 1px solid rgba(99, 199, 192, 0.12);
+  border-radius: 6px;
+  content: '';
+  pointer-events: none;
 }
 
 .cesium-globe,
@@ -494,7 +614,7 @@
   position: absolute;
   left: 16px;
   bottom: 18px;
-  z-index: 4;
+  z-index: 5;
   max-width: min(460px, calc(100% - 32px));
   border: 1px solid rgba(216, 166, 58, 0.36);
   border-left: 4px solid var(--amber);
@@ -704,6 +824,7 @@
 
 .panel__header h2,
 .approve-banner h2 {
+  font-family: var(--font-display);
   margin: 0;
   color: var(--text-primary);
   font-size: 1rem;
@@ -836,6 +957,7 @@
 }
 
 .event-feed__header h2 {
+  font-family: var(--font-display);
   margin: 4px 0 0;
   color: var(--text-primary);
   font-size: 1.08rem;
@@ -862,6 +984,13 @@
   border-bottom: 1px solid var(--line);
   padding: 10px 14px;
   color: var(--text-primary);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.event-feed__row:not(.event-feed__row--head):hover {
+  background: rgba(99, 199, 192, 0.055);
 }
 
 .event-feed__row--head {
@@ -881,6 +1010,10 @@
   .operator-shell::after {
     animation: canopy-ambient 18s ease-in-out infinite alternate;
   }
+
+  .map-stage::before {
+    animation: canopy-scan 14s linear infinite;
+  }
 }
 
 @keyframes canopy-ambient {
@@ -890,6 +1023,16 @@
 
   to {
     transform: translate3d(1.5%, 1%, 0) rotate(2deg);
+  }
+}
+
+@keyframes canopy-scan {
+  from {
+    background-position: 0 -160px, 0 0;
+  }
+
+  to {
+    background-position: 0 160px, 96px 0;
   }
 }
 
