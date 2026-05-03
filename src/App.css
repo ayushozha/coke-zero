@@ -1513,12 +1513,234 @@
 }
 
 .panel__header h2,
-.approve-banner h2 {
+.approve-banner h2,
+.scenario-timeline__header h2 {
   font-family: var(--font-display);
   margin: 0;
   color: var(--text-primary);
   font-size: 0.92rem;
   font-weight: 760;
+}
+
+.scenario-timeline {
+  display: grid;
+  gap: 10px;
+  border-color: rgba(51, 242, 240, 0.28);
+}
+
+.scenario-timeline__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(220, 227, 213, 0.12);
+}
+
+.scenario-timeline__header > div {
+  min-width: 0;
+}
+
+.scenario-timeline__header span,
+.scenario-timeline__focus span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.scenario-timeline__header h2 {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-timeline__header strong {
+  border: 1px solid rgba(51, 242, 240, 0.36);
+  border-radius: 2px;
+  background: rgba(51, 242, 240, 0.07);
+  color: #8cf4ef;
+  font-size: 0.72rem;
+  font-weight: 760;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.scenario-timeline__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.scenario-timeline__meta span {
+  min-width: 0;
+  border-left: 2px solid rgba(201, 164, 87, 0.72);
+  background:
+    linear-gradient(90deg, rgba(201, 164, 87, 0.1), transparent 82%),
+    rgba(7, 11, 11, 0.56);
+  color: var(--text-primary);
+  font-size: 0.66rem;
+  font-weight: 720;
+  overflow: hidden;
+  padding: 5px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-timeline__meta b {
+  display: block;
+  color: var(--text-subtle);
+  font-size: 0.52rem;
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.scenario-timeline__rail {
+  position: relative;
+  height: 30px;
+  border: 1px solid rgba(220, 227, 213, 0.14);
+  background:
+    linear-gradient(90deg, rgba(51, 242, 240, 0.08), transparent 42%),
+    rgba(7, 11, 11, 0.62);
+}
+
+.scenario-timeline__rail::before,
+.scenario-timeline__rail-fill {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  height: 2px;
+  content: '';
+  transform: translateY(-50%);
+}
+
+.scenario-timeline__rail::before {
+  right: 8px;
+  background: rgba(220, 227, 213, 0.16);
+}
+
+.scenario-timeline__rail-fill {
+  max-width: calc(100% - 16px);
+  background: linear-gradient(90deg, var(--cyan), var(--amber));
+  box-shadow: 0 0 14px rgba(51, 242, 240, 0.2);
+}
+
+.scenario-timeline__marker {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(220, 227, 213, 0.42);
+  background: rgba(2, 4, 4, 0.9);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.scenario-timeline__marker--complete {
+  border-color: rgba(51, 242, 240, 0.78);
+  background: rgba(51, 242, 240, 0.38);
+}
+
+.scenario-timeline__marker--next {
+  border-color: rgba(201, 164, 87, 0.9);
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(201, 164, 87, 0.58);
+}
+
+.scenario-timeline__focus {
+  min-width: 0;
+  border-left: 3px solid var(--amber);
+  background:
+    linear-gradient(90deg, rgba(201, 164, 87, 0.1), transparent 88%),
+    rgba(7, 11, 11, 0.42);
+  padding: 7px 9px;
+}
+
+.scenario-timeline__focus strong,
+.scenario-timeline__focus p,
+.scenario-timeline__row strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.scenario-timeline__focus strong {
+  margin-top: 4px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 720;
+  line-height: 1.22;
+  -webkit-line-clamp: 2;
+}
+
+.scenario-timeline__focus p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+}
+
+.scenario-timeline__list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scenario-timeline__row {
+  display: grid;
+  grid-template-columns: 48px 76px minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+  min-width: 0;
+  border-top: 1px solid rgba(220, 227, 213, 0.08);
+  padding-top: 5px;
+}
+
+.scenario-timeline__row-time,
+.scenario-timeline__row-domain {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-timeline__row-time {
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 760;
+}
+
+.scenario-timeline__row-domain {
+  color: rgba(220, 227, 213, 0.72);
+  font-size: 0.62rem;
+  font-weight: 720;
+}
+
+.scenario-timeline__row strong {
+  color: rgba(245, 247, 240, 0.9);
+  font-size: 0.68rem;
+  font-weight: 620;
+  line-height: 1.24;
+  -webkit-line-clamp: 2;
+}
+
+.scenario-timeline__row--next {
+  border-top-color: rgba(201, 164, 87, 0.32);
+}
+
+.scenario-timeline__row--next .scenario-timeline__row-time,
+.scenario-timeline__row--next .scenario-timeline__row-domain {
+  color: #e1c879;
+}
+
+.scenario-timeline__row--pending {
+  opacity: 0.62;
 }
 
 .narration__plain {
@@ -2275,6 +2497,28 @@
     padding: 10px;
   }
 
+  .scenario-timeline {
+    gap: 8px;
+  }
+
+  .scenario-timeline__header {
+    padding-bottom: 7px;
+  }
+
+  .scenario-timeline__meta {
+    gap: 5px;
+  }
+
+  .scenario-timeline__meta span {
+    padding: 4px 5px;
+    font-size: 0.6rem;
+  }
+
+  .scenario-timeline__row {
+    grid-template-columns: 44px 66px minmax(0, 1fr);
+    gap: 6px;
+  }
+
   .narration {
     max-height: 250px;
   }
@@ -2335,9 +2579,23 @@
     min-height: 520px;
   }
 
+  .status-row {
+    order: 2;
+  }
+
+  .event-feed {
+    order: 3;
+  }
+
   .nav-crosshair,
   .nav-inset {
     display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1080px) {
+  .status-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2474,6 +2732,26 @@
 
   .event-feed__stream {
     max-height: 280px;
+  }
+
+  .scenario-timeline__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scenario-timeline__meta span:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .scenario-timeline__row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .scenario-timeline__row-domain {
+    grid-column: 2;
+  }
+
+  .scenario-timeline__row strong {
+    grid-column: 1 / -1;
   }
 
   .event-feed__header {
