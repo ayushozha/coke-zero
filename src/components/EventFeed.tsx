@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import type { Signal } from '../types/canopy'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
 
@@ -10,349 +9,23 @@ type EventFeedProps = {
   signals: Signal[]
 }
 
-type FeedView = 'updates' | 'raw' | 'flow'
-type FlowNodeId =
-  | 'signal'
-  | 'schema'
-  | 'fuse'
-  | 'confidence'
-  | 'draft'
-  | 'commander'
-  | 'hold'
-  | 'watch'
-type FlowEdgeId =
-  | 'signal-schema'
-  | 'schema-fuse'
-  | 'schema-hold'
-  | 'fuse-confidence'
-  | 'confidence-draft'
-  | 'confidence-watch'
-  | 'draft-commander'
+const SIGNAL_STREAM_UPDATE_MS = 5000
 
-type DecisionFlowFrame = {
-  activeEdges: FlowEdgeId[]
-  activeNode: FlowNodeId
-  completedEdges: FlowEdgeId[]
-  completedNodes: FlowNodeId[]
-  detail: string
-  headline: string
-}
-
-const RAW_SIGNAL_LIMIT = 30
-const SPARKLINE_BUCKETS = 24
-const ONE_MINUTE_MS = 60_000
-
-const priorityForSignal = (signal: Signal) =>
-  signal.confidence >= 0.86
-    ? 'high'
-    : signal.confidence >= 0.74
-      ? 'watch'
-      : 'low'
-
-const signalEnvelope = (signal: Signal) => ({
-  type: 'signal',
-  data: signal,
-})
-
-const signalJson = (signal: Signal) =>
-  JSON.stringify(signalEnvelope(signal), null, 2)
-
-const formatTime = (ts: string, includeSeconds = false) =>
-  new Date(ts).toLocaleTimeString([], {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: includeSeconds ? '2-digit' : undefined,
-  })
-
-const compactSource = (source: string) =>
-  source
-    .replace(/^brigade-/i, 'bde-')
-    .replace(/^canopy-/i, 'canopy-')
-    .replace(/controller/gi, 'ctrl')
-    .replace(/commercial/gi, 'com')
-    .replace(/\s+/g, '_')
-    .toLowerCase()
-
-const compactPayload = (signal: Signal) => {
-  const eventType = signal.payload.event_type
-  const asset = signal.payload.asset
-  const summary = signal.payload.summary
-  const fragments = [eventType, asset, summary].filter(Boolean)
-
-  if (fragments.length) {
-    return fragments.join(' | ')
-  }
-
-  return signal.source
-}
-
-const numericSignalSequence = (signal: Signal) => {
-  const streamSequence = signal.payload.observables?.stream_sequence
-  if (typeof streamSequence === 'number') {
-    return streamSequence
-  }
-
-  const numericSuffix = signal.id.match(/(\d+)$/)?.[1]
-  if (numericSuffix) {
-    return Number(numericSuffix)
-  }
-
-  return signal.id
-    .split('')
-    .reduce((total, character) => total + character.charCodeAt(0), 0)
-}
-
-const idleDecisionFlow: DecisionFlowFrame[] = [
-  {
-    activeEdges: [],
-    activeNode: 'signal',
-    completedEdges: [],
-    completedNodes: [],
-    detail: 'Awaiting signal bus',
-    headline: 'LLM decision flow standing by',
-  },
-]
-
-const buildDummyDecisionFlow = (
-  signal: Signal | undefined,
-  activeDomains: number,
-): DecisionFlowFrame[] => {
-  if (!signal) {
-    return idleDecisionFlow
-  }
-
-  const sequence = numericSignalSequence(signal)
-  const schemaAccepted = sequence % 9 !== 0
-  const actionThreshold = signal.domain === 'sda' ? 0.84 : 0.86
-  const actionReady = signal.confidence >= actionThreshold
-  const source = compactSource(signal.source)
-  const confidence = signal.confidence.toFixed(2)
-  const baseDetail = `${signal.domain} / ${source} / conf=${confidence}`
-  const frames: DecisionFlowFrame[] = [
-    {
-      activeEdges: ['signal-schema'],
-      activeNode: 'signal',
-      completedEdges: [],
-      completedNodes: [],
-      detail: baseDetail,
-      headline: 'LLM ingesting signal envelope',
-    },
-    {
-      activeEdges: schemaAccepted ? ['schema-fuse'] : ['schema-hold'],
-      activeNode: 'schema',
-      completedEdges: ['signal-schema'],
-      completedNodes: ['signal'],
-      detail: schemaAccepted
-        ? 'Signal contract accepted; extracting operational fields'
-        : 'Schema gate needs enrichment before attribution',
-      headline: schemaAccepted ? 'Schema accepted' : 'Schema needs context',
-    },
-  ]
-
-  if (!schemaAccepted) {
-    return [
-      ...frames,
-      {
-        activeEdges: [],
-        activeNode: 'hold',
-        completedEdges: ['signal-schema', 'schema-hold'],
-        completedNodes: ['signal', 'schema'],
-        detail: 'Holding event while CANOPY asks for missing context',
-        headline: 'LLM routes event to enrichment hold',
-      },
-    ]
-  }
-
-  frames.push(
-    {
-      activeEdges: ['fuse-confidence'],
-      activeNode: 'fuse',
-      completedEdges: ['signal-schema', 'schema-fuse'],
-      completedNodes: ['signal', 'schema'],
-      detail: `${activeDomains} active domains checked for correlation`,
-      headline: 'LLM fusing cross-domain context',
-    },
-    {
-      activeEdges: actionReady ? ['confidence-draft'] : ['confidence-watch'],
-      activeNode: 'confidence',
-      completedEdges: ['signal-schema', 'schema-fuse', 'fuse-confidence'],
-      completedNodes: ['signal', 'schema', 'fuse'],
-      detail: actionReady
-        ? `Confidence clears ${actionThreshold.toFixed(2)} action threshold`
-        : `Confidence below ${actionThreshold.toFixed(2)} action threshold`,
-      headline: actionReady ? 'Action gate passed' : 'Action gate held',
-    },
-  )
-
-  if (!actionReady) {
-    return [
-      ...frames,
-      {
-        activeEdges: [],
-        activeNode: 'watch',
-        completedEdges: [
-          'signal-schema',
-          'schema-fuse',
-          'fuse-confidence',
-          'confidence-watch',
-        ],
-        completedNodes: ['signal', 'schema', 'fuse', 'confidence'],
-        detail: 'Continuing watch; no commander action generated yet',
-        headline: 'LLM routes event to watch queue',
-      },
-    ]
-  }
-
-  return [
-    ...frames,
-    {
-      activeEdges: ['draft-commander'],
-      activeNode: 'draft',
-      completedEdges: [
-        'signal-schema',
-        'schema-fuse',
-        'fuse-confidence',
-        'confidence-draft',
-      ],
-      completedNodes: ['signal', 'schema', 'fuse', 'confidence'],
-      detail: 'Drafting recommendation packet for command review',
-      headline: 'LLM drafting commander action',
-    },
-    {
-      activeEdges: [],
-      activeNode: 'commander',
-      completedEdges: [
-        'signal-schema',
-        'schema-fuse',
-        'fuse-confidence',
-        'confidence-draft',
-        'draft-commander',
-      ],
-      completedNodes: ['signal', 'schema', 'fuse', 'confidence', 'draft'],
-      detail: 'Commander update is ready in the decision pane',
-      headline: 'LLM decision surfaced to commander',
-    },
-  ]
-}
-
-const sparklineBuckets = (arrivalTimes: number[]) => {
-  const now = Date.now()
-  const bucketWidth = ONE_MINUTE_MS / SPARKLINE_BUCKETS
-  const buckets = Array.from({ length: SPARKLINE_BUCKETS }, () => 0)
-
-  arrivalTimes.forEach((arrivalTime) => {
-    const age = now - arrivalTime
-    if (age < 0 || age > ONE_MINUTE_MS) {
-      return
-    }
-
-    const bucketIndex = Math.min(
-      SPARKLINE_BUCKETS - 1,
-      Math.floor(age / bucketWidth),
-    )
-    buckets[SPARKLINE_BUCKETS - 1 - bucketIndex] += 1
-  })
-
-  const peak = Math.max(1, ...buckets)
-  return buckets.map((count) => Math.max(10, Math.round((count / peak) * 100)))
-}
-
-export function EventFeed({
-  isMapAutoFocusEnabled = false,
-  isLive = false,
-  onToggleMapAutoFocus,
-  signals,
-}: EventFeedProps) {
-  const [activeView, setActiveView] = useState<FeedView>('updates')
-  const [flowProgress, setFlowProgress] = useState<{
-    signalId: string | undefined
-    stepIndex: number
-  }>({ signalId: undefined, stepIndex: 0 })
-  const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null)
-  const [arrivalTimes, setArrivalTimes] = useState<number[]>([])
-  const arrivalTimesByIdRef = useRef<Map<string, number>>(new Map())
-  const rawStreamRef = useRef<HTMLDivElement>(null)
-  const latestSignal = signals[0]
-  const latestSignalId = latestSignal?.id
+export function EventFeed({ signals }: EventFeedProps) {
+  const [visibleSignals, setVisibleSignals] = useState(signals)
 
   useEffect(() => {
-    const now = Date.now()
-    const signalIds = new Set(signals.map((signal) => signal.id))
-    const arrivals = arrivalTimesByIdRef.current
-
-    signals.forEach((signal) => {
-      if (!arrivals.has(signal.id)) {
-        arrivals.set(signal.id, now)
-      }
-    })
-
-    arrivals.forEach((arrivalTime, signalId) => {
-      if (now - arrivalTime > ONE_MINUTE_MS && !signalIds.has(signalId)) {
-        arrivals.delete(signalId)
-      }
-    })
-
-    setArrivalTimes(
-      Array.from(arrivals.values()).filter(
-        (arrivalTime) => now - arrivalTime <= ONE_MINUTE_MS,
-      ),
-    )
-  }, [signals])
-
-  useEffect(() => {
-    if (activeView === 'raw') {
-      rawStreamRef.current?.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      })
-    }
-  }, [activeView, latestSignalId])
-
-  const rawSignals = useMemo(
-    () => signals.slice(0, RAW_SIGNAL_LIMIT),
-    [signals],
-  )
-  const activeDomains = useMemo(
-    () => new Set(signals.map((signal) => signal.domain)).size,
-    [signals],
-  )
-  const eventRateBuckets = useMemo(
-    () => sparklineBuckets(arrivalTimes),
-    [arrivalTimes],
-  )
-  const flowFrames = useMemo(
-    () => buildDummyDecisionFlow(latestSignal, activeDomains),
-    [activeDomains, latestSignal],
-  )
-
-  useEffect(() => {
-    if (!latestSignalId) {
-      return
-    }
-
     const timer = window.setInterval(() => {
-      setFlowProgress((current) => {
-        const currentStep =
-          current.signalId === latestSignalId ? current.stepIndex : 0
-
-        return {
-          signalId: latestSignalId,
-          stepIndex:
-            currentStep >= flowFrames.length - 1
-              ? currentStep
-              : currentStep + 1,
-        }
-      })
-    }, 1275)
+      setVisibleSignals(signals)
+    }, SIGNAL_STREAM_UPDATE_MS)
 
     return () => window.clearInterval(timer)
-  }, [flowFrames.length, latestSignalId])
+  }, [signals])
 
   const feedState =
-    latestSignal?.confidence >= 0.86
+    visibleSignals[0]?.confidence >= 0.86
       ? 'PRIORITY'
-      : latestSignal?.confidence >= 0.74
+      : visibleSignals[0]?.confidence >= 0.74
         ? 'WATCH'
         : 'MONITOR'
   const flowFrame =
@@ -489,6 +162,10 @@ export function EventFeed({
             <span>{statusLabel}</span>
             <strong>{signals.length.toString().padStart(2, '0')}</strong>
           </div>
+        ) : null}
+        <div className="event-feed__status">
+          <span>{feedState}</span>
+          <strong>{visibleSignals.length.toString().padStart(2, '0')}</strong>
         </div>
       </div>
 
@@ -529,23 +206,27 @@ export function EventFeed({
             )
           })}
         </div>
-      ) : activeView === 'flow' ? (
-        <div
-          className={`event-feed__flow-view event-feed__flow-view--${flowPriority}`}
-          aria-label="CANOPY decision flow"
-        >
-          <div className="event-feed__flow-summary">
-            <span>Sense / Attribute / Decide</span>
-            <strong>{flowHeadline}</strong>
-            <em>{flowDetail}</em>
-          </div>
-          <div className="event-feed__flow-canvas">
-            <svg
-              className="event-feed__flow-svg"
-              viewBox="0 0 1180 172"
-              role="img"
-              aria-label="Signal bus flows left to right through fusion, attribution, confidence gating, and commander update."
-              preserveAspectRatio="xMidYMid meet"
+      ) : null}
+      <div
+        className="event-feed__stream"
+        role="log"
+        aria-label="Live signal stream"
+        aria-live="polite"
+      >
+        {visibleSignals.slice(0, 10).map((signal, index) => {
+          const summary = commanderSignalSummary(signal)
+          const priority =
+            signal.confidence >= 0.86
+              ? 'high'
+              : signal.confidence >= 0.74
+                ? 'watch'
+                : 'low'
+          return (
+            <article
+              className={`event-feed__entry event-feed__entry--${priority}`}
+              data-newest={index === 0 ? 'true' : undefined}
+              key={signal.id}
+              title={`${summary.oneLine} / ${summary.sourceLabel} / ${summary.location}`}
             >
               <defs>
                 <marker

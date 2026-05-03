@@ -1259,6 +1259,174 @@
   color: #b8fbf7;
 }
 
+.satellite-family-controls {
+  position: absolute;
+  top: 108px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(154, 190, 180, 0.26);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(245, 247, 240, 0.035), rgba(245, 247, 240, 0.01)),
+    rgba(6, 12, 12, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 247, 240, 0.04),
+    0 10px 26px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px) saturate(1.08);
+}
+
+.satellite-family-controls button {
+  min-width: 46px;
+  min-height: 32px;
+  border: 0;
+  border-right: 1px solid rgba(154, 190, 180, 0.16);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(245, 247, 240, 0.78);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 7px 9px;
+}
+
+.satellite-family-controls button:last-child {
+  border-right: 0;
+}
+
+.satellite-family-controls button:hover,
+.satellite-family-controls button.is-active {
+  background:
+    linear-gradient(180deg, rgba(201, 164, 87, 0.12), rgba(51, 242, 240, 0.025)),
+    rgba(28, 35, 24, 0.78);
+  color: #f1d184;
+}
+
+.satellite-family-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.satellite-detail {
+  position: absolute;
+  right: 14px;
+  bottom: 56px;
+  z-index: 5;
+  width: min(280px, calc(100% - 28px));
+  border: 1px solid rgba(201, 164, 87, 0.42);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(201, 164, 87, 0.08), rgba(51, 242, 240, 0.025)),
+    rgba(6, 12, 12, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 247, 240, 0.04),
+    0 12px 28px rgba(0, 0, 0, 0.28);
+  padding: 10px;
+  backdrop-filter: blur(10px) saturate(1.08);
+}
+
+.satellite-detail span,
+.satellite-detail dt {
+  color: rgba(220, 227, 213, 0.68);
+  font-size: 0.66rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.satellite-detail strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 720;
+}
+
+.satellite-detail dl {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.satellite-detail div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid rgba(220, 227, 213, 0.12);
+  padding-top: 6px;
+}
+
+.satellite-detail dd {
+  margin: 0;
+  color: #f5f7f0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-align: right;
+}
+
+.orbit-toggle {
+  position: absolute;
+  top: 154px;
+  right: 14px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border: 1px solid rgba(201, 164, 87, 0.42);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(201, 164, 87, 0.06), rgba(245, 247, 240, 0.01)),
+    rgba(6, 12, 12, 0.78);
+  color: rgba(245, 247, 240, 0.84);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 650;
+  padding: 8px 11px;
+  backdrop-filter: blur(10px) saturate(1.08);
+}
+
+.orbit-toggle__box {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 14px;
+  border: 1px dashed rgba(201, 164, 87, 0.88);
+  background: rgba(2, 4, 4, 0.64);
+}
+
+.orbit-toggle__box::after {
+  position: absolute;
+  inset: 3px 2px auto 2px;
+  border-top: 2px dashed rgba(201, 164, 87, 0.95);
+  content: '';
+}
+
+.orbit-toggle--active {
+  background:
+    linear-gradient(180deg, rgba(201, 164, 87, 0.15), rgba(51, 242, 240, 0.025)),
+    rgba(19, 24, 12, 0.82);
+  color: #f1d184;
+}
+
+.orbit-toggle--active .orbit-toggle__box::before {
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 7px;
+  height: 10px;
+  border-right: 2px solid #f1d184;
+  border-bottom: 2px solid #f1d184;
+  content: '';
+  transform: rotate(42deg);
+}
+
+.orbit-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .cesium-credits {
   position: absolute;
   right: 12px;
@@ -3639,6 +3807,16 @@
     gap: 5px;
   }
 
+  .satellite-family-controls {
+    top: 148px;
+    right: 310px;
+  }
+
+  .orbit-toggle {
+    top: 190px;
+    right: 310px;
+  }
+
   .cesium-scenario-controls button {
     min-height: 30px;
     padding: 6px 8px;
@@ -3943,6 +4121,27 @@
     flex: 1 1 0;
     min-width: 0;
     padding: 8px 6px;
+  }
+
+  .satellite-family-controls {
+    top: auto;
+    right: 10px;
+    bottom: 58px;
+    left: 10px;
+    z-index: 8;
+  }
+
+  .satellite-family-controls button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 5px;
+  }
+
+  .orbit-toggle {
+    top: auto;
+    right: 10px;
+    bottom: 104px;
+    z-index: 8;
   }
 
   .aor-map__hud,
