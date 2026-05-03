@@ -3,21 +3,58 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from collections.abc import Callable
+
 from halo.services.bus import Bus
 from halo.services.kb import KB
 from halo.services.llm import LLMClient
-from halo.services.schemas.events import Anomaly
+from halo.services.schemas.events import Anomaly, Domain
+from halo.services.traces import Tracer
 
 log = logging.getLogger(__name__)
 
 __all__ = ["AttribService"]
 
 DEFAULT_WINDOW_S = 2.0
+STRESS_HAIRCUT = 0.15
+
+# Map anomaly kinds to the input domains they implicitly rely on. When an
+# input domain is blocked, attributions backed primarily by that domain
+# take a confidence haircut to honestly reflect the degraded picture.
+_KIND_DOMAINS: dict[str, set[Domain]] = {
+    "rf_anomaly": {"rf_ew"},
+    "rf_gnss_jamming": {"rf_ew", "pnt"},
+    "rf_uas_control_link": {"rf_ew"},
+    "rf_emission_posture_risk": {"rf_ew"},
+    "rf_telemetry_degradation": {"rf_ew", "satcom"},
+    "gnss_spoof": {"pnt"},
+    "satcom_degradation": {"satcom"},
+    "cyber_probe_burst": {"cyber"},
+    "cyber_response_action": {"cyber"},
+    "sda_catalog_match": {"sda"},
+    "sda_maritime_picture_shift": {"sda"},
+    "sda_overhead_ir_cue": {"sda"},
+    "sda_counterspace_context": {"sda"},
+    "drone_spoofing": {"drone"},
+    "drone_lost_link": {"drone"},
+    "drone_degraded": {"drone"},
+    "orbital_rpo_risk": {"orbit", "sda"},
+    "orbital_collection_risk": {"orbit"},
+    "orbital_collection_overlap": {"orbit"},
+    "orbital_collection_correlated": {"orbit"},
+}
 
 
 def _country_topic(actor: str) -> str:
     head = actor.split("/", 1)[0].strip().lower()
     return head.replace(" ", "_") or "unknown"
+
+
+def _critical_domains_for(anomalies: list[Anomaly]) -> set[Domain]:
+    domains: set[Domain] = set()
+    for a in anomalies:
+        domains.update(_KIND_DOMAINS.get(a.kind, set()))
+    return domains
 
 
 class AttribService:
@@ -37,11 +74,15 @@ class AttribService:
         kb: KB,
         *,
         window_s: float = DEFAULT_WINDOW_S,
+        tracer: Tracer | None = None,
+        blocked_domains: Callable[[], set[Domain]] | None = None,
     ) -> None:
         self._bus = bus
         self._llm = llm
         self._kb = kb
         self._window_s = window_s
+        self._tracer = tracer
+        self._blocked_domains = blocked_domains
 
     async def run(self) -> None:
         buffer: list[Anomaly] = []
@@ -86,11 +127,60 @@ class AttribService:
         if not context:
             context = self._kb.all_entries()
 
+        # Multi-agent attribution loop: primary → red-team → reconcile.
+        # The intermediate primary + challenge live entirely in the trace
+        # stream; downstream services see only the final reconciled
+        # attribution on ``attributions.{actor}``.
         try:
-            attribution = await self._llm.attribute(anomalies, context)
+            primary = await self._llm.attribute_primary(anomalies, context)
         except Exception:
-            log.exception("attrib: LLMClient.attribute failed for batch of %d", len(anomalies))
+            log.exception(
+                "attrib: attribute_primary failed for batch of %d", len(anomalies)
+            )
             return
+        if self._tracer is not None:
+            await self._tracer.emit(
+                "attrib_primary",
+                "info",
+                f"actor={primary.actor} confidence={primary.confidence:.2f}",
+                ref_id=primary.id,
+                actor=primary.actor,
+                confidence=primary.confidence,
+            )
+
+        try:
+            challenge = await self._llm.attribute_redteam(primary, anomalies, context)
+        except Exception:
+            log.exception(
+                "attrib: attribute_redteam failed for primary=%s", primary.id
+            )
+            attribution = primary
+        else:
+            if self._tracer is not None:
+                alt = challenge.alternative_actor or "uncertainty floor"
+                await self._tracer.emit(
+                    "attrib_redteam",
+                    "warn" if challenge.confidence_delta < 0 else "info",
+                    f"challenge: {challenge.rationale}",
+                    ref_id=primary.id,
+                    alternative_actor=alt,
+                    confidence_delta=challenge.confidence_delta,
+                    objections=challenge.objections,
+                )
+            try:
+                attribution = await self._llm.reconcile(
+                    primary, challenge, anomalies, context
+                )
+            except Exception:
+                log.exception(
+                    "attrib: reconcile failed for primary=%s", primary.id
+                )
+                attribution = primary
+
+        # Stress-mode confidence haircut: if any critical input domain for
+        # this anomaly cluster is blocked, lower confidence and surface the
+        # degradation in the trace stream.
+        attribution = await self._apply_stress_haircut(attribution, anomalies)
 
         country = _country_topic(attribution.actor)
         await self._bus.publish(f"attributions.{country}", attribution)
@@ -100,4 +190,47 @@ class AttribService:
             attribution.actor,
             attribution.confidence,
             len(attribution.source_signal_ids),
+        )
+        if self._tracer is not None:
+            await self._tracer.emit(
+                "attrib_reconcile",
+                "info",
+                f"final actor={attribution.actor} confidence={attribution.confidence:.2f}",
+                ref_id=attribution.id,
+                actor=attribution.actor,
+                confidence=attribution.confidence,
+            )
+
+    async def _apply_stress_haircut(
+        self, attribution, anomalies: list[Anomaly]
+    ):
+        if self._blocked_domains is None:
+            return attribution
+        blocked = self._blocked_domains()
+        if not blocked:
+            return attribution
+        critical = _critical_domains_for(anomalies)
+        intersection = critical & blocked
+        if not intersection:
+            return attribution
+
+        new_confidence = max(0.30, attribution.confidence - STRESS_HAIRCUT)
+        evidence = list(attribution.evidence)
+        evidence.append(
+            "Stress: input domains "
+            f"{sorted(intersection)} unavailable — confidence lowered."
+        )
+        if self._tracer is not None:
+            await self._tracer.emit(
+                "stress",
+                "warn",
+                f"{sorted(intersection)} blocked — lowering confidence "
+                f"{attribution.confidence:.2f} → {new_confidence:.2f}",
+                ref_id=attribution.id,
+                blocked=sorted(intersection),
+                before=attribution.confidence,
+                after=new_confidence,
+            )
+        return attribution.model_copy(
+            update={"confidence": round(new_confidence, 3), "evidence": evidence}
         )

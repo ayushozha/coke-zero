@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from halo.services.kb.models import KBEntry
-from halo.services.schemas.events import Anomaly
+from halo.services.schemas.events import Anomaly, Attribution, AttributionChallenge
 
 ATTRIBUTION_TOOL: dict[str, Any] = {
     "name": "submit_attribution",
@@ -251,4 +251,133 @@ def attribution_user_prompt(
         "[ ] Confidence score matches the tier vocabulary\n"
         "[ ] Each evidence item names the affected segment (orbital/link/terrestrial)\n\n"
         "Submit the attribution assessment via the submit_attribution tool."
+    )
+
+# ---- Red-team challenge prompt ------------------------------------------
+
+REDTEAM_TOOL: dict[str, Any] = {
+    "name": "submit_challenge",
+    "description": (
+        "Critique the primary attribution. Identify the strongest alternative "
+        "actor or hypothesis the primary may have missed, list specific "
+        "objections to the primary's reasoning, and propose a confidence "
+        "delta (negative if primary is overconfident, positive only when red-team "
+        "agrees evidence is stronger than primary scored). The reconciler will "
+        "use this to produce the final calibrated attribution."
+    ),
+    "input_schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["objections", "confidence_delta", "rationale"],
+        "properties": {
+            "alternative_actor": {
+                "type": ["string", "null"],
+                "description": (
+                    "Best alternative actor if one is plausible. Null if the "
+                    "primary's actor is the strongest hypothesis but the "
+                    "confidence is too high."
+                ),
+            },
+            "objections": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "One short objection per item (1-3 items).",
+            },
+            "confidence_delta": {
+                "type": "number",
+                "minimum": -0.4,
+                "maximum": 0.1,
+                "description": (
+                    "Adjustment to apply to primary.confidence. Negative is "
+                    "typical (primary is usually overconfident). Use 0 to "
+                    "endorse the primary's confidence as calibrated."
+                ),
+            },
+            "rationale": {
+                "type": "string",
+                "description": "One- or two-sentence rationale for the challenge.",
+            },
+        },
+    },
+}
+
+
+def redteam_system_prompt() -> str:
+    return (
+        "You are CANOPY's red-team attribution agent. Your job is to challenge "
+        "the primary attribution: surface plausible alternative actors, name the "
+        "weakest links in the primary's evidence chain, and propose a "
+        "confidence delta. Default to skepticism — single-domain cues should "
+        "rarely support >0.7 attribution. Submit via submit_challenge."
+    )
+
+
+def redteam_user_prompt(
+    primary: "Attribution",
+    anomalies: list[Anomaly],
+    kb_entries: Iterable[KBEntry],
+) -> str:
+    primary_blob = json.dumps(primary.model_dump(mode="json"), indent=2, default=str)
+    anomalies_blob = json.dumps(
+        [a.model_dump(mode="json") for a in anomalies], indent=2, default=str
+    )
+    kb_blob = json.dumps(
+        [e.model_dump(mode="json") for e in kb_entries], indent=2, default=str
+    )
+    return (
+        "## Primary Attribution\n"
+        f"```json\n{primary_blob}\n```\n\n"
+        "## Anomalies\n"
+        f"```json\n{anomalies_blob}\n```\n\n"
+        "## Knowledge Base\n"
+        f"```json\n{kb_blob}\n```\n\n"
+        "Identify alternative actors, objections, and a calibrated confidence "
+        "delta. Submit via the submit_challenge tool."
+    )
+
+
+# ---- Reconciler prompt --------------------------------------------------
+
+
+def reconcile_system_prompt() -> str:
+    return (
+        "You are CANOPY's reconciler agent. Given a primary attribution and "
+        "a red-team challenge, produce the final calibrated attribution. "
+        "Apply the red-team's confidence delta unless the challenge is "
+        "weak. If the challenge raises a more credible alternative actor and "
+        "the evidence supports it, change the actor. Otherwise keep the "
+        "primary's actor and lower the confidence. Always include the "
+        "uncertainty anchor (kb-attribution-uncertainty-001) and append a "
+        "summary of the red-team objection to the evidence chain. "
+        "Submit via submit_attribution — same schema as the primary."
+    )
+
+
+def reconcile_user_prompt(
+    primary: "Attribution",
+    challenge: "AttributionChallenge",
+    anomalies: list[Anomaly],
+    kb_entries: Iterable[KBEntry],
+) -> str:
+    primary_blob = json.dumps(primary.model_dump(mode="json"), indent=2, default=str)
+    challenge_blob = json.dumps(
+        challenge.model_dump(mode="json"), indent=2, default=str
+    )
+    anomalies_blob = json.dumps(
+        [a.model_dump(mode="json") for a in anomalies], indent=2, default=str
+    )
+    kb_blob = json.dumps(
+        [e.model_dump(mode="json") for e in kb_entries], indent=2, default=str
+    )
+    return (
+        "## Primary Attribution\n"
+        f"```json\n{primary_blob}\n```\n\n"
+        "## Red-Team Challenge\n"
+        f"```json\n{challenge_blob}\n```\n\n"
+        "## Anomalies\n"
+        f"```json\n{anomalies_blob}\n```\n\n"
+        "## Knowledge Base\n"
+        f"```json\n{kb_blob}\n```\n\n"
+        "Produce the final calibrated attribution. Submit via "
+        "submit_attribution."
     )
