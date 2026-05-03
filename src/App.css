@@ -2387,7 +2387,7 @@
   }
 
   .tak-map-chrome {
-    top: 58px;
+    top: 14px;
     left: 264px;
     min-width: 0;
     padding: 7px 9px;
@@ -2412,7 +2412,7 @@
   }
 
   .aor-map__hud {
-    top: 104px;
+    top: 60px;
     left: 264px;
     min-width: 184px;
     padding: 8px 10px;
