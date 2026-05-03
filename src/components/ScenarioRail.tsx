@@ -19,8 +19,8 @@ export function ScenarioRail() {
   return (
     <aside className="scenario-rail" aria-label="Scenario library">
       <div className="scenario-rail__header">
-        <span>Scenario Queue</span>
-        <strong>Primary demo</strong>
+        <span>Scenario Stack</span>
+        <strong>Active track</strong>
       </div>
 
       <nav className="scenario-list" aria-label="Available scenarios">
@@ -43,7 +43,7 @@ export function ScenarioRail() {
 
       <div className="scenario-rail__footer">
         <span>{hiddenCount} more loaded</span>
-        <strong>Replay ready</strong>
+        <strong>Replay armed</strong>
       </div>
     </aside>
   )
