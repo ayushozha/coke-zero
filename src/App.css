@@ -1205,6 +1205,8 @@
   bottom: 82px;
   display: flex;
   gap: 10px;
+  max-width: calc(100% - 28px);
+  overflow: hidden;
   padding: 8px 10px;
 }
 
@@ -1213,9 +1215,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   color: rgba(220, 227, 213, 0.8);
   font-size: 0.66rem;
   font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .aor-map__legend-key {
@@ -1243,6 +1249,8 @@
   bottom: 14px;
   display: flex;
   gap: 12px;
+  max-width: calc(100% - 28px);
+  overflow: hidden;
   padding: 7px 10px;
 }
 
@@ -1250,10 +1258,19 @@
   right: 14px;
   bottom: 82px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 14px;
   justify-content: flex-end;
+  max-width: calc(100% - 28px);
+  overflow: hidden;
   padding: 8px 10px;
+}
+
+.aor-map__scale span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .aor-marker {
@@ -2405,18 +2422,24 @@
   }
 
   .aor-map__scale {
+    left: 466px;
     right: 310px;
     bottom: 236px;
+    justify-content: space-between;
   }
 
   .aor-map__legend {
     left: 264px;
     bottom: 236px;
+    width: 188px;
   }
 
   .aor-map__ops-strip {
-    right: 310px;
-    bottom: 240px;
+    left: 264px;
+    right: auto;
+    bottom: 276px;
+    width: 282px;
+    justify-content: space-between;
   }
 
   .space-hud {
