@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   Anomaly,
   Attribution,
@@ -108,10 +109,12 @@ const initialState = (): Omit<
   kb: {},
 });
 
-export const useEventStore = create<EventState>((set) => ({
-  ...initialState(),
+export const useEventStore = create<EventState>()(
+  persist(
+    (set) => ({
+      ...initialState(),
 
-  ingestSignal: (signal) =>
+      ingestSignal: (signal) =>
     set((state) => ({
       signals: pushBounded(state.signals, signal),
       signalsById: { ...state.signalsById, [signal.id]: signal },
@@ -175,9 +178,34 @@ export const useEventStore = create<EventState>((set) => ({
     }),
   openTakeover: (event) => set({ takeoverEvent: event }),
   closeTakeover: () => set({ takeoverEvent: null }),
-  setKB: (entries) =>
-    set({
-      kb: Object.fromEntries(entries.map((e) => [e.id, e])),
+      setKB: (entries) =>
+        set({
+          kb: Object.fromEntries(entries.map((e) => [e.id, e])),
+        }),
+      reset: () => set(initialState()),
     }),
-  reset: () => set(initialState()),
-}));
+    {
+      // Survives full-page navigations (the Brigade ↔ Operator header link
+      // is a regular <a href>, so the JS state would otherwise reset on
+      // every tab switch). Persisting the engine event ring buffers means
+      // the reasoning panel and event timeline keep their history when
+      // the user moves between pages.
+      name: "halo-event-store",
+      version: 2,
+      storage: createJSONStorage(() => sessionStorage),
+      // Skip live UI/connection state and the Set (Sets don't survive
+      // JSON.stringify cleanly). KB is fetched fresh on each mount.
+      partialize: (state) => ({
+        signals: state.signals,
+        anomalies: state.anomalies,
+        attributions: state.attributions,
+        decisions: state.decisions,
+        uiEvents: state.uiEvents,
+        traces: state.traces,
+        signalsById: state.signalsById,
+        attributionsById: state.attributionsById,
+        decisionsById: state.decisionsById,
+      }),
+    },
+  ),
+);
