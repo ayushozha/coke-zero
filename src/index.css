@@ -1,19 +1,27 @@
 :root {
-  --black: #0d1117;
-  --white: #f3f6f8;
-  --amber: #c99a2e;
-  --red: #c75b55;
-  --green: #6f9f79;
-  --panel: rgba(23, 30, 38, 0.96);
-  --panel-soft: rgba(31, 40, 50, 0.9);
-  --line: rgba(212, 220, 226, 0.14);
-  --line-bright: rgba(212, 220, 226, 0.28);
-  --text-primary: #f3f6f8;
-  --text-muted: #a9b4bd;
-  --text-subtle: #7f8b95;
+  --black: #07100f;
+  --white: #f5f7f0;
+  --amber: #d8a63a;
+  --red: #d05f58;
+  --green: #77b884;
+  --cyan: #63c7c0;
+  --olive: #a7b96f;
+  --violet: #8b87c7;
+  --panel: rgba(13, 23, 24, 0.9);
+  --panel-strong: rgba(9, 17, 18, 0.96);
+  --panel-soft: rgba(24, 38, 38, 0.76);
+  --line: rgba(220, 227, 213, 0.13);
+  --line-bright: rgba(220, 227, 213, 0.28);
+  --text-primary: #f5f7f0;
+  --text-muted: #b6beb2;
+  --text-subtle: #879188;
+  --ambient-cyan: rgba(79, 181, 178, 0.18);
+  --ambient-olive: rgba(145, 166, 92, 0.15);
+  --ambient-violet: rgba(111, 101, 173, 0.12);
 
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Aptos, "IBM Plex Sans", "SF Pro Text", "Helvetica Neue", ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   font-size: 16px;
   line-height: 1.45;

@@ -21,10 +21,11 @@ import 'cesium/Build/Cesium/Widgets/widgets.css'
 import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
-const MAP_FONT = '12px Inter, system-ui, sans-serif'
-const MAP_RED = Color.fromCssColorString('#c75b55')
-const MAP_AMBER = Color.fromCssColorString('#c99a2e')
-const MAP_PANEL = Color.fromCssColorString('#171e26')
+const MAP_FONT =
+  '12px Aptos, "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
+const MAP_RED = Color.fromCssColorString('#d05f58')
+const MAP_AMBER = Color.fromCssColorString('#d8a63a')
+const MAP_PANEL = Color.fromCssColorString('#091112')
 
 type CesiumGlobeProps = {
   correlatedSignalIds?: string[]
@@ -393,8 +394,8 @@ export function CesiumGlobe({
     viewerRef.current = viewer
 
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
-    viewer.scene.backgroundColor = Color.fromCssColorString('#0d1117')
-    viewer.scene.globe.baseColor = Color.fromCssColorString('#111821')
+    viewer.scene.backgroundColor = Color.fromCssColorString('#07100f')
+    viewer.scene.globe.baseColor = Color.fromCssColorString('#0c1514')
     viewer.scene.globe.enableLighting = false
     viewer.scene.globe.maximumScreenSpaceError = 1
     viewer.scene.globe.showGroundAtmosphere = false
@@ -526,7 +527,7 @@ export function CesiumGlobe({
       polyline: {
         clampToGround: true,
         material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#c99a2e').withAlpha(0.85),
+          color: MAP_AMBER.withAlpha(0.85),
           glowPower: 0.14,
         }),
         positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
@@ -542,7 +543,7 @@ export function CesiumGlobe({
         point: {
           color: contact.color,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.fromCssColorString('#0d1117'),
+          outlineColor: Color.fromCssColorString('#07100f'),
           outlineWidth: 2,
           pixelSize: 12,
         },
@@ -566,7 +567,7 @@ export function CesiumGlobe({
         point: {
           color: contact.color,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.fromCssColorString('#0d1117'),
+          outlineColor: Color.fromCssColorString('#07100f'),
           outlineWidth: 2,
           pixelSize: 10,
           scaleByDistance: new NearFarScalar(1500000, 1.5, 25000000, 0.75),
@@ -589,7 +590,7 @@ export function CesiumGlobe({
       polyline: {
         clampToGround: false,
         material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#c99a2e').withAlpha(0.8),
+          color: MAP_AMBER.withAlpha(0.8),
           glowPower: 0.16,
         }),
         positions: arcPositions,
@@ -648,7 +649,7 @@ export function CesiumGlobe({
           point: {
             color,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            outlineColor: Color.fromCssColorString('#0d1117'),
+            outlineColor: Color.fromCssColorString('#07100f'),
             outlineWidth: isFocus ? 4 : 2,
             pixelSize: isFocus ? 18 : isCorrelated ? 14 : 10,
             scaleByDistance: new NearFarScalar(1500000, 1.4, 25000000, 0.7),
@@ -735,7 +736,7 @@ export function CesiumGlobe({
         polyline: {
           clampToGround: false,
           material: new PolylineGlowMaterialProperty({
-            color: Color.fromCssColorString('#c99a2e').withAlpha(0.92),
+            color: MAP_AMBER.withAlpha(0.92),
             glowPower: 0.22,
           }),
           positions: Cartesian3.fromDegreesArrayHeights(correlation),
