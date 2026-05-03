@@ -3,12 +3,14 @@ import maplibregl from 'maplibre-gl'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
 type Basemap = 'imagery' | 'terrain'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  playback: PlaybackStatus | null
   scenario: ScenarioDefinition
   signals: Signal[]
 }
@@ -117,6 +119,10 @@ const signalTimeMs = (signal: Signal | undefined) => {
 }
 
 const formatDuration = (milliseconds: number) => {
+  if (milliseconds > 0 && milliseconds < 60 * 1000) {
+    return '<1M'
+  }
+
   const totalMinutes = Math.max(0, Math.round(milliseconds / 60000))
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
@@ -212,6 +218,42 @@ const createRoute = (points: [number, number][]) =>
         : [],
   }) as GeoJSON.FeatureCollection
 
+const interpolatePoint = (
+  start: [number, number],
+  end: [number, number],
+  progress: number,
+): [number, number] => [
+  start[0] + (end[0] - start[0]) * progress,
+  start[1] + (end[1] - start[1]) * progress,
+]
+
+const routeProgressPoints = (
+  points: [number, number][],
+  progress: number,
+) => {
+  if (points.length < 2) {
+    return points
+  }
+
+  const clampedProgress = Math.min(100, Math.max(0, progress))
+  const routePosition = (clampedProgress / 100) * (points.length - 1)
+  const completedSegment = Math.floor(routePosition)
+  const segmentProgress = routePosition - completedSegment
+  const result = points.slice(0, completedSegment + 1)
+
+  if (completedSegment < points.length - 1) {
+    result.push(
+      interpolatePoint(
+        points[completedSegment],
+        points[completedSegment + 1],
+        segmentProgress,
+      ),
+    )
+  }
+
+  return result
+}
+
 const createGrid = (bounds: AorBounds) => {
   const features: GeoJSON.Feature[] = []
   const step = 0.01
@@ -261,6 +303,7 @@ const createGrid = (bounds: AorBounds) => {
 export function AorMap({
   correlatedSignalIds,
   focusSignalId,
+  playback,
   scenario,
   signals,
 }: AorMapProps) {
@@ -297,8 +340,11 @@ export function AorMap({
     [scenarioCoordinateSignals],
   )
   const activeRoutePoints = useMemo(
-    () => coordinateSignals.map(({ point }) => point).reverse(),
-    [coordinateSignals],
+    () =>
+      playback
+        ? routeProgressPoints(routePoints, playback.progress)
+        : coordinateSignals.map(({ point }) => point).reverse(),
+    [coordinateSignals, playback, routePoints],
   )
   const operationalBounds = useMemo(
     () => boundsFromPoints(scenarioCoordinateSignals.map(({ point }) => point)),
@@ -329,22 +375,28 @@ export function AorMap({
   const highSignalCount = visibleSignals.filter(
     ({ signal }) => priorityForSignal(signal) === 'high',
   ).length
-  const scenarioProgress = Math.round(
-    (signals.length / Math.max(scenario.signals.length, 1)) * 100,
-  )
+  const scenarioProgress =
+    playback?.progress ??
+    Math.round((signals.length / Math.max(scenario.signals.length, 1)) * 100)
   const scenarioStartTime = signalTimeMs(scenario.signals[0])
   const scenarioEndTime = signalTimeMs(scenario.signals.at(-1))
   const latestSignalTime = signalTimeMs(signals[0])
   const elapsedMs =
-    scenarioStartTime !== null && latestSignalTime !== null
+    playback?.elapsedMs ??
+    (scenarioStartTime !== null && latestSignalTime !== null
       ? latestSignalTime - scenarioStartTime
-      : 0
+      : 0)
   const durationMs =
-    scenarioStartTime !== null && scenarioEndTime !== null
+    playback?.durationMs ??
+    (scenarioStartTime !== null && scenarioEndTime !== null
       ? scenarioEndTime - scenarioStartTime
-      : 0
+      : 0)
   const scenarioClock = `${formatDuration(elapsedMs)} / ${formatDuration(durationMs)}`
   const scenarioPhase = phaseForProgress(scenarioProgress)
+  const nextInjectLabel =
+    playback?.nextInjectMs === null || playback?.nextInjectMs === undefined
+      ? 'NEXT ENDEX'
+      : `NEXT ${formatDuration(playback.nextInjectMs)}`
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -647,6 +699,7 @@ export function AorMap({
         <span>LIVE CONTACTS {visibleSignals.length}</span>
         <span>{scenarioPhase}</span>
         <span>FIELD PACE</span>
+        <span>{nextInjectLabel}</span>
         <span>SIM {scenarioProgress}%</span>
         <span>MET {scenarioClock}</span>
         <span>THREAT {highSignalCount}</span>
@@ -673,7 +726,8 @@ export function AorMap({
       <div className="aor-map__scale">
         <span>Zoom {zoom}</span>
         <span>{scenarioPhase}</span>
-        <span>FIELD PACE</span>
+        <span>{playback?.scaleLabel ?? 'FIELD PACE'}</span>
+        <span>{nextInjectLabel}</span>
         <span>SIM {scenarioProgress}%</span>
         <span>MET {scenarioClock}</span>
         <span>Real-world basemap</span>

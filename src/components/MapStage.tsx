@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { AorMap } from './AorMap'
 import { CesiumGlobe } from './CesiumGlobe'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
 type MapStageProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  playback: PlaybackStatus | null
   scenario: ScenarioDefinition
   signals: Signal[]
 }
@@ -14,6 +16,7 @@ type MapStageProps = {
 export function MapStage({
   correlatedSignalIds,
   focusSignalId,
+  playback,
   scenario,
   signals,
 }: MapStageProps) {
@@ -36,6 +39,7 @@ export function MapStage({
         <AorMap
           correlatedSignalIds={correlatedSignalIds}
           focusSignalId={focusSignalId}
+          playback={playback}
           scenario={scenario}
           signals={signals}
         />
