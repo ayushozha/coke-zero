@@ -69,7 +69,10 @@ EXPECTED_ANOMALY_SOURCE_SIGNALS = [
 EXPECTED_ANOMALY_SEVERITIES = [0.81, 0.86, 0.90, 0.88, 0.83, 0.84, 0.82, 0.91]
 
 EXPECTED_ATTRIBUTION_ACTOR = "China"
-EXPECTED_ATTRIBUTION_CONFIDENCE = 0.74
+# 0.74 (primary) - 0.03 (red-team confidence_delta for orbital_rpo_risk) = 0.71.
+# The multi-agent pipeline reconciles primary against red-team challenge before
+# publishing; see halo/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
+EXPECTED_ATTRIBUTION_CONFIDENCE = 0.71
 EXPECTED_ATTRIBUTION_CITATIONS = {
     "kb-rpo-ambiguity-001",
     "kb-gps-jamming-001",
