@@ -121,7 +121,7 @@
 
 .command-workbench {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 360px;
+  grid-template-columns: 220px minmax(0, 1fr) 340px;
   gap: 12px;
   min-height: 0;
 }
@@ -266,7 +266,7 @@
 }
 
 .map-workspace {
-  grid-template-rows: minmax(380px, 1fr) auto minmax(190px, 0.38fr);
+  grid-template-rows: minmax(500px, 1fr) auto minmax(160px, 0.28fr);
 }
 
 .decision-stack {
@@ -493,12 +493,14 @@
 .map-stage__readout {
   position: absolute;
   left: 16px;
-  bottom: 82px;
+  bottom: 18px;
   z-index: 4;
+  max-width: min(460px, calc(100% - 32px));
+  border: 1px solid rgba(216, 166, 58, 0.36);
   border-left: 4px solid var(--amber);
+  border-radius: 5px;
   background: linear-gradient(90deg, rgba(7, 16, 15, 0.84), rgba(7, 16, 15, 0.18), transparent);
-  padding-left: 12px;
-  padding-right: 16px;
+  padding: 10px 16px 10px 12px;
   pointer-events: none;
 }
 
@@ -527,10 +529,10 @@
 
 .map-stage__readout strong {
   color: var(--text-primary);
-  font-size: 1.42rem;
+  font-size: 1.08rem;
   font-weight: 520;
   display: block;
-  max-width: min(520px, 54vw);
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -971,7 +973,7 @@
   }
 
   .map-stage {
-    min-height: 380px;
+    min-height: 520px;
   }
 }
 
@@ -997,7 +999,7 @@
   }
 
   .map-stage {
-    min-height: 300px;
+    min-height: 460px;
   }
 
   .cesium-scenario-controls {

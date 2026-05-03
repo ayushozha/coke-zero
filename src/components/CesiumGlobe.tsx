@@ -636,17 +636,6 @@ export function CesiumGlobe({
       )
     const focusSignalPoint =
       signalPoints.find((item) => item.signal.id === focusSignalId) ?? null
-    const labeledSignalIds = new Set<string>()
-    if (focusSignalId) {
-      labeledSignalIds.add(focusSignalId)
-    }
-    correlatedSignalIds.slice(0, signals.length > 16 ? 1 : 3).forEach((id) =>
-      labeledSignalIds.add(id),
-    )
-    signals.slice(0, signals.length > 16 ? 1 : 4).forEach((signal) => {
-      labeledSignalIds.add(signal.id)
-    })
-
     signals.forEach((signal) => {
       const entityId = `signal-${signal.id}`
       const color = colorForSignal(signal)
@@ -654,8 +643,7 @@ export function CesiumGlobe({
       const polygon = signalPolygon(signal)
       const isFocus = signal.id === focusSignalId
       const isCorrelated = correlatedIds.has(signal.id)
-      const shouldLabel = labeledSignalIds.has(signal.id)
-      const prefix = isFocus ? 'FOCUS ' : isCorrelated ? 'FUSED ' : ''
+      const shouldLabel = isFocus && signals.length <= 8
 
       if (point) {
         viewer.entities.add({
@@ -680,9 +668,7 @@ export function CesiumGlobe({
             show: shouldLabel,
             showBackground: true,
             style: LabelStyle.FILL,
-            text: `${prefix}${signal.domain.toUpperCase()} ${Math.round(
-              signal.confidence * 100,
-            )}%`,
+            text: 'FOCUS',
           },
           description: signal.payload.summary,
         })
