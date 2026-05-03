@@ -85,17 +85,25 @@ EXPECTED_UI_EVENT_TYPE = "recommendation_created"
 EXPECTED_UI_EVENT_SEVERITY = "high"
 EXPECTED_UI_EVENT_TITLE = "Active defense escort recommended — China"
 
-# Maneuver enrichment from DecideService + OrbitService. Beat-4.7 demo names
-# (CANOPY-LEO-07, UNKNOWN-RSO-441) match a hand-pinned entry in
-# OrbitService._SCRIPTED_MANEUVERS so these numbers are deterministic.
+# Maneuver enrichment from DecideService + OrbitService. The first
+# orbital_rpo_risk anomaly in this scenario fires from army-chain-001 — a
+# screening_overlay signal whose observables carry range_km=18.5 and
+# time_of_closest_approach=2026-06-18T15:55:30Z. The signal arrives at
+# 15:40:00Z, the engine adds a 60 s authorization buffer (t_burn=15:41:00Z),
+# lead = 870 s. Real Clohessy-Wiltshire physics: with a 5 m/s prograde Δv
+# (capped) over an 870 s lead, you gain ~4.2 km of LVLH drift, which bumps
+# the miss from 18.5 → 19.0 km. Honest physics, modest gain — bigger numbers
+# come from longer-lead scenarios.
 EXPECTED_MANEUVER_FRIENDLY = "CANOPY-LEO-07"
 EXPECTED_MANEUVER_INSPECTOR = "UNKNOWN-RSO-441"
-EXPECTED_PRE_MISS_KM = 8.6
-EXPECTED_POST_MISS_KM = 142.0
-EXPECTED_DV_M_S = 1.2
+EXPECTED_PRE_MISS_KM = 18.5
+EXPECTED_POST_MISS_KM = 19.0
+EXPECTED_DV_M_S = 5.0
+EXPECTED_LEAD_SECONDS = 870.0
+EXPECTED_BURN_UTC = "2026-06-18T15:41:00Z"
 EXPECTED_MANEUVER_CLAUSE = (
-    "Recommended maneuver: CANOPY-LEO-07 1.2 m/s burn, "
-    "miss 8.6 → 142.0 km (+133 km separation)."
+    "Recommended maneuver: CANOPY-LEO-07 5.0 m/s burn, "
+    "miss 18.5 → 19.0 km (+0.5 km separation)."
 )
 
 
@@ -192,7 +200,8 @@ def test_decision(pipeline_output) -> None:
 
 def test_decision_request_packet_carries_maneuver_math(pipeline_output) -> None:
     """The orbital enrichment in DecideService should populate the pre/post
-    miss distance and recommended_burn block for the operator's APPROVE card."""
+    miss distance and recommended_burn block for the operator's APPROVE card.
+    Math comes from OrbitService's Clohessy-Wiltshire impulsive model."""
     packet = pipeline_output["decision"][0].request_packet
     assert packet["pre_miss_km"] == pytest.approx(EXPECTED_PRE_MISS_KM)
     assert packet["post_miss_km"] == pytest.approx(EXPECTED_POST_MISS_KM)
@@ -201,10 +210,10 @@ def test_decision_request_packet_carries_maneuver_math(pipeline_output) -> None:
     assert burn["sat"] == EXPECTED_MANEUVER_FRIENDLY
     assert burn["against"] == EXPECTED_MANEUVER_INSPECTOR
     assert burn["dv_m_s"] == pytest.approx(EXPECTED_DV_M_S)
-    # t_burn_utc is derived as TCA - 6 minutes from the source signal; just
-    # assert the format. Beat-4.7 RPO TCA in the source scenario is
-    # 2026-06-18T15:55:30Z, so the burn lands 6 minutes earlier.
-    assert burn["t_burn_utc"] == "2026-06-18T15:49:30Z"
+    # t_burn_utc = signal.ts + 60 s authorization buffer.
+    assert burn["t_burn_utc"] == EXPECTED_BURN_UTC
+    # lead_seconds = TCA - t_burn, used by Clohessy-Wiltshire.
+    assert burn["lead_seconds"] == pytest.approx(EXPECTED_LEAD_SECONDS)
 
 
 def test_ui_event(pipeline_output) -> None:
