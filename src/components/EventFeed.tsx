@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { Signal } from '../types/canopy'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
-import type { PlaybackStatus } from '../types/playback'
 
 type EventFeedProps = {
   isMapAutoFocusEnabled?: boolean
