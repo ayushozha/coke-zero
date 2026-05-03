@@ -136,15 +136,16 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line-bright);
-  border-radius: 8px;
+  border-radius: 3px;
   background:
-    linear-gradient(180deg, rgba(245, 247, 240, 0.06), transparent 42%),
-    linear-gradient(135deg, rgba(99, 199, 192, 0.055), transparent 55%),
+    linear-gradient(180deg, rgba(245, 247, 240, 0.045), transparent 36%),
+    linear-gradient(135deg, rgba(99, 199, 192, 0.045), transparent 48%),
     var(--panel);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 18px 46px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(14px);
+    0 14px 34px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(9px);
 }
 
 .scenario-rail::before,
@@ -248,7 +249,7 @@
   align-items: center;
   width: 100%;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 2px;
   background: transparent;
   color: var(--text-muted);
   padding: 9px 8px;
@@ -275,7 +276,7 @@
 
 .scenario-list__item:hover,
 .scenario-list__item--active {
-  border-color: rgba(99, 199, 192, 0.26);
+  border-color: rgba(99, 199, 192, 0.34);
   background:
     linear-gradient(90deg, rgba(99, 199, 192, 0.11), transparent 78%),
     rgba(245, 247, 240, 0.045);
@@ -307,7 +308,7 @@
 
 .scenario-list__item em {
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 2px;
   color: var(--text-muted);
   font-size: 0.7rem;
   font-style: normal;
@@ -364,7 +365,7 @@
 
 .mission-summary__topline strong {
   border: 1px solid rgba(216, 166, 58, 0.6);
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(216, 166, 58, 0.08);
   color: var(--amber);
   font-size: 0.86rem;
@@ -406,11 +407,12 @@
   overflow: hidden;
   min-width: 0;
   border: 1px solid var(--line-bright);
-  border-radius: 8px;
+  border-radius: 3px;
   background:
     linear-gradient(180deg, rgba(245, 247, 240, 0.045), transparent),
     var(--panel-soft);
   padding: 10px 12px;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   box-shadow:
     inset 0 1px 0 rgba(245, 247, 240, 0.05),
     0 12px 28px rgba(0, 0, 0, 0.16);
@@ -502,7 +504,7 @@
   position: relative;
   min-height: 0;
   border: 1px solid var(--line-bright);
-  border-radius: 8px;
+  border-radius: 3px;
   background:
     linear-gradient(160deg, rgba(99, 199, 192, 0.16), transparent 42%),
     radial-gradient(circle at 72% 14%, rgba(216, 166, 58, 0.1), transparent 28%),
@@ -532,9 +534,69 @@
   inset: 12px;
   z-index: 3;
   border: 1px solid rgba(99, 199, 192, 0.12);
-  border-radius: 6px;
+  border-radius: 2px;
   content: '';
   pointer-events: none;
+}
+
+.tak-map-chrome,
+.tak-map-strip {
+  position: absolute;
+  z-index: 5;
+  border: 1px solid rgba(99, 199, 192, 0.34);
+  background: rgba(5, 12, 11, 0.82);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.tak-map-chrome {
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 210px;
+  padding: 9px 12px;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+.tak-map-chrome span,
+.tak-map-strip span,
+.map-stage__readout span {
+  color: #80d6cd;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.05em;
+}
+
+.tak-map-chrome strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.92rem;
+  font-weight: 760;
+}
+
+.tak-map-chrome em {
+  border-left: 1px solid rgba(99, 199, 192, 0.28);
+  color: var(--amber);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
+  padding-left: 12px;
+}
+
+.tak-map-strip {
+  right: 14px;
+  bottom: 18px;
+  display: flex;
+  gap: 10px;
+  padding: 7px 9px;
+}
+
+.tak-map-strip span {
+  color: var(--text-muted);
+  font-size: 0.64rem;
 }
 
 .cesium-globe,
@@ -557,9 +619,9 @@
 }
 
 .aor-map__basemaps button {
-  min-height: 36px;
+  min-height: 34px;
   border: 1px solid var(--line-bright);
-  border-radius: 4px;
+  border-radius: 2px;
   background: rgba(9, 17, 18, 0.82);
   color: var(--text-primary);
   font: inherit;
@@ -575,7 +637,7 @@
 
 .cesium-scenario-controls {
   position: absolute;
-  top: 14px;
+  top: 72px;
   right: 14px;
   z-index: 5;
   display: flex;
@@ -583,9 +645,9 @@
 }
 
 .cesium-scenario-controls button {
-  min-height: 36px;
+  min-height: 34px;
   border: 1px solid var(--line-bright);
-  border-radius: 4px;
+  border-radius: 2px;
   background: rgba(9, 17, 18, 0.82);
   color: var(--text-primary);
   font: inherit;
@@ -613,29 +675,19 @@
 .map-stage__readout {
   position: absolute;
   left: 16px;
-  bottom: 18px;
+  bottom: 54px;
   z-index: 5;
   max-width: min(460px, calc(100% - 32px));
   border: 1px solid rgba(216, 166, 58, 0.36);
   border-left: 4px solid var(--amber);
-  border-radius: 5px;
+  border-radius: 2px;
   background: linear-gradient(90deg, rgba(7, 16, 15, 0.84), rgba(7, 16, 15, 0.18), transparent);
   padding: 10px 16px 10px 12px;
   pointer-events: none;
 }
 
 .map-stage__mode {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 4;
-  border: 1px solid var(--line-bright);
-  border-radius: 4px;
-  background: rgba(9, 17, 18, 0.82);
-  color: var(--text-muted);
-  padding: 8px 10px;
-  pointer-events: none;
-  font-weight: 600;
+  display: none;
 }
 
 .map-stage__readout span,
@@ -667,7 +719,7 @@
 
 .aor-map {
   background: #0c1514;
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 .aor-map__canvas .maplibregl-canvas {
@@ -704,7 +756,7 @@
   z-index: 7;
   background: rgba(9, 17, 18, 0.84);
   border: 1px solid var(--line-bright);
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .aor-map__hud {
@@ -789,7 +841,7 @@
   left: 50%;
   min-width: max-content;
   border: 1px solid rgba(220, 227, 213, 0.32);
-  border-radius: 3px;
+  border-radius: 2px;
   background: rgba(9, 17, 18, 0.86);
   padding: 2px 5px;
   transform: translateX(-50%);
@@ -923,7 +975,7 @@
   min-height: 48px;
   margin-top: 12px;
   border: 1px solid var(--white);
-  border-radius: 4px;
+  border-radius: 2px;
   background: linear-gradient(135deg, var(--white), #dce7d2);
   color: #07100f;
   font: inherit;
@@ -1146,7 +1198,7 @@
   }
 
   .cesium-scenario-controls {
-    top: 54px;
+    top: 76px;
     right: 10px;
     left: 10px;
   }
@@ -1159,7 +1211,7 @@
 
   .aor-map__hud,
   .aor-map__basemaps {
-    top: 54px;
+    top: 64px;
   }
 
   .aor-map__hud {
@@ -1169,7 +1221,7 @@
   }
 
   .aor-map__basemaps {
-    top: 146px;
+    top: 154px;
     right: 10px;
     left: 10px;
   }
@@ -1187,5 +1239,21 @@
 
   .event-feed__table {
     min-width: 680px;
+  }
+
+  .tak-map-chrome {
+    right: 10px;
+    left: 10px;
+    min-width: 0;
+  }
+
+  .tak-map-strip {
+    right: 10px;
+    left: 10px;
+    justify-content: space-between;
+  }
+
+  .tak-map-strip span:nth-child(3) {
+    display: none;
   }
 }
