@@ -1,4 +1,5 @@
 import type { Attribution, Decision, UIEvent } from '../types/canopy'
+import { commanderEventSummary } from '../lib/commanderLanguage'
 
 type MissionSummaryProps = {
   attribution: Attribution | null
@@ -18,38 +19,40 @@ export function MissionSummary({
     : attribution
       ? `${Math.round(attribution.confidence * 100)}%`
       : '--'
-  const state =
-    uiEvent?.severity === 'critical' || uiEvent?.severity === 'high'
-      ? 'Red'
-      : uiEvent?.severity === 'medium' || attribution
-        ? 'Amber'
-        : 'White'
-  const headline = uiEvent?.title ?? attribution?.actor ?? 'Correlating'
-  const summary =
-    uiEvent?.message ??
-    attribution?.predicted_next ??
-    'Awaiting attribution package'
-  const action =
-    uiEvent?.recommendation?.summary ??
-    decision?.action ??
-    'No commander action pending'
+  const commanderBrief = commanderEventSummary(uiEvent)
+  const state = uiEvent
+    ? commanderBrief.state
+    : attribution
+      ? 'Amber'
+      : commanderBrief.state
+  const headline = uiEvent
+    ? commanderBrief.headline
+    : attribution
+      ? `${attribution.actor} pattern under review`
+      : commanderBrief.headline
+  const summary = uiEvent
+    ? commanderBrief.body
+    : attribution?.predicted_next ?? commanderBrief.body
+  const action = uiEvent
+    ? commanderBrief.action
+    : decision?.action ?? commanderBrief.action
 
   return (
     <section className="mission-summary" aria-label="Mission summary">
       <div className="mission-summary__status">
-        <span>Threat State</span>
+        <span>Current Posture</span>
         <strong>{state}</strong>
       </div>
       <div className="mission-summary__main">
         <p className="mission-summary__kicker">
-          {signalCount.toString().padStart(2, '0')} signals fused / {confidence}{' '}
-          attribution
+          {signalCount.toString().padStart(2, '0')} reports fused / {confidence}{' '}
+          confidence / {commanderBrief.urgency}
         </p>
         <h2>{headline}</h2>
         <p>{summary}</p>
       </div>
       <div className="mission-summary__action">
-        <span>Recommended Action</span>
+        <span>Do This Now</span>
         <strong>{action}</strong>
       </div>
     </section>

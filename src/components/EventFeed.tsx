@@ -1,43 +1,60 @@
 import type { Signal } from '../types/canopy'
+import { commanderSignalSummary } from '../lib/commanderLanguage'
 
 type EventFeedProps = {
   signals: Signal[]
 }
 
-const formatPayload = (payload: Signal['payload']) =>
-  Object.entries(payload)
-    .map(([key, value]) => `${key}:${String(value)}`)
-    .join(' / ')
-
 export function EventFeed({ signals }: EventFeedProps) {
   return (
-    <details className="details-panel event-feed">
-      <summary>
-        <span>Incoming Signals</span>
-        <span>{signals.length.toString().padStart(2, '0')} live</span>
-      </summary>
+    <section className="event-feed" aria-label="Incoming signals">
+      <div className="event-feed__header">
+        <div>
+          <span>Incoming Reports</span>
+          <h2>What Changed</h2>
+        </div>
+        <strong>{signals.length.toString().padStart(2, '0')} live</strong>
+      </div>
       <ol className="event-feed__list">
-        {signals.map((signal) => (
-          <li className="event-feed__item" key={signal.id}>
-            <span className="event-feed__time">
-              {new Date(signal.ts).toLocaleTimeString([], {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}
-            </span>
-            <span className="event-feed__domain">{signal.domain}</span>
-            <span className="event-feed__source">{signal.source}</span>
-            <span className="event-feed__payload">
-              {formatPayload(signal.payload)}
-            </span>
-            <span className="event-feed__confidence">
-              {Math.round(signal.confidence * 100)}%
-            </span>
-          </li>
-        ))}
+        {signals.slice(0, 8).map((signal) => {
+          const summary = commanderSignalSummary(signal)
+          return (
+            <li className="event-feed__item" key={signal.id}>
+              <div className="event-feed__meta">
+                <span className="event-feed__time">
+                  {new Date(signal.ts).toLocaleTimeString([], {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <span className="event-feed__domain">{summary.label}</span>
+                <span className="event-feed__confidence">
+                  {summary.confidenceLabel}
+                </span>
+              </div>
+              <div className="event-feed__body">
+                <h3>{summary.headline}</h3>
+                <p>{summary.detail}</p>
+                <dl>
+                  <div>
+                    <dt>Where</dt>
+                    <dd>{summary.location}</dd>
+                  </div>
+                  <div>
+                    <dt>Why it matters</dt>
+                    <dd>{summary.whyItMatters}</dd>
+                  </div>
+                  <div>
+                    <dt>Commander cue</dt>
+                    <dd>{summary.action}</dd>
+                  </div>
+                </dl>
+              </div>
+            </li>
+          )
+        })}
       </ol>
-    </details>
+    </section>
   )
 }
