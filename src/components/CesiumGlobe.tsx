@@ -1048,6 +1048,336 @@ export function CesiumGlobe({
       hostile: hostile.satelliteName,
     })
 
+    const demoType = maneuverDemo.demoType ?? 'evasion'
+
+    // ----- Strike branch: kinetic kill vehicle ---------------------------
+    // For orbital_strike_request / active_defense_counterattack actions.
+    // Both satellites continue along their natural orbits — no position
+    // override. A KV entity launches from the friendly's live position
+    // along a Bezier arc that intercepts the hostile, then dims the
+    // hostile's billboard to communicate "neutralized".
+    if (demoType === 'strike') {
+      const friendlyDisplay = currentN2YODisplayPoint(friendly)
+      const launchPos = Cartesian3.fromDegrees(
+        friendlyDisplay.lng,
+        friendlyDisplay.lat,
+        friendly.displayAltitudeM,
+      )
+
+      let vehicleFraction = 0
+      let hostileDim = 0
+
+      const hostileBillboard = hostileEntity.billboard
+      const originalHostileBillboardColor = hostileBillboard?.color
+
+      // Quadratic Bezier interpolation between launchPos and the hostile's
+      // live position, with a control point pulled outward (away from
+      // Earth's center) so the trajectory arcs over rather than cutting
+      // straight through space. Reads as a kill vehicle climbing then
+      // descending onto its target.
+      const computeVehiclePos = () => {
+        if (vehicleFraction <= 0) return launchPos
+        const display = currentN2YODisplayPoint(hostile)
+        const targetPos = Cartesian3.fromDegrees(
+          display.lng,
+          display.lat,
+          hostile.displayAltitudeM,
+        )
+        if (vehicleFraction >= 1) return targetPos
+        const mid = Cartesian3.midpoint(launchPos, targetPos, new Cartesian3())
+        const outward = Cartesian3.normalize(mid, new Cartesian3())
+        const arcHeight = Cartesian3.distance(launchPos, targetPos) * 0.22
+        const control = Cartesian3.add(
+          mid,
+          Cartesian3.multiplyByScalar(outward, arcHeight, new Cartesian3()),
+          new Cartesian3(),
+        )
+        const t = vehicleFraction
+        const inv = 1 - t
+        return new Cartesian3(
+          inv * inv * launchPos.x + 2 * inv * t * control.x + t * t * targetPos.x,
+          inv * inv * launchPos.y + 2 * inv * t * control.y + t * t * targetPos.y,
+          inv * inv * launchPos.z + 2 * inv * t * control.z + t * t * targetPos.z,
+        )
+      }
+
+      const vehiclePosition = new CallbackPositionProperty(
+        () => computeVehiclePos(),
+        false,
+      )
+
+      const vehicleId = `maneuver-vehicle-${maneuverDemo.decisionId}`
+      const vehicleTrailId = `maneuver-vehicle-trail-${maneuverDemo.decisionId}`
+
+      viewer.entities.add({
+        id: vehicleId,
+        position: vehiclePosition,
+        point: {
+          color: Color.WHITE,
+          pixelSize: 11,
+          outlineColor: Color.fromCssColorString('#ef4444'),
+          outlineWidth: 3,
+        },
+        label: {
+          backgroundColor: MAP_PANEL.withAlpha(0.85),
+          fillColor: Color.WHITE,
+          font: MAP_FONT,
+          pixelOffset: new Cartesian2(14, -2),
+          show: true,
+          showBackground: true,
+          style: LabelStyle.FILL,
+          text: 'KV',
+        },
+      })
+
+      viewer.entities.add({
+        id: vehicleTrailId,
+        polyline: {
+          arcType: ArcType.NONE,
+          clampToGround: false,
+          material: new PolylineDashMaterialProperty({
+            color: Color.fromCssColorString('#ef4444'),
+            dashLength: 14,
+          }),
+          positions: new CallbackProperty(
+            () => [launchPos, computeVehiclePos()],
+            false,
+          ),
+          width: 3,
+        },
+      })
+
+      // Dim the hostile's billboard once impact has occurred.
+      if (hostileBillboard) {
+        hostileBillboard.color = new CallbackProperty(
+          () => Color.WHITE.withAlpha(1 - hostileDim * 0.78),
+          false,
+        )
+      }
+
+      // Camera framing — same approach as evasion (bounding sphere centered
+      // at the engagement midpoint), wide enough to keep the arc in frame.
+      const friendlyD = currentN2YODisplayPoint(friendly)
+      const hostileD = currentN2YODisplayPoint(hostile)
+      const strikeMidLat = (friendlyD.lat + hostileD.lat) / 2
+      const strikeMidLng = (friendlyD.lng + hostileD.lng) / 2
+      const strikeRadiusM = Math.max(
+        friendly.displayAltitudeM,
+        hostile.displayAltitudeM,
+      )
+      viewer.camera.flyToBoundingSphere(
+        new BoundingSphere(
+          Cartesian3.fromDegrees(strikeMidLng, strikeMidLat, 0),
+          strikeRadiusM,
+        ),
+        {
+          duration: 1.4,
+          offset: new HeadingPitchRange(
+            0,
+            -(Math.PI / 180) * 48,
+            strikeRadiusM * 5,
+          ),
+        },
+      )
+
+      let strikeRaf = 0
+      let strikeCancelled = false
+      const strikeStart = performance.now()
+      const strikeDuration = maneuverDemo.durationMs
+
+      const smoothStrike = (x: number) =>
+        x * x * x * (x * (x * 6 - 15) + 10)
+
+      const strikeTick = () => {
+        if (strikeCancelled) return
+        const elapsed = performance.now() - strikeStart
+        const t = Math.min(elapsed / strikeDuration, 1)
+        // Phase windows:
+        //   0.00 - 0.08: camera fly-in
+        //   0.08 - 0.20: pre-launch hold
+        //   0.20 - 0.72: vehicle arcs from friendly to hostile
+        //   0.72 - 0.92: target dims
+        //   0.92 - 1.00 (and beyond): persistent post-strike hold
+        const vT = Math.min(Math.max((t - 0.2) / 0.52, 0), 1)
+        vehicleFraction = smoothStrike(vT)
+        const dimT = Math.min(Math.max((t - 0.72) / 0.2, 0), 1)
+        hostileDim = smoothStrike(dimT)
+        setManeuverProgress(t)
+        viewer.scene.requestRender()
+        if (t < 1) strikeRaf = requestAnimationFrame(strikeTick)
+        // Same persistence pattern as evasion: don't auto-end. The
+        // dimmed hostile + KV at impact stay on screen until a new
+        // demo replaces this one.
+      }
+      strikeRaf = requestAnimationFrame(strikeTick)
+
+      return () => {
+        strikeCancelled = true
+        if (strikeRaf) cancelAnimationFrame(strikeRaf)
+        if (!viewer.isDestroyed()) {
+          if (hostileBillboard) {
+            hostileBillboard.color =
+              originalHostileBillboardColor ?? new ConstantProperty(Color.WHITE)
+          }
+          viewer.entities.removeById(vehicleId)
+          viewer.entities.removeById(vehicleTrailId)
+          viewer.scene.requestRender()
+        }
+        setManeuverPair(null)
+      }
+    }
+
+    // ----- Interdiction branch: jamming beam -----------------------------
+    // For space_link_interdiction_request. A friendly satellite emits a
+    // jamming beam to the hostile, which pulses then visibly degrades.
+    if (demoType === 'interdiction') {
+      let beamFraction = 0
+      let hostileDim = 0
+      const hostileBillboard = hostileEntity.billboard
+      const originalHostileBillboardColor = hostileBillboard?.color
+
+      const beamId = `maneuver-beam-${maneuverDemo.decisionId}`
+      const groundLinkId = `maneuver-ground-link-${maneuverDemo.decisionId}`
+
+      // The hostile's "comms link" — a faded red beam from the hostile
+      // down to a notional ground station directly below it (sub-satellite
+      // point at altitude 0). Visualizes what the friendly is trying to
+      // sever.
+      const groundLinkPositions = new CallbackProperty(() => {
+        const display = currentN2YODisplayPoint(hostile)
+        const top = Cartesian3.fromDegrees(
+          display.lng,
+          display.lat,
+          hostile.displayAltitudeM,
+        )
+        const bottom = Cartesian3.fromDegrees(display.lng, display.lat, 0)
+        return [top, bottom]
+      }, false)
+
+      viewer.entities.add({
+        id: groundLinkId,
+        polyline: {
+          arcType: ArcType.NONE,
+          clampToGround: false,
+          material: new PolylineDashMaterialProperty({
+            color: Color.fromCssColorString('#ef4444').withAlpha(0.55),
+            dashLength: 14,
+          }),
+          positions: groundLinkPositions,
+          width: 2,
+        },
+      })
+
+      // Friendly→hostile jamming beam — grows across the beam phase.
+      viewer.entities.add({
+        id: beamId,
+        polyline: {
+          arcType: ArcType.NONE,
+          clampToGround: false,
+          material: new PolylineDashMaterialProperty({
+            color: Color.fromCssColorString('#facc15'),
+            dashLength: 8,
+          }),
+          positions: new CallbackProperty(() => {
+            const fd = currentN2YODisplayPoint(friendly)
+            const hd = currentN2YODisplayPoint(hostile)
+            const fp = Cartesian3.fromDegrees(
+              fd.lng,
+              fd.lat,
+              friendly.displayAltitudeM,
+            )
+            const hp = Cartesian3.fromDegrees(
+              hd.lng,
+              hd.lat,
+              hostile.displayAltitudeM,
+            )
+            // Truncate the beam by (1 - beamFraction) until it reaches
+            // the hostile, so it visually "extends" toward the target.
+            if (beamFraction <= 0) return []
+            const tip = new Cartesian3(
+              fp.x + (hp.x - fp.x) * beamFraction,
+              fp.y + (hp.y - fp.y) * beamFraction,
+              fp.z + (hp.z - fp.z) * beamFraction,
+            )
+            return [fp, tip]
+          }, false),
+          width: 4,
+        },
+      })
+
+      if (hostileBillboard) {
+        hostileBillboard.color = new CallbackProperty(
+          () => Color.WHITE.withAlpha(1 - hostileDim * 0.55),
+          false,
+        )
+      }
+
+      const friendlyD = currentN2YODisplayPoint(friendly)
+      const hostileD = currentN2YODisplayPoint(hostile)
+      const interMidLat = (friendlyD.lat + hostileD.lat) / 2
+      const interMidLng = (friendlyD.lng + hostileD.lng) / 2
+      const interRadiusM = Math.max(
+        friendly.displayAltitudeM,
+        hostile.displayAltitudeM,
+      )
+      viewer.camera.flyToBoundingSphere(
+        new BoundingSphere(
+          Cartesian3.fromDegrees(interMidLng, interMidLat, 0),
+          interRadiusM,
+        ),
+        {
+          duration: 1.4,
+          offset: new HeadingPitchRange(
+            0,
+            -(Math.PI / 180) * 48,
+            interRadiusM * 5,
+          ),
+        },
+      )
+
+      let interRaf = 0
+      let interCancelled = false
+      const interStart = performance.now()
+      const interDuration = maneuverDemo.durationMs
+      const smoothInter = (x: number) =>
+        x * x * x * (x * (x * 6 - 15) + 10)
+
+      const interTick = () => {
+        if (interCancelled) return
+        const elapsed = performance.now() - interStart
+        const t = Math.min(elapsed / interDuration, 1)
+        //   0.00 - 0.08: camera fly-in
+        //   0.08 - 0.25: hostile link visible (red beam to ground)
+        //   0.25 - 0.65: friendly emits jamming beam (yellow), grows
+        //                from friendly toward hostile
+        //   0.65 - 0.85: hostile dims (link severed)
+        //   0.85 - 1.00: persistent hold
+        const bT = Math.min(Math.max((t - 0.25) / 0.4, 0), 1)
+        beamFraction = smoothInter(bT)
+        const dimT = Math.min(Math.max((t - 0.65) / 0.2, 0), 1)
+        hostileDim = smoothInter(dimT)
+        setManeuverProgress(t)
+        viewer.scene.requestRender()
+        if (t < 1) interRaf = requestAnimationFrame(interTick)
+      }
+      interRaf = requestAnimationFrame(interTick)
+
+      return () => {
+        interCancelled = true
+        if (interRaf) cancelAnimationFrame(interRaf)
+        if (!viewer.isDestroyed()) {
+          if (hostileBillboard) {
+            hostileBillboard.color =
+              originalHostileBillboardColor ?? new ConstantProperty(Color.WHITE)
+          }
+          viewer.entities.removeById(beamId)
+          viewer.entities.removeById(groundLinkId)
+          viewer.scene.requestRender()
+        }
+        setManeuverPair(null)
+      }
+    }
+
     // Snapshot originals so we can restore natural orbital motion on
     // cleanup. We override BOTH satellites' positions: the hostile is
     // pulled onto a tailing co-orbital track behind the friendly so the
@@ -1447,32 +1777,87 @@ export function CesiumGlobe({
       {maneuverDemo ? (
         <aside className="maneuver-overlay" aria-label="Maneuver execution status">
           <span className="maneuver-overlay__eyebrow">
-            Plane-change burn executing
+            {maneuverDemo.demoType === 'strike'
+              ? 'Kinetic strike inbound'
+              : maneuverDemo.demoType === 'interdiction'
+                ? 'Link interdiction active'
+                : 'Plane-change burn executing'}
           </span>
           <strong className="maneuver-overlay__title">
             {maneuverPair?.friendly ?? maneuverDemo.friendlyLabel ?? 'Friendly'}{' '}
-            ↦ evade{' '}
+            {maneuverDemo.demoType === 'strike'
+              ? '↣ neutralize'
+              : maneuverDemo.demoType === 'interdiction'
+                ? '↯ jam'
+                : '↦ evade'}{' '}
             {maneuverPair?.hostile ?? maneuverDemo.hostileLabel ?? 'hostile'}
           </strong>
           <dl className="maneuver-overlay__metrics">
-            <div>
-              <dt>Pre-burn miss</dt>
-              <dd className="maneuver-overlay__value maneuver-overlay__value--threat">
-                {maneuverDemo.preMissKm.toFixed(1)} km
-              </dd>
-            </div>
-            <div>
-              <dt>Post-burn miss</dt>
-              <dd className="maneuver-overlay__value maneuver-overlay__value--safe">
-                {maneuverDemo.postMissKm.toFixed(1)} km
-              </dd>
-            </div>
-            <div>
-              <dt>Δv applied</dt>
-              <dd className="maneuver-overlay__value">
-                {maneuverDemo.dvMs.toFixed(2)} m/s
-              </dd>
-            </div>
+            {maneuverDemo.demoType === 'evasion' ||
+            maneuverDemo.demoType === undefined ? (
+              <>
+                <div>
+                  <dt>Pre-burn miss</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--threat">
+                    {maneuverDemo.preMissKm.toFixed(1)} km
+                  </dd>
+                </div>
+                <div>
+                  <dt>Post-burn miss</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--safe">
+                    {maneuverDemo.postMissKm.toFixed(1)} km
+                  </dd>
+                </div>
+                <div>
+                  <dt>Δv applied</dt>
+                  <dd className="maneuver-overlay__value">
+                    {maneuverDemo.dvMs.toFixed(2)} m/s
+                  </dd>
+                </div>
+              </>
+            ) : maneuverDemo.demoType === 'strike' ? (
+              <>
+                <div>
+                  <dt>Closing range</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--threat">
+                    {maneuverDemo.preMissKm.toFixed(1)} km
+                  </dd>
+                </div>
+                <div>
+                  <dt>KV Δv</dt>
+                  <dd className="maneuver-overlay__value">
+                    {(maneuverDemo.dvMs * 220).toFixed(0)} m/s
+                  </dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--safe">
+                    {maneuverProgress > 0.85 ? 'Neutralized' : 'Inbound'}
+                  </dd>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <dt>Target band</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--threat">
+                    Ka downlink
+                  </dd>
+                </div>
+                <div>
+                  <dt>Beam EIRP</dt>
+                  <dd className="maneuver-overlay__value">
+                    {(maneuverDemo.dvMs * 28).toFixed(0)} dBW
+                  </dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd className="maneuver-overlay__value maneuver-overlay__value--safe">
+                    {maneuverProgress > 0.78 ? 'Link severed' : 'Closing'}
+                  </dd>
+                </div>
+              </>
+            )}
           </dl>
           <div
             className="maneuver-overlay__progress"

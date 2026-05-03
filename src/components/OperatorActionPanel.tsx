@@ -1,4 +1,4 @@
-import { useEventStore } from '../store/eventStore'
+import { useEventStore, type ManeuverDemo } from '../store/eventStore'
 
 const ACTION_LABELS: Record<string, string> = {
   active_defense_escort: 'Active defense escort',
@@ -9,6 +9,23 @@ const ACTION_LABELS: Record<string, string> = {
   sda_tasking: 'SDA tasking',
   threat_warning: 'Threat warning',
   passive_defense: 'Passive defense',
+}
+
+// Map engine action → which Cesium animation runs on Accept. Evasion is
+// the default since it's the broadest visualisation (shared-orbit threat
+// + plane change) and reads correctly even for actions without a more
+// specific story (threat_warning, passive_defense, sda_tasking).
+const actionToDemoType = (action: string): ManeuverDemo['demoType'] => {
+  if (
+    action === 'orbital_strike_request' ||
+    action === 'active_defense_counterattack'
+  ) {
+    return 'strike'
+  }
+  if (action === 'space_link_interdiction_request') {
+    return 'interdiction'
+  }
+  return 'evasion'
 }
 
 const formatAction = (action: string) =>
@@ -101,6 +118,7 @@ export function OperatorActionPanel() {
                   typeof burn.sat === 'string' ? burn.sat : undefined,
                 hostileLabel:
                   typeof burn.against === 'string' ? burn.against : undefined,
+                demoType: actionToDemoType(decision.action),
               })
             }}
           >

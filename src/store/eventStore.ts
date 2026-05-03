@@ -34,6 +34,15 @@ export type ManeuverDemo = {
   friendlyLabel?: string;
   /** Hostile satellite name (matches an entry in the n2yo catalog). */
   hostileLabel?: string;
+  /** Which Cesium animation runs.
+   *  - `evasion`: friendly executes a plane-change burn off a shared orbit
+   *    (active_defense_escort, active_defense_counterattack, default)
+   *  - `strike`: friendly fires a kinetic kill vehicle on a Bezier arc
+   *    that intercepts the hostile (orbital_strike_request, also fits
+   *    active_defense_counterattack on offensive scenarios)
+   *  - `interdiction`: friendly emits a jamming beam that breaks the
+   *    hostile's link (space_link_interdiction_request, sda_tasking) */
+  demoType?: 'evasion' | 'strike' | 'interdiction';
 };
 
 function pushBounded<T>(buffer: T[], item: T): T[] {
