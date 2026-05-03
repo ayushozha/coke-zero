@@ -4,6 +4,7 @@ type ScenarioRailProps = {
   activeScenarioId: string
   onSelectScenario: (scenarioId: string) => void
   scenarios: ScenarioDefinition[]
+  collapsed?: boolean
 }
 
 const familyLabel = (family: ScenarioDefinition['family']) => {
@@ -20,13 +21,18 @@ export function ScenarioRail({
   activeScenarioId,
   onSelectScenario,
   scenarios,
+  collapsed = false,
 }: ScenarioRailProps) {
   const activeScenario =
     scenarios.find((scenario) => scenario.id === activeScenarioId) ??
     scenarios[0]
 
   return (
-    <aside className="scenario-rail" aria-label="Scenario library">
+    <aside
+      className={`scenario-rail${collapsed ? ' scenario-rail--collapsed' : ''}`}
+      aria-label="Scenario library"
+      aria-hidden={collapsed}
+    >
       <div className="scenario-rail__header">
         <span>Scenario Stack</span>
         <strong>{scenarios.length} simulations loaded</strong>
