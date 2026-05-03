@@ -1,5 +1,6 @@
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import { MissionSummary } from './MissionSummary'
+import { OperatorActionPanel } from './OperatorActionPanel'
 import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
 import type { PlaybackStatus } from '../types/playback'
 import type { Attribution, Decision, Signal, UIEvent } from '../types/canopy'
@@ -104,6 +105,8 @@ export function ScenarioRail({
           )
         })}
       </nav>
+
+      <OperatorActionPanel />
 
       {activeScenario ? (
         <MissionSummary
