@@ -156,7 +156,10 @@ export function Brigade() {
             signals={signals}
           />
 
-          <EventFeed signals={signals} />
+          <EventFeed
+            playback={socketState.signals.length ? null : playbackStatus}
+            signals={signals}
+          />
         </section>
 
         <aside className="decision-stack" aria-label="Commander decision stack">

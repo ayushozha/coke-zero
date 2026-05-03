@@ -82,6 +82,8 @@ const eventTypeOverrides: Record<string, string> = {
   satcom_rf_spike: 'RF spike overlaps SATCOM backup routing.',
   terrain_masking_risk: 'Terrain may block the current relay path.',
   uas_control_link_detected: 'Possible UAS control link detected.',
+  iran_counter_c5isr_assessment: 'CANOPY fused the counter-C5ISR event set.',
+  missile_uas_capability_context: 'Missile and UAS capability context added.',
 }
 
 const actionByDomain: Record<Domain, string> = {
@@ -120,19 +122,29 @@ export function commanderSignalSummary(signal: Signal): {
   action: string
   location: string
   confidenceLabel: string
+  sourceLabel: string
 } {
   const copy = domainCopy[signal.domain]
   const confidence = Math.round(signal.confidence * 100)
-  const asset = signal.payload.asset ? `${signal.payload.asset}: ` : ''
+  const observables = signal.payload.observables
+  const demoAction =
+    typeof observables?.demo_action === 'string'
+      ? observables.demo_action.replaceAll('_', ' ')
+      : null
+  const spaceDependency =
+    typeof observables?.space_dependency === 'string'
+      ? observables.space_dependency
+      : null
 
   return {
     label: copy.label,
-    headline: `${asset}${plainEventName(signal)}`,
-    detail: signal.payload.summary,
-    whyItMatters: copy.commanderQuestion,
-    action: actionByDomain[signal.domain],
+    headline: signal.payload.summary,
+    detail: plainEventName(signal),
+    whyItMatters: spaceDependency ?? copy.meaning,
+    action: demoAction ?? actionByDomain[signal.domain],
     location: signal.location.label ?? signal.source,
     confidenceLabel: `${confidence}% confidence`,
+    sourceLabel: signal.payload.asset ?? signal.source,
   }
 }
 
