@@ -1526,6 +1526,112 @@
   font-variant-numeric: tabular-nums;
 }
 
+.maneuver-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(460px, calc(100% - 32px));
+  border: 1px solid rgba(34, 197, 94, 0.55);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(239, 68, 68, 0.06)),
+    rgba(6, 12, 12, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(245, 247, 240, 0.04) inset,
+    0 18px 38px rgba(0, 0, 0, 0.42),
+    0 0 18px rgba(34, 197, 94, 0.28);
+  padding: 14px 18px 16px;
+  backdrop-filter: blur(12px) saturate(1.1);
+  animation: maneuver-overlay-in 0.32s ease-out;
+}
+
+@keyframes maneuver-overlay-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.maneuver-overlay__eyebrow {
+  display: block;
+  color: #4ade80;
+  font-size: 0.74rem;
+  font-weight: 720;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.maneuver-overlay__title {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-primary);
+  font-size: 1.06rem;
+  font-weight: 720;
+  letter-spacing: 0.02em;
+}
+
+.maneuver-overlay__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 12px 0 10px;
+}
+
+.maneuver-overlay__metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid rgba(220, 227, 213, 0.16);
+  padding-top: 8px;
+}
+
+.maneuver-overlay__metrics dt {
+  color: rgba(220, 227, 213, 0.72);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.maneuver-overlay__metrics dd {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 720;
+  font-variant-numeric: tabular-nums;
+  color: #f5f7f0;
+}
+
+.maneuver-overlay__value--threat {
+  color: #fda4a4;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.42);
+}
+
+.maneuver-overlay__value--safe {
+  color: #86efac;
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.42);
+}
+
+.maneuver-overlay__progress {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(220, 227, 213, 0.12);
+  overflow: hidden;
+}
+
+.maneuver-overlay__progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444, #facc15 55%, #22c55e);
+  transition: width 0.12s linear;
+}
+
 .orbit-toggle {
   position: absolute;
   top: 148px;
