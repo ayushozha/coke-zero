@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl'
 import { forward as toMgrs } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
-import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
+import { commanderSignalSummary, signalKindLabel } from '../lib/commanderLanguage'
 import { boundsForSignals, signalCoordinate } from '../lib/signalLocation'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
@@ -317,7 +317,7 @@ const mapLabelForSignal = (signal: Signal) => {
   case 'line_of_sight_forecast':
     return 'Relay masking risk'
   default:
-    return domainLabel(signal.domain)
+    return signalKindLabel(signal)
   }
 }
 

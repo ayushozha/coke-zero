@@ -10,12 +10,12 @@ const domainCopy: Record<
     commanderQuestion: 'Could this disrupt ISR, warning, or communications?',
   },
   sda: {
-    label: 'Space tracking',
+    label: 'Satellite custody',
     meaning: 'Space tracking or overhead warning changed.',
     commanderQuestion: 'Does the brigade need space support attention?',
   },
   rf_ew: {
-    label: 'Radio interference',
+    label: 'EW interference',
     meaning: 'Enemy jamming or interference may be affecting links.',
     commanderQuestion: 'Are radios, drones, or SATCOM starting to degrade?',
   },
@@ -25,7 +25,7 @@ const domainCopy: Record<
     commanderQuestion: 'Should automated handoffs be slowed or checked?',
   },
   osint: {
-    label: 'Intel context',
+    label: 'Threat context',
     meaning: 'Open or correlated reporting changed the threat picture.',
     commanderQuestion: 'Does this change the commander’s risk estimate?',
   },
@@ -35,7 +35,7 @@ const domainCopy: Record<
     commanderQuestion: 'Does this support a pause, mask, or emit less order?',
   },
   pnt: {
-    label: 'GPS / timing warning',
+    label: 'GPS / timing risk',
     meaning: 'Position, navigation, or timing may not be trustworthy.',
     commanderQuestion: 'Can we trust coordinates for movement or fires?',
   },
@@ -45,12 +45,12 @@ const domainCopy: Record<
     commanderQuestion: 'Do we need a backup path or space-link request?',
   },
   drone: {
-    label: 'Drone relay status',
+    label: 'UAS / relay status',
     meaning: 'UAS or relay behavior changed at the edge.',
     commanderQuestion: 'Is ISR still reaching the brigade?',
   },
   terrain: {
-    label: 'Terrain risk',
+    label: 'Masking risk',
     meaning: 'Terrain may block line-of-sight or relay coverage.',
     commanderQuestion: 'Should the relay geometry change?',
   },
@@ -225,6 +225,88 @@ const assetAliases: Record<string, string> = {
 
 export function domainLabel(domain: Domain): string {
   return domainCopy[domain].label
+}
+
+export function signalKindLabel(signal: Signal): string {
+  switch (signal.payload.event_type) {
+  case 'approach_masking_check':
+    return 'Masked UAS lane'
+  case 'attack_chain_correlation':
+  case 'convergence':
+    return 'Attack chain'
+  case 'backup_link_check':
+  case 'priority_path_confirmed':
+    return 'Backup comms'
+  case 'blockade_notice':
+  case 'public_report':
+  case 'osint_context':
+    return 'Public report'
+  case 'collection_cue':
+  case 'collection_risk_assessment':
+  case 'overhead_collection_window':
+  case 'sda_catalog_match':
+    return 'Collection risk'
+  case 'counterspace_capability_context':
+    return 'Counterspace threat'
+  case 'credential_probe':
+  case 'credential_spray':
+  case 'gateway_config_probe':
+  case 'maintenance_api_rate_limit':
+  case 'process_anomaly':
+    return 'Access probe'
+  case 'custody_quality_change':
+  case 'custody_update':
+    return 'Satellite custody'
+  case 'emission_cluster_detected':
+  case 'emission_posture_risk':
+    return 'Emission risk'
+  case 'gnss_jamming_signature':
+  case 'gps_spoof':
+  case 'pnt_spoofing':
+  case 'receiver_holdover_active':
+    return 'GPS / timing risk'
+  case 'maritime_space_picture_shift':
+    return 'Maritime tracking'
+  case 'militia_uas_risk_context':
+  case 'missile_uas_capability_context':
+    return 'Threat context'
+  case 'orbital_setup':
+  case 'space_support_option':
+    return 'Satellite pass'
+  case 'overhead_ir_cue':
+  case 'overhead_warning_quality_drop':
+    return 'Overhead warning'
+  case 'proximity_operations':
+  case 'rpo_close_approach':
+  case 'screening_overlay':
+    return 'Space object watch'
+  case 'rf_bearing_crosscheck':
+  case 'rf_interference':
+  case 'ew_bearing_refined':
+  case 'satcom_rf_spike':
+  case 'uas_control_link_detected':
+    return 'EW interference'
+  case 'satcom_degradation':
+  case 'satcom_link_margin_drop':
+  case 'satcom_priority_queue':
+  case 'satcom_queue_pressure':
+  case 'satcom_route_shed':
+    return 'SATCOM degraded'
+  case 'terrain_masking_risk':
+  case 'line_of_sight_forecast':
+    return 'Relay masking risk'
+  case 'track_handoff_success':
+  case 'drone_track_custody_split':
+    return 'UAS custody'
+  case 'telemetry_update':
+  case 'telemetry_degradation':
+  case 'degraded_telemetry':
+  case 'drone_spoofing':
+  case 'autonomous_relay_handoff':
+    return 'UAS / relay status'
+  default:
+    return domainLabel(signal.domain)
+  }
 }
 
 export function plainEventName(signal: Signal): string {
@@ -565,7 +647,7 @@ export function commanderSignalSummary(signal: Signal): {
   const action = operationalAction ?? actionByDomain[signal.domain]
 
   return {
-    label: copy.label,
+    label: signalKindLabel(signal),
     headline: signal.payload.summary,
     oneLine: oneLineForSignal(signal),
     detail: plainEventName(signal),
