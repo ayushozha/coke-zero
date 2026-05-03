@@ -23,7 +23,7 @@ export function Brigade() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setBeatIndex((current) =>
-        Math.min(current + 1, activeScenario.signals.length),
+        current >= activeScenario.signals.length ? 1 : current + 1,
       )
     }, 1500)
 
