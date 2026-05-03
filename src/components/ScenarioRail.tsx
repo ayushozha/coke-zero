@@ -6,6 +6,16 @@ type ScenarioRailProps = {
   scenarios: ScenarioDefinition[]
 }
 
+const familyLabel = (family: ScenarioDefinition['family']) => {
+  if (family === 'iran') {
+    return 'Iran'
+  }
+  if (family === 'army') {
+    return 'Army'
+  }
+  return 'Regional'
+}
+
 export function ScenarioRail({
   activeScenarioId,
   onSelectScenario,
@@ -23,8 +33,8 @@ export function ScenarioRail({
           <button
             className={
               scenario.id === activeScenarioId
-                ? 'scenario-list__item scenario-list__item--active'
-                : 'scenario-list__item'
+                ? `scenario-list__item scenario-list__item--${scenario.family} scenario-list__item--active`
+                : `scenario-list__item scenario-list__item--${scenario.family}`
             }
             key={scenario.id}
             onClick={() => onSelectScenario(scenario.id)}
@@ -32,7 +42,11 @@ export function ScenarioRail({
           >
             <span>{scenario.id}</span>
             <strong>{scenario.shortName}</strong>
-            {scenario.id === activeScenarioId ? <em>Active</em> : null}
+            <em>
+              {scenario.id === activeScenarioId
+                ? `Active ${familyLabel(scenario.family)}`
+                : familyLabel(scenario.family)}
+            </em>
           </button>
         ))}
       </nav>
