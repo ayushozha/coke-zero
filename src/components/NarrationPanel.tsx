@@ -1,26 +1,59 @@
-import type { Attribution } from '../types/canopy'
+import type { Attribution, UIEvent } from '../types/canopy'
 
 type NarrationPanelProps = {
   attribution: Attribution | null
+  uiEvent?: UIEvent | null
 }
 
-export function NarrationPanel({ attribution }: NarrationPanelProps) {
+export function NarrationPanel({
+  attribution,
+  uiEvent = null,
+}: NarrationPanelProps) {
+  const predictedNext =
+    attribution?.predicted_next ?? 'continued activity in the next window'
+
   return (
     <section className="narration" aria-labelledby="narration-title">
       <div className="panel__header">
-        <h2 id="narration-title">Commander Narration</h2>
-        <span>{attribution ? 'attribution lock' : 'standing by'}</span>
+        <h2 id="narration-title">Assessment</h2>
+        <span>
+          {uiEvent
+            ? uiEvent.severity
+            : attribution
+              ? 'attribution lock'
+              : 'standing by'}
+        </span>
       </div>
 
-      {attribution ? (
+      {uiEvent ? (
+        <>
+          <p className="narration__plain">{uiEvent.message}</p>
+          <details className="details-panel details-panel--nested">
+            <summary>
+              <span>Evidence packet</span>
+              <span>{Math.round(uiEvent.confidence * 100)}%</span>
+            </summary>
+            <dl className="narration__facts">
+              <div>
+                <dt>Alert type</dt>
+                <dd>{uiEvent.type.replaceAll('_', ' ')}</dd>
+              </div>
+              <div>
+                <dt>Reports behind it</dt>
+                <dd>{uiEvent.source_signal_ids.length || 'none'}</dd>
+              </div>
+            </dl>
+          </details>
+        </>
+      ) : attribution ? (
         <>
           <p className="narration__plain">
-            CANOPY assesses {attribution.actor} is preparing to{' '}
-            {attribution.predicted_next.toLowerCase()}.
+            CANOPY sees a pattern consistent with {attribution.actor}. It may{' '}
+            {predictedNext.toLowerCase()}.
           </p>
           <details className="details-panel details-panel--nested">
             <summary>
-              <span>Attribution Detail</span>
+              <span>Attribution packet</span>
               <span>{Math.round(attribution.confidence * 100)}%</span>
             </summary>
             <dl className="narration__facts">

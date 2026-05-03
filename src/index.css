@@ -1,17 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-
 :root {
-  --black: #000;
-  --white: #fff;
-  --amber: #ffb300;
-  --red: #ff2222;
-  --panel: rgba(8, 8, 8, 0.94);
-  --line: rgba(255, 255, 255, 0.18);
-  --line-bright: rgba(255, 255, 255, 0.38);
-  --text-primary: #fff;
-  --text-muted: rgba(255, 255, 255, 0.68);
+  --black: #07100f;
+  --white: #f5f7f0;
+  --amber: #c9a457;
+  --red: #e05c4f;
+  --green: #77b884;
+  --cyan: #33f2f0;
+  --olive: #a7b96f;
+  --violet: #8b87c7;
+  --panel: rgba(13, 23, 24, 0.9);
+  --panel-strong: rgba(9, 17, 18, 0.96);
+  --panel-soft: rgba(24, 38, 38, 0.76);
+  --control-surface: rgba(19, 30, 30, 0.58);
+  --control-surface-active: rgba(47, 82, 80, 0.66);
+  --control-line: rgba(154, 190, 180, 0.25);
+  --line: rgba(220, 227, 213, 0.13);
+  --line-bright: rgba(220, 227, 213, 0.28);
+  --text-primary: #f5f7f0;
+  --text-muted: #b6beb2;
+  --text-subtle: #879188;
+  --ambient-cyan: rgba(79, 181, 178, 0.18);
+  --ambient-olive: rgba(145, 166, 92, 0.15);
+  --ambient-violet: rgba(111, 101, 173, 0.12);
+  --font-sans:
+    Aptos, "Aptos Display", "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text",
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display:
+    "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Display",
+    ui-sans-serif, system-ui, sans-serif;
 
-  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.45;
   color: var(--text-primary);
@@ -54,11 +71,12 @@ p {
 }
 
 h1 {
+  font-family: var(--font-display);
   color: var(--text-primary);
-  font-size: 2.25rem;
-  font-weight: 400;
-  line-height: 1;
-  text-transform: uppercase;
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.08;
 }
 
 #root {

@@ -1,43 +1,75 @@
 import type { Signal } from '../types/canopy'
+import { commanderSignalSummary } from '../lib/commanderLanguage'
 
 type EventFeedProps = {
   signals: Signal[]
 }
 
-const formatPayload = (payload: Signal['payload']) =>
-  Object.entries(payload)
-    .map(([key, value]) => `${key}:${String(value)}`)
-    .join(' / ')
-
 export function EventFeed({ signals }: EventFeedProps) {
+  const feedState =
+    signals[0]?.confidence >= 0.86
+      ? 'PRIORITY'
+      : signals[0]?.confidence >= 0.74
+        ? 'WATCH'
+        : 'MONITOR'
+
   return (
-    <details className="details-panel event-feed">
-      <summary>
-        <span>Incoming Signals</span>
-        <span>{signals.length.toString().padStart(2, '0')} live</span>
-      </summary>
-      <ol className="event-feed__list">
-        {signals.map((signal) => (
-          <li className="event-feed__item" key={signal.id}>
-            <span className="event-feed__time">
-              {new Date(signal.ts).toLocaleTimeString([], {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}
-            </span>
-            <span className="event-feed__domain">{signal.domain}</span>
-            <span className="event-feed__source">{signal.source}</span>
-            <span className="event-feed__payload">
-              {formatPayload(signal.payload)}
-            </span>
-            <span className="event-feed__confidence">
-              {Math.round(signal.confidence * 100)}%
-            </span>
-          </li>
-        ))}
-      </ol>
-    </details>
+    <section className="event-feed" aria-label="Incoming signals">
+      <div className="event-feed__header">
+        <div>
+          <span>ISR / EW / CSM</span>
+          <h2>Signal Stream</h2>
+        </div>
+        <div className="event-feed__status">
+          <span>{feedState}</span>
+          <strong>{signals.length.toString().padStart(2, '0')}</strong>
+        </div>
+      </div>
+      <div
+        className="event-feed__stream"
+        role="log"
+        aria-label="Live signal stream"
+        aria-live="polite"
+      >
+        {signals.slice(0, 10).map((signal, index) => {
+          const summary = commanderSignalSummary(signal)
+          const priority =
+            signal.confidence >= 0.86
+              ? 'high'
+              : signal.confidence >= 0.74
+                ? 'watch'
+                : 'low'
+          return (
+            <article
+              className={`event-feed__entry event-feed__entry--${priority}`}
+              data-newest={index === 0 ? 'true' : undefined}
+              key={signal.id}
+            >
+              <div className="event-feed__entry-top">
+                <span className="event-feed__time">
+                  {new Date(signal.ts).toLocaleTimeString([], {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <span className="event-feed__domain">{summary.label}</span>
+                <span className="event-feed__confidence">
+                  {summary.confidenceLabel}
+                </span>
+              </div>
+              <div className="event-feed__meaning">
+                <strong>{summary.headline}</strong>
+                <p>{summary.whyItMatters}</p>
+              </div>
+              <div className="event-feed__entry-meta">
+                <span>{summary.location}</span>
+                <span>{summary.action}</span>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </section>
   )
 }

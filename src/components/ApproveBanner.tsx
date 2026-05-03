@@ -1,32 +1,42 @@
-import type { Decision } from '../types/canopy'
+import type { Decision, UIEvent } from '../types/canopy'
 
 type ApproveBannerProps = {
   decision: Decision | null
+  uiEvent?: UIEvent | null
   isApproved: boolean
   onApprove: () => void
 }
 
 export function ApproveBanner({
   decision,
+  uiEvent = null,
   isApproved,
   onApprove,
 }: ApproveBannerProps) {
-  if (!decision || decision.authority !== 'request') {
+  const recommendation = uiEvent?.recommendation
+
+  if (!recommendation && (!decision || decision.authority !== 'request')) {
     return null
   }
+
+  const title = recommendation?.summary ?? decision?.action ?? 'Review request'
+  const requestId = recommendation?.id ?? decision?.id ?? 'pending'
+  const rationale = uiEvent?.message ?? decision?.rationale ?? ''
+  const target = decision?.target ?? 'higher-authority review'
+  const approveLabel = recommendation?.approveLabel ?? 'Approve'
 
   return (
     <section className="approve-banner" aria-label="Approval request">
       <div>
-        <span className="approve-banner__kicker">Authority Request</span>
-        <h2>{decision.action}</h2>
-        <p>Target {decision.target}</p>
+        <span className="approve-banner__kicker">Decision Gate</span>
+        <h2>{title}</h2>
+        <p>Target: {target}</p>
         <details className="details-panel details-panel--compact">
           <summary>
-            <span>Request Packet</span>
-            <span>{decision.id}</span>
+            <span>Approval basis</span>
+            <span>{requestId}</span>
           </summary>
-          <p>{decision.rationale}</p>
+          <p>{rationale}</p>
         </details>
       </div>
       <button
@@ -35,7 +45,7 @@ export function ApproveBanner({
         onClick={onApprove}
         disabled={isApproved}
       >
-        {isApproved ? 'Approved' : 'Approve'}
+        {isApproved ? 'Approved' : approveLabel}
       </button>
     </section>
   )
