@@ -1383,8 +1383,9 @@
   right: 14px;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(7, minmax(58px, auto));
-  gap: 4px;
+  grid-template-columns: repeat(7, minmax(40px, auto));
+  gap: 3px;
+  padding: 3px;
   border: 1px solid rgba(154, 190, 180, 0.26);
   border-radius: 2px;
   background:
@@ -1398,11 +1399,11 @@
 
 .satellite-family-controls button {
   --satellite-family-color: rgba(245, 247, 240, 0.74);
-  min-width: 58px;
-  min-height: 44px;
+  min-width: 40px;
+  min-height: 26px;
   border: 0;
   border: 1px solid rgba(154, 190, 180, 0.14);
-  border-radius: 0;
+  border-radius: 2px;
   background:
     linear-gradient(
       180deg,
@@ -1412,19 +1413,19 @@
     rgba(6, 12, 12, 0.62);
   color: rgba(245, 247, 240, 0.78);
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 6px 8px;
-  text-align: left;
+  padding: 4px 6px;
+  text-align: center;
 }
 
 .satellite-family-controls__swatch {
   display: block;
   width: 100%;
-  height: 3px;
-  margin-bottom: 5px;
+  height: 2px;
+  margin-bottom: 3px;
   background: var(--satellite-family-color);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--satellite-family-color) 55%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--satellite-family-color) 52%, transparent);
 }
 
 .satellite-family-controls__label,
@@ -1436,11 +1437,12 @@
 .satellite-family-controls__label {
   color: var(--satellite-family-color);
   font-family: var(--font-display);
-  font-size: 0.72rem;
-  letter-spacing: 0.03em;
+  font-size: 0.64rem;
+  letter-spacing: 0;
 }
 
 .satellite-family-controls__sub {
+  display: none;
   margin-top: 3px;
   color: rgba(245, 247, 240, 0.58);
   font-size: 0.55rem;
@@ -1526,7 +1528,7 @@
 
 .orbit-toggle {
   position: absolute;
-  top: 154px;
+  top: 148px;
   right: 14px;
   z-index: 5;
   display: inline-flex;
@@ -4104,12 +4106,12 @@
   }
 
   .satellite-family-controls {
-    top: 148px;
+    top: 98px;
     right: 310px;
   }
 
   .orbit-toggle {
-    top: 190px;
+    top: 136px;
     right: 310px;
   }
 
@@ -4430,13 +4432,13 @@
   .satellite-family-controls button {
     flex: 1 1 0;
     min-width: 0;
-    padding: 8px 5px;
+    padding: 4px 3px;
   }
 
   .orbit-toggle {
     top: auto;
     right: 10px;
-    bottom: 104px;
+    bottom: 96px;
     z-index: 8;
   }
 

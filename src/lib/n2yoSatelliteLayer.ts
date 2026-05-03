@@ -30,8 +30,7 @@ export const isN2YOGeostationaryFamily = (family: N2YOSatelliteFamily) =>
   family === 'AEHF' ||
   family === 'MUOS' ||
   family === 'WGS' ||
-  family === 'SBIRS' ||
-  family === 'GSSAP'
+  family === 'SBIRS'
 
 export const N2YO_SATELLITES: N2YOSatelliteConfig[] = [
   {
@@ -310,6 +309,12 @@ type N2YOTrackPoint = {
   alt_km: number
 }
 
+export type N2YODisplayPoint = {
+  lat: number
+  lng: number
+  timestampUtc: string
+}
+
 export type N2YOPositionCache = {
   fetched_at: string
   satellite: {
@@ -494,16 +499,53 @@ const createAnimatedOrbitPosition = (
   track: N2YOTrackPoint[],
   displayAltitudeM: number,
 ) => {
-  const { current, selectedPoint, tangent } = latestPointOrbitBasis(track)
-  const startedAtMs = Date.now()
-  const periodSeconds = orbitalPeriodSeconds(selectedPoint.alt_km)
-
   return new CallbackPositionProperty(() => {
-    const elapsedSeconds =
-      ((Date.now() - startedAtMs) / 1000) * ORBIT_MOTION_PLAYBACK_SPEED
-    const theta = ((elapsedSeconds % periodSeconds) / periodSeconds) * Math.PI * 2
-    return cartesianFromOrbitBasis(current, tangent, theta, displayAltitudeM)
+    const displayPoint = currentN2YODisplayPoint({ track })
+    return Cartesian3.fromDegrees(
+      displayPoint.lng,
+      displayPoint.lat,
+      displayAltitudeM,
+    )
   }, false)
+}
+
+export function currentN2YODisplayPoint(
+  layer: Pick<N2YOLayerState, 'cache' | 'satelliteFamily'> | Pick<N2YOPositionCache, 'track'>,
+): N2YODisplayPoint {
+  const track = 'cache' in layer ? layer.cache.track : layer.track
+  const point = latestTrackPoint({
+    fetched_at: '',
+    satellite: { id: 0, name: '' },
+    track,
+  })
+
+  if ('satelliteFamily' in layer && isN2YOGeostationaryFamily(layer.satelliteFamily)) {
+    return {
+      lat: point.lat,
+      lng: point.lng,
+      timestampUtc: point.timestamp_utc,
+    }
+  }
+
+  const { current, selectedPoint, tangent } = latestPointOrbitBasis(track)
+  const periodSeconds = orbitalPeriodSeconds(selectedPoint.alt_km)
+  const elapsedSeconds =
+    ((Date.now() - selectedPoint.timestamp * 1000) / 1000) *
+    ORBIT_MOTION_PLAYBACK_SPEED
+  const theta = ((elapsedSeconds % periodSeconds) / periodSeconds) * Math.PI * 2
+  const sample = normalize({
+    x: current.x * Math.cos(theta) + tangent.x * Math.sin(theta),
+    y: current.y * Math.cos(theta) + tangent.y * Math.sin(theta),
+    z: current.z * Math.cos(theta) + tangent.z * Math.sin(theta),
+  })
+
+  return {
+    lat: Math.asin(sample.z) * (180 / Math.PI),
+    lng: Math.atan2(sample.y, sample.x) * (180 / Math.PI),
+    timestampUtc: new Date(
+      selectedPoint.timestamp * 1000 + elapsedSeconds * 1000,
+    ).toISOString(),
+  }
 }
 
 const createSampledMotionOrbitPositions = (
