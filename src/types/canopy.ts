@@ -98,6 +98,27 @@ export type Decision = {
   source_signal_ids: string[]
 }
 
+export type TraceStage =
+  | 'fusion'
+  | 'attrib_primary'
+  | 'attrib_redteam'
+  | 'attrib_reconcile'
+  | 'decide'
+  | 'tools'
+  | 'stress'
+
+export type TraceLevel = 'info' | 'decision' | 'tool' | 'warn'
+
+export type ReasoningTrace = {
+  id: string
+  ts: string
+  stage: TraceStage
+  level: TraceLevel
+  message: string
+  ref_id: string | null
+  payload: Record<string, unknown>
+}
+
 export type Recommendation = {
   id: string
   summary: string
@@ -124,6 +145,7 @@ export type CanopyMessage =
   | { type: 'attribution'; topic?: string; data: Attribution }
   | { type: 'decision'; topic?: string; data: Decision }
   | { type: 'ui_event'; topic?: string; data: UIEvent }
+  | { type: 'trace'; topic?: string; data: ReasoningTrace }
 
 export type CanopySocketState = {
   signals: Signal[]
@@ -131,6 +153,47 @@ export type CanopySocketState = {
   attributions: Attribution[]
   decisions: Decision[]
   uiEvents: UIEvent[]
+  traces: ReasoningTrace[]
   isConnected: boolean
   lastError: string | null
 }
+
+export type ConnectionStatus = 'connecting' | 'live' | 'fixture' | 'offline'
+
+export type ViewMode = 'brigade' | 'operator'
+
+export type KBEntry = {
+  id: string
+  actor: string
+  capability_type: string
+  title: string
+  summary: string
+  decision_implications?: string[]
+  domains?: Domain[]
+  scenario_signal_ids?: string[]
+  [key: string]: unknown
+}
+
+export type RecommendedBurn = {
+  sat?: string
+  against?: string
+  dv_m_s?: number
+  t_burn_utc?: string
+  lead_seconds?: number | null
+  actual_lead_seconds?: number | null
+}
+
+export type RequestPacket = {
+  recommended_burn?: RecommendedBurn
+  pre_miss_km?: number
+  post_miss_km?: number
+  [key: string]: unknown
+}
+
+export type WSEnvelope =
+  | { topic: string; kind: 'signal'; data: Signal }
+  | { topic: string; kind: 'anomaly'; data: Anomaly }
+  | { topic: string; kind: 'attribution'; data: Attribution }
+  | { topic: string; kind: 'decision'; data: Decision }
+  | { topic: string; kind: 'ui_event'; data: UIEvent }
+  | { topic: string; kind: 'trace'; data: ReasoningTrace }
