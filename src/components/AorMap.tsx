@@ -111,6 +111,23 @@ const priorityLabel = (priority: ReturnType<typeof priorityForSignal>) => {
   return 'TRACK'
 }
 
+const signalTimeMs = (signal: Signal | undefined) => {
+  const time = Date.parse(signal?.ts ?? '')
+  return Number.isFinite(time) ? time : null
+}
+
+const formatDuration = (milliseconds: number) => {
+  const totalMinutes = Math.max(0, Math.round(milliseconds / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours > 0) {
+    return `${hours}H ${minutes.toString().padStart(2, '0')}M`
+  }
+
+  return `${minutes}M`
+}
+
 const boundsFromPoints = (points: [number, number][]): AorBounds => {
   if (!points.length) {
     return aorBounds
@@ -299,6 +316,18 @@ export function AorMap({
   const scenarioProgress = Math.round(
     (signals.length / Math.max(scenario.signals.length, 1)) * 100,
   )
+  const scenarioStartTime = signalTimeMs(scenario.signals[0])
+  const scenarioEndTime = signalTimeMs(scenario.signals.at(-1))
+  const latestSignalTime = signalTimeMs(signals[0])
+  const elapsedMs =
+    scenarioStartTime !== null && latestSignalTime !== null
+      ? latestSignalTime - scenarioStartTime
+      : 0
+  const durationMs =
+    scenarioStartTime !== null && scenarioEndTime !== null
+      ? scenarioEndTime - scenarioStartTime
+      : 0
+  const scenarioClock = `${formatDuration(elapsedMs)} / ${formatDuration(durationMs)}`
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -384,8 +413,8 @@ export function AorMap({
         type: 'fill',
         source: 'aor-zone',
         paint: {
-          'fill-color': '#e05c4f',
-          'fill-opacity': 0.045,
+          'fill-color': '#c9a457',
+          'fill-opacity': 0.02,
         },
       })
       map.addLayer({
@@ -393,9 +422,9 @@ export function AorMap({
         type: 'line',
         source: 'aor-zone',
         paint: {
-          'line-color': '#e05c4f',
-          'line-opacity': 0.64,
-          'line-width': 1.4,
+          'line-color': '#c9a457',
+          'line-opacity': 0.42,
+          'line-width': 1.1,
         },
       })
 
@@ -408,9 +437,9 @@ export function AorMap({
         type: 'line',
         source: 'mgrs-grid',
         paint: {
-          'line-color': '#ffffff',
-          'line-opacity': 0.22,
-          'line-width': 1,
+          'line-color': '#f5f7f0',
+          'line-opacity': 0.13,
+          'line-width': 0.8,
         },
       })
 
@@ -597,6 +626,7 @@ export function AorMap({
       <div className="aor-map__ops-strip" aria-hidden="true">
         <span>LIVE CONTACTS {visibleSignals.length}</span>
         <span>SIM {scenarioProgress}%</span>
+        <span>MET {scenarioClock}</span>
         <span>THREAT {highSignalCount}</span>
         <span>FUSED {correlatedSignalIds.length}</span>
         <span>{scenario.domains.length} DOMAINS</span>
@@ -621,6 +651,7 @@ export function AorMap({
       <div className="aor-map__scale">
         <span>Zoom {zoom}</span>
         <span>SIM {scenarioProgress}%</span>
+        <span>MET {scenarioClock}</span>
         <span>10m MGRS labels</span>
       </div>
     </div>

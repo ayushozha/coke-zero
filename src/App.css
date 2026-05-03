@@ -1250,7 +1250,9 @@
   right: 14px;
   bottom: 82px;
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
+  justify-content: flex-end;
   padding: 8px 10px;
 }
 
