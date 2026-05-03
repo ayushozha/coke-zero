@@ -27,18 +27,26 @@ Every record is a canonical `Signal`, whether it comes from a public source, a m
 
 ## Quick start
 
-Install dependencies with `uv`, then validate and replay the demo data:
+Install dependencies with `uv`. If `uv` is not on your `PATH`, the repo-local
+`./run` helper will also use `$HOME/.local/bin/uv`.
 
 ```bash
-uv run python scripts/validate_scenarios.py
-uv run python scripts/replay.py scenarios/beat2.jsonl --dry-run
-uv run python scripts/replay.py scenarios/beat47.jsonl --dry-run | uv run python services/fusion/orbital_anomaly.py
+./run python scripts/validate_scenarios.py
+./run python scripts/replay.py scenarios/beat2.jsonl --dry-run
+./run python scripts/replay.py scenarios/beat47.jsonl --dry-run | ./run python services/fusion/orbital_anomaly.py
 ```
 
 Run tests:
 
 ```bash
-uv run python -m unittest discover -s tests
+./run pytest
+./run python scripts/verify.py
+```
+
+Live Claude run, after adding `ANTHROPIC_API_KEY` to `.env`:
+
+```bash
+./run python scripts/verify.py --live scenarios/iran_counter_c5isr_brigade.jsonl
 ```
 
 ## Core idea
