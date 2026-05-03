@@ -51,7 +51,16 @@ BENCH_DIR = Path(__file__).resolve().parent
 VARIANTS_DIR = BENCH_DIR / "scenarios"
 SCORECARD = BENCH_DIR / "scorecard.json"
 PER_SCENARIO_TIMEOUT = 15.0
-DRAIN_S = 0.5
+# Maximum time to wait after replay finishes for the engine to produce a
+# Decision. Stub takes <1ms; Anthropic does primary+redteam+reconcile+decide
+# (4 LLM calls) so allow ~90s. Polled — exits as soon as a Decision lands.
+DRAIN_BUDGETS_S: dict[str, float] = {
+    "stub": 1.0,
+    "anthropic": 90.0,
+    "ollama": 120.0,
+}
+DRAIN_DEFAULT_S = 1.0
+DRAIN_POLL_S = 0.1
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +70,7 @@ async def _run_scenario(
     path: Path,
     *,
     timeout_s: float = PER_SCENARIO_TIMEOUT,
+    drain_budget_s: float = DRAIN_DEFAULT_S,
 ) -> dict[str, list]:
     """Replay one scenario and capture engine outputs."""
     captured: dict[str, list] = {
@@ -98,8 +108,19 @@ async def _run_scenario(
         await asyncio.wait_for(replay_done.wait(), timeout=timeout_s)
     except asyncio.TimeoutError:
         log.warning("replay timed out for %s", path.name)
-    # drain any in-flight events
-    await asyncio.sleep(DRAIN_S)
+
+    # Drain: poll until we see a Decision (the last stage of the pipeline)
+    # or the budget runs out. Anthropic's three attribution calls + decide
+    # take ~10-30s, so the previous fixed 0.5s drain captured nothing for
+    # live providers and falsely reported them as wrong.
+    drain_t0 = time.perf_counter()
+    while time.perf_counter() - drain_t0 < drain_budget_s:
+        if captured["decision"]:
+            # Give one more poll cycle for the decision to fan out to
+            # ui_events before we cut the consumers.
+            await asyncio.sleep(DRAIN_POLL_S)
+            break
+        await asyncio.sleep(DRAIN_POLL_S)
 
     replay_task.cancel()
     for c in consumers:
@@ -196,9 +217,14 @@ async def _run(
     provider: str,
     seeds_only: bool,
     limit: int | None,
+    multi_agent: bool = True,
 ) -> Scorecard:
-    log.info("Building engine (llm=%s)", provider)
-    engine = build_engine(provider=provider, attrib_window_s=0.0)
+    log.info(
+        "Building engine (llm=%s, multi_agent=%s)", provider, multi_agent
+    )
+    engine = build_engine(
+        provider=provider, attrib_window_s=0.0, multi_agent=multi_agent
+    )
     tasks = start_engine_tasks(engine)
 
     scorecard = Scorecard()
@@ -210,13 +236,20 @@ async def _run(
     if limit is not None:
         labels = labels[:limit]
 
-    log.info("Scoring %d scenarios", len(labels))
+    drain_budget = DRAIN_BUDGETS_S.get(provider, DRAIN_DEFAULT_S)
+    log.info(
+        "Scoring %d scenarios (drain budget per scenario: %.0fs)",
+        len(labels),
+        drain_budget,
+    )
 
     try:
         for i, label in enumerate(labels, start=1):
             path = Path(label["_path"])
             t0 = time.perf_counter()
-            captured = await _run_scenario(engine, path)
+            captured = await _run_scenario(
+                engine, path, drain_budget_s=drain_budget
+            )
             elapsed = time.perf_counter() - t0
             result = _label_outputs(label, captured, elapsed)
             scorecard.append(result)
@@ -284,6 +317,11 @@ def main() -> int:
     parser.add_argument("--regenerate-variants", action="store_true")
     parser.add_argument("--variants", type=int, default=4)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--no-redteam",
+        action="store_true",
+        help="Disable the red-team / reconcile attribution agents (single-pass).",
+    )
     args = parser.parse_args()
 
     if args.regenerate_variants and not args.seeds_only:
@@ -293,7 +331,12 @@ def main() -> int:
 
     provider = resolve_provider(llm_flag=args.provider)
     card = asyncio.run(
-        _run(provider=provider, seeds_only=args.seeds_only, limit=args.limit)
+        _run(
+            provider=provider,
+            seeds_only=args.seeds_only,
+            limit=args.limit,
+            multi_agent=not args.no_redteam,
+        )
     )
 
     SCORECARD.write_text(json.dumps(card.to_dict(), indent=2))
