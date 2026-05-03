@@ -4,6 +4,7 @@ import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
 import { NarrationPanel } from '../components/NarrationPanel'
+import { ScenarioRail } from '../components/ScenarioRail'
 import { StatusCard } from '../components/StatusCard'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
@@ -127,7 +128,7 @@ const beatDecision: Decision = {
 }
 
 const commanderFocus =
-  'CANOPY turns raw space, GPS, SATCOM, EW, cyber, and drone reports into a short commander brief: what changed, why it matters, and whether a decision is needed.'
+  'Space, EW, cyber, PNT, SATCOM, and drone signals fused into one commander decision view.'
 
 export function Brigade() {
   const socketState = useCanopySocket()
@@ -166,8 +167,8 @@ export function Brigade() {
     <main className="brigade-shell">
       <header className="app-header">
         <div>
-          <p className="app-header__eyebrow">CANOPY / Brigade View</p>
-          <h1>Commander Space-Support Brief</h1>
+          <p className="app-header__eyebrow">CANOPY Brigade Workbench</p>
+          <h1>Space Support Common Operating Picture</h1>
           <p className="app-header__plain">{commanderFocus}</p>
         </div>
         <div className="app-header__right">
@@ -184,27 +185,33 @@ export function Brigade() {
         </div>
       </header>
 
-      <MissionSummary
-        attribution={latestAttribution}
-        decision={latestDecision}
-        uiEvent={latestUiEvent}
-        signalCount={signals.length}
-      />
+      <section className="command-workbench">
+        <ScenarioRail />
 
-      <section className="status-row" aria-label="Critical system status">
-        <StatusCard {...missionState.statuses.spaceLayer} />
-        <StatusCard {...missionState.statuses.blosComms} />
-        <StatusCard {...missionState.statuses.attribution} />
-      </section>
+        <section className="map-workspace" aria-label="Map and incoming reports">
+          <MapStage
+            correlatedSignalIds={missionState.correlatedSignalIds}
+            focusSignalId={missionState.mapFocusSignalId}
+            latestSignal={missionState.latestSignal}
+            signals={signals}
+          />
 
-      <section className="command-layout">
-        <MapStage
-          correlatedSignalIds={missionState.correlatedSignalIds}
-          focusSignalId={missionState.mapFocusSignalId}
-          latestSignal={missionState.latestSignal}
-          signals={signals}
-        />
-        <div className="command-layout__side">
+          <section className="status-row" aria-label="Critical system status">
+            <StatusCard {...missionState.statuses.spaceLayer} />
+            <StatusCard {...missionState.statuses.blosComms} />
+            <StatusCard {...missionState.statuses.attribution} />
+          </section>
+
+          <EventFeed signals={signals} />
+        </section>
+
+        <aside className="decision-stack" aria-label="Commander decision stack">
+          <MissionSummary
+            attribution={latestAttribution}
+            decision={latestDecision}
+            uiEvent={latestUiEvent}
+            signalCount={signals.length}
+          />
           <NarrationPanel
             attribution={latestAttribution}
             uiEvent={latestUiEvent}
@@ -215,8 +222,7 @@ export function Brigade() {
             isApproved={isApproved}
             onApprove={() => setIsApproved(true)}
           />
-          <EventFeed signals={signals} />
-        </div>
+        </aside>
       </section>
     </main>
   )
