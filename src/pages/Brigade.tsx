@@ -5,20 +5,47 @@ import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
 import { ReasoningPanel } from '../components/ReasoningPanel'
 import { ScenarioRail } from '../components/ScenarioRail'
-import { StressMode } from '../components/StressMode'
+import { ScenarioTimeline } from '../components/ScenarioTimeline'
+import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
-import type { Attribution, Decision, Signal } from '../types/canopy'
+import type { PlaybackStatus } from '../types/playback'
+import type { Signal } from '../types/canopy'
 
-const nowMinus = (seconds: number) =>
-  new Date(Date.now() - seconds * 1000).toISOString()
+const fieldDurationFloorMs = 12 * 60 * 1000
+const fieldDurationScale = 1
+const playbackTickMs = 1000
+const simulatedMsPerTick = 60 * 1000
+const playbackScaleLabel = '1 SEC = 1 SIM MIN'
 
-type MockSignalInput = Omit<
-  Signal,
-  'realism' | 'location' | 'payload' | 'provenance'
-> & {
-  location?: Signal['location']
-  payload: Record<string, unknown>
+const signalTimeMs = (signal: Signal | undefined) => {
+  const time = Date.parse(signal?.ts ?? '')
+  return Number.isFinite(time) ? time : null
+}
+
+const buildPlaybackTimeline = (signals: Signal[]) => {
+  const times = signals
+    .map(signalTimeMs)
+    .filter((time): time is number => time !== null)
+  const startMs = times.length ? Math.min(...times) : 0
+  const endMs = times.length ? Math.max(...times) : startMs
+  const realDurationMs = Math.max(endMs - startMs, 1)
+  const durationMs = Math.max(
+    fieldDurationFloorMs,
+    realDurationMs * fieldDurationScale,
+  )
+
+  const offsets = signals.map((signal, index) => {
+    const time = signalTimeMs(signal)
+    if (time === null || realDurationMs <= 1) {
+      return signals.length > 1
+        ? (index / (signals.length - 1)) * durationMs
+        : 0
+    }
+
+type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
+  confidence: [number, number]
+  cadence?: 'normal' | 'surge'
 }
 
 type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
@@ -47,7 +74,7 @@ const randomBetween = ([min, max]: [number, number]) =>
 const demoConfidenceForSequence = (sequence: number) =>
   sequence % 5 === 0 ? randomBetween([0.86, 0.96]) : randomBetween([0.74, 0.85])
 
-const randomDemoDelay = () => 1000 + Math.floor(Math.random() * 4000)
+const randomDemoDelay = () => 10000 + Math.floor(Math.random() * 5000)
 
 const jitter = (value: number, amount: number) =>
   Number((value + (Math.random() - 0.5) * amount).toFixed(5))
@@ -353,21 +380,7 @@ const beatAttribution: Attribution = {
   source_signal_ids: ['sig-rf-001', 'sig-cy-014', 'sig-sda-042'],
 }
 
-const beatDecision: Decision = {
-  id: 'dec-approve-009',
-  ts: nowMinus(0),
-  attribution_id: 'att-ghost-lance',
-  action: 'Authorize SATCOM hardening package',
-  target: 'SAT-BRAVO / north-axis BLOS relay',
-  rationale:
-    'Preemptive waveform shift and relay isolation are expected to preserve command links during the predicted denial window.',
-  authority: 'request',
-  request_packet: {
-    packet_id: 'REQ-SAT-BRAVO-009',
-    ttl_minutes: 6,
-    commander_intent: 'preserve brigade C2',
-  },
-  source_signal_ids: ['sig-rf-001', 'sig-sat-023'],
+  return { durationMs, offsets }
 }
 
 export function Brigade() {
@@ -386,14 +399,46 @@ export function Brigade() {
   const demoSequenceRef = useRef(beatSignals.length)
   const [isMapAutoFocusEnabled, setIsMapAutoFocusEnabled] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
+  const activeScenario =
+    scenarios.find((scenario) => scenario.id === activeScenarioId) ??
+    defaultScenario
+  const playbackTimeline = useMemo(
+    () => buildPlaybackTimeline(activeScenario.signals),
+    [activeScenario.signals],
+  )
 
   useEffect(() => {
+    if (
+      socketState.signals.length ||
+      simElapsedMs >= playbackTimeline.durationMs
+    ) {
+      return
+    }
+
     const timer = window.setInterval(() => {
-      setBeatIndex((current) => (current % beatSignals.length) + 1)
-    }, 1500)
+      setSimElapsedMs((current) =>
+        Math.min(current + simulatedMsPerTick, playbackTimeline.durationMs),
+      )
+    }, playbackTickMs)
 
     return () => window.clearInterval(timer)
-  }, [])
+  }, [playbackTimeline.durationMs, simElapsedMs, socketState.signals.length])
+
+  const selectScenario = (scenarioId: string) => {
+    setActiveScenarioId(scenarioId)
+    setSimElapsedMs(0)
+    setIsApproved(false)
+  }
+
+  const revealedSignalCount = useMemo(
+    () =>
+      Math.max(
+        1,
+        playbackTimeline.offsets.filter((offset) => offset <= simElapsedMs)
+          .length,
+      ),
+    [playbackTimeline.offsets, simElapsedMs],
+  )
 
   useEffect(() => {
     if (socketState.isConnected && !forceDemoStream) {
@@ -457,12 +502,18 @@ export function Brigade() {
       </header>
 
       <section className="command-workbench">
-        <ScenarioRail />
+        <ScenarioRail
+          activeScenarioId={activeScenario.id}
+          onSelectScenario={selectScenario}
+          scenarios={scenarios}
+        />
 
         <section className="map-workspace" aria-label="Map and incoming reports">
           <MapStage
             correlatedSignalIds={missionState.correlatedSignalIds}
             focusSignalId={missionState.mapFocusSignalId}
+            playback={socketState.signals.length ? null : playbackStatus}
+            scenario={activeScenario}
             signals={signals}
           />
 
@@ -480,6 +531,7 @@ export function Brigade() {
           <MissionSummary
             attribution={latestAttribution}
             decision={latestDecision}
+            scenario={activeScenario}
             uiEvent={latestUiEvent}
             signalCount={signals.length}
           />
@@ -489,8 +541,12 @@ export function Brigade() {
             isApproved={isApproved}
             onApprove={() => setIsApproved(true)}
           />
-          <ReasoningPanel compact />
-          <StressMode />
+          <ScenarioTimeline
+            offsets={playbackTimeline.offsets}
+            playback={socketState.signals.length ? null : playbackStatus}
+            scenario={activeScenario}
+            signals={signals}
+          />
         </aside>
       </section>
     </main>
