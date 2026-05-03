@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { AorMap } from './AorMap'
 import { CesiumGlobe } from './CesiumGlobe'
+import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { Signal } from '../types/canopy'
 
 type MapStageProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  scenario: ScenarioDefinition
   signals: Signal[]
 }
 
 export function MapStage({
   correlatedSignalIds,
   focusSignalId,
+  scenario,
   signals,
 }: MapStageProps) {
   const [viewMode, setViewMode] = useState<'nav' | 'globe'>('nav')
@@ -33,6 +36,7 @@ export function MapStage({
         <AorMap
           correlatedSignalIds={correlatedSignalIds}
           focusSignalId={focusSignalId}
+          scenario={scenario}
           signals={signals}
         />
       )}
@@ -67,7 +71,7 @@ export function MapStage({
         <em>
           {isGlobe
             ? `${correlatedSignalIds.length.toString().padStart(2, '0')} fused`
-            : `${signals.length.toString().padStart(2, '0')} feeds`}
+            : `${scenario.id} / ${signals.length.toString().padStart(2, '0')} feeds`}
         </em>
       </div>
     </section>
