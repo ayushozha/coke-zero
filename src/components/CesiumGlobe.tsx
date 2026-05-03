@@ -16,10 +16,24 @@ import {
   TileMapServiceImageryProvider,
   Viewer,
 } from 'cesium'
-import { forward as toMgrs } from 'mgrs'
+import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
+
+type CesiumGlobeProps = {
+  correlatedSignalIds?: string[]
+  focusSignalId?: string | null
+  signals?: Signal[]
+}
+
+type MapPoint = {
+  lon: number
+  lat: number
+  height: number
+  label: string
+}
 
 const contacts = [
   {
@@ -93,6 +107,81 @@ const formatMgrs = (lon: number, lat: number) =>
     /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
     '$1 $2 $3 $4',
   )
+
+const colorForSignal = (signal: Signal) => {
+  if (signal.confidence >= 0.86) {
+    return Color.RED
+  }
+  if (signal.confidence >= 0.74) {
+    return Color.fromCssColorString('#ffb300')
+  }
+  return Color.WHITE
+}
+
+const signalLabel = (signal: Signal) =>
+  signal.location.label ??
+  signal.payload.asset ??
+  signal.payload.event_type.replaceAll('_', ' ').toUpperCase()
+
+const signalPoint = (signal: Signal): MapPoint | null => {
+  let lon = signal.location.lng
+  let lat = signal.location.lat
+
+  if (
+    (typeof lon !== 'number' || typeof lat !== 'number') &&
+    signal.location.mgrs
+  ) {
+    try {
+      const [mgrsLon, mgrsLat] = mgrsToPoint(signal.location.mgrs)
+      lon = mgrsLon
+      lat = mgrsLat
+    } catch {
+      return null
+    }
+  }
+
+  if (typeof lon !== 'number' || typeof lat !== 'number') {
+    return null
+  }
+
+  const height =
+    signal.location.alt_m ??
+    (signal.location.alt_km !== undefined
+      ? signal.location.alt_km * 1000
+      : signal.domain === 'orbit' || signal.domain === 'sda'
+        ? 400000
+        : 25)
+
+  return {
+    lon,
+    lat,
+    height,
+    label: signalLabel(signal),
+  }
+}
+
+const signalPolygon = (signal: Signal) => {
+  const match = signal.location.area_wkt?.match(/POLYGON\s*\(\((.+)\)\)/i)
+  if (!match) {
+    return null
+  }
+
+  const coords = match[1]
+    .split(',')
+    .flatMap((pair) => {
+      const [lon, lat] = pair.trim().split(/\s+/).map(Number)
+      return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : []
+    })
+
+  return coords.length >= 6 ? coords : null
+}
+
+const cameraHeightForSignal = (signal: Signal, point: MapPoint) => {
+  if (signal.domain === 'orbit' || signal.domain === 'sda') {
+    return Math.max(point.height * 4, 2200000)
+  }
+  return 90000
+}
 
 const addMinutes = (date: Date, minutes: number) =>
   new Date(date.getTime() + minutes * 60000).toISOString()
@@ -255,10 +344,16 @@ const createVehicleCzml = () => {
   ]
 }
 
-export function CesiumGlobe() {
+export function CesiumGlobe({
+  correlatedSignalIds = [],
+  focusSignalId = null,
+  signals = [],
+}: CesiumGlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
+  const signalEntityIdsRef = useRef<Set<string>>(new Set())
+  const focusFlightSignalIdRef = useRef<string | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
   const [imageryMode, setImageryMode] = useState('Loading imagery')
 
@@ -510,6 +605,160 @@ export function CesiumGlobe() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+
+    signalEntityIdsRef.current.forEach((id) => {
+      viewer.entities.removeById(id)
+    })
+    signalEntityIdsRef.current.clear()
+
+    const correlatedIds = new Set(correlatedSignalIds)
+    const signalPoints = signals
+      .map((signal) => ({ signal, point: signalPoint(signal) }))
+      .filter(
+        (item): item is { signal: Signal; point: MapPoint } =>
+          item.point !== null,
+      )
+    const focusSignalPoint =
+      signalPoints.find((item) => item.signal.id === focusSignalId) ?? null
+
+    signals.forEach((signal) => {
+      const entityId = `signal-${signal.id}`
+      const color = colorForSignal(signal)
+      const point = signalPoint(signal)
+      const polygon = signalPolygon(signal)
+      const isFocus = signal.id === focusSignalId
+      const isCorrelated = correlatedIds.has(signal.id)
+      const prefix = isFocus ? 'FOCUS ' : isCorrelated ? 'FUSED ' : ''
+
+      if (point) {
+        viewer.entities.add({
+          id: entityId,
+          name: point.label,
+          position: Cartesian3.fromDegrees(point.lon, point.lat, point.height),
+          point: {
+            color,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            outlineColor: Color.BLACK,
+            outlineWidth: isFocus ? 4 : 2,
+            pixelSize: isFocus ? 18 : isCorrelated ? 14 : 10,
+            scaleByDistance: new NearFarScalar(1500000, 1.4, 25000000, 0.7),
+          },
+          label: {
+            backgroundColor: Color.BLACK.withAlpha(0.78),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            fillColor: Color.WHITE,
+            font: '13px Share Tech Mono',
+            pixelOffset: new Cartesian2(0, -28),
+            showBackground: true,
+            style: LabelStyle.FILL,
+            text: `${prefix}${point.label}\n${signal.domain.toUpperCase()} ${Math.round(
+              signal.confidence * 100,
+            )}%`,
+          },
+          description: signal.payload.summary,
+        })
+        signalEntityIdsRef.current.add(entityId)
+
+        if (isFocus || isCorrelated) {
+          const pulseId = `${entityId}-pulse`
+          viewer.entities.add({
+            id: pulseId,
+            name: `${point.label} focus ring`,
+            position: Cartesian3.fromDegrees(point.lon, point.lat, 0),
+            ellipse: {
+              semiMajorAxis: isFocus ? 22000 : 14000,
+              semiMinorAxis: isFocus ? 22000 : 14000,
+              material: color.withAlpha(isFocus ? 0.12 : 0.07),
+              outline: true,
+              outlineColor: color.withAlpha(isFocus ? 0.9 : 0.65),
+            },
+          })
+          signalEntityIdsRef.current.add(pulseId)
+        }
+      } else if (polygon) {
+        viewer.entities.add({
+          id: entityId,
+          name: signalLabel(signal),
+          polygon: {
+            hierarchy: Cartesian3.fromDegreesArray(polygon),
+            material: color.withAlpha(0.08),
+            outline: true,
+            outlineColor: color.withAlpha(0.8),
+          },
+          description: signal.payload.summary,
+        })
+        signalEntityIdsRef.current.add(entityId)
+      }
+    })
+
+    const thread = signalPoints.slice(0, 6).flatMap(({ point }) => [
+      point.lon,
+      point.lat,
+      Math.max(point.height, 400),
+    ])
+    if (thread.length >= 6) {
+      const threadId = 'signal-thread'
+      viewer.entities.add({
+        id: threadId,
+        name: 'Live signal thread',
+        polyline: {
+          clampToGround: false,
+          material: new PolylineGlowMaterialProperty({
+            color: Color.WHITE.withAlpha(0.42),
+            glowPower: 0.12,
+          }),
+          positions: Cartesian3.fromDegreesArrayHeights(thread),
+          width: 2,
+        },
+      })
+      signalEntityIdsRef.current.add(threadId)
+    }
+
+    const correlation = signalPoints
+      .filter(({ signal }) => correlatedIds.has(signal.id))
+      .flatMap(({ point }) => [point.lon, point.lat, Math.max(point.height, 400)])
+    if (correlation.length >= 6) {
+      const correlationId = 'signal-correlation'
+      viewer.entities.add({
+        id: correlationId,
+        name: 'Fused signal correlation',
+        polyline: {
+          clampToGround: false,
+          material: new PolylineGlowMaterialProperty({
+            color: Color.fromCssColorString('#ffb300').withAlpha(0.92),
+            glowPower: 0.22,
+          }),
+          positions: Cartesian3.fromDegreesArrayHeights(correlation),
+          width: 4,
+        },
+      })
+      signalEntityIdsRef.current.add(correlationId)
+    }
+
+    if (
+      focusSignalPoint &&
+      focusSignalId &&
+      focusFlightSignalIdRef.current !== focusSignalId
+    ) {
+      focusFlightSignalIdRef.current = focusSignalId
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(
+          focusSignalPoint.point.lon,
+          focusSignalPoint.point.lat,
+          cameraHeightForSignal(focusSignalPoint.signal, focusSignalPoint.point),
+        ),
+        duration: 1.4,
+      })
+    }
+
+    viewer.scene.requestRender()
+  }, [correlatedSignalIds, focusSignalId, signals])
 
   const resetDynamicSources = () => {
     const viewer = viewerRef.current

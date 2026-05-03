@@ -53,6 +53,37 @@ Use it for:
 - Frontend fallback demo data.
 - Demo script timing.
 
+## Local WebSocket Bridge
+
+The experimental bridge lives at `halo.api:app`.
+
+Run it with:
+
+```bash
+python -m uvicorn halo.api:app --host 127.0.0.1 --port 8000
+```
+
+It exposes:
+
+```txt
+POST /signals
+WS   /ws/brigade
+```
+
+`POST /signals` validates a canonical `Signal`, publishes it to
+`signals.{domain}`, and feeds the backend pipeline. `/ws/brigade` streams:
+
+```txt
+{ "type": "signal", "data": Signal }
+{ "type": "ui_event", "data": UIEvent }
+```
+
+The frontend uses `VITE_CANOPY_WS_URL`, defaulting in dev to:
+
+```txt
+ws://127.0.0.1:8000/ws/brigade
+```
+
 ## KB Seed Entries
 
 `data/kb_seed_entries.json` maps scenario signal IDs to public-source-backed

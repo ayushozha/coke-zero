@@ -9,7 +9,7 @@
 
 .brigade-shell {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -126,6 +126,89 @@
   display: block;
   margin-top: 8px;
   text-transform: uppercase;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+}
+
+.status-card {
+  min-width: 0;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  padding: 10px 12px;
+}
+
+.status-card--amber {
+  border-color: var(--amber);
+}
+
+.status-card--red {
+  border-color: var(--red);
+}
+
+.status-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.status-card__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-card__lamp {
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+  background: currentColor;
+}
+
+.status-card--white .status-card__state {
+  color: var(--white);
+}
+
+.status-card--amber .status-card__state,
+.status-card--amber .status-card__metric {
+  color: var(--amber);
+}
+
+.status-card--red .status-card__state,
+.status-card--red .status-card__metric {
+  color: var(--red);
+}
+
+.status-card h2 {
+  margin: 7px 0 4px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.status-card__metric {
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+}
+
+.status-card__detail {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .command-layout {
@@ -261,7 +344,12 @@
   color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 400;
+  display: block;
+  max-width: min(520px, 54vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .aor-map,
@@ -604,7 +692,8 @@
 
 @media (max-width: 1080px) {
   .mission-summary,
-  .command-layout {
+  .command-layout,
+  .status-row {
     grid-template-columns: 1fr;
   }
 

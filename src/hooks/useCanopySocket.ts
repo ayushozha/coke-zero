@@ -6,21 +6,30 @@ import type {
   CanopySocketState,
   Decision,
   Signal,
+  UIEvent,
 } from '../types/canopy'
 
 export const MOCK_URL: string | null = null
+const DEV_BRIDGE_URL = 'ws://127.0.0.1:8000/ws/brigade'
+const configuredUrl = import.meta.env.VITE_CANOPY_WS_URL?.trim()
+const DEFAULT_URL: string | null =
+  configuredUrl || (import.meta.env.DEV ? DEV_BRIDGE_URL : MOCK_URL)
 
 const initialState: CanopySocketState = {
   signals: [],
   anomalies: [],
   attributions: [],
   decisions: [],
+  uiEvents: [],
   isConnected: false,
   lastError: null,
 }
 
-const prependLimited = <T,>(items: T[], next: T, limit: number) =>
-  [next, ...items].slice(0, limit)
+const prependLimited = <T extends { id: string }>(
+  items: T[],
+  next: T,
+  limit: number,
+) => [next, ...items.filter((item) => item.id !== next.id)].slice(0, limit)
 
 function isCanopyMessage(value: unknown): value is CanopyMessage {
   if (!value || typeof value !== 'object') {
@@ -30,7 +39,9 @@ function isCanopyMessage(value: unknown): value is CanopyMessage {
   const candidate = value as { type?: unknown; data?: unknown }
   return (
     typeof candidate.type === 'string' &&
-    ['signal', 'anomaly', 'attribution', 'decision'].includes(candidate.type) &&
+    ['signal', 'anomaly', 'attribution', 'decision', 'ui_event'].includes(
+      candidate.type,
+    ) &&
     typeof candidate.data === 'object' &&
     candidate.data !== null
   )
@@ -65,10 +76,15 @@ function reduceMessage(
         ...state,
         decisions: prependLimited<Decision>(state.decisions, message.data, 20),
       }
+    case 'ui_event':
+      return {
+        ...state,
+        uiEvents: prependLimited<UIEvent>(state.uiEvents, message.data, 20),
+      }
   }
 }
 
-export function useCanopySocket(url: string | null = MOCK_URL) {
+export function useCanopySocket(url: string | null = DEFAULT_URL) {
   const [state, setState] = useState<CanopySocketState>(initialState)
 
   useEffect(() => {
