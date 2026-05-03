@@ -1,5 +1,6 @@
 import { useEventStore } from '../store/eventStore'
 import { ActionLog } from '../components/ActionLog'
+import { EmbeddingViz } from '../components/EmbeddingViz'
 import { ReasoningPanel } from '../components/ReasoningPanel'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 
@@ -69,6 +70,7 @@ export function Operator() {
           </div>
         </div>
         <ActionLog limit={20} />
+        <EmbeddingViz />
         <ReasoningPanel />
       </section>
     </main>

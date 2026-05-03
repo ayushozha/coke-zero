@@ -442,6 +442,16 @@ _KIND_TO_ATTRIBUTION: dict[str, _AttribTemplate] = {
         predicted_next="Pair with overhead and RF cues before raising confidence.",
         capability_lookups=["attribution_uncertainty"],
     ),
+    "osint_semantic_cluster": _AttribTemplate(
+        actor="Multi-actor",
+        confidence=0.62,
+        evidence=[
+            "Multiple OSINT reports cluster on a single event via sentence-transformer embeddings.",
+            "Clustered observations corroborate one another, raising confidence above the single-report floor.",
+        ],
+        predicted_next="Treat as one fused observation; pair with cross-domain cues before naming a single actor.",
+        capability_lookups=["attribution_uncertainty"],
+    ),
 }
 
 _DEFAULT_ATTRIBUTION = _AttribTemplate(

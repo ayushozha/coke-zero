@@ -50,6 +50,31 @@ export function ReasoningPanel({ compact = false }: Props) {
     if (el) el.scrollTop = el.scrollHeight
   }, [traces.length])
 
+  const clear = () => {
+    // Full session reset — wipes every engine event slice the demo
+    // accumulates (traces, anomalies, decisions, attributions, signals,
+    // ui_events, OSINT embedding snapshot, lookup tables, pending
+    // approval) but preserves KB (fetched once at mount) and live
+    // connection state. Persisted sessionStorage gets updated on the
+    // next setState since the persist middleware writes through.
+    useEventStore.setState({
+      signals: [],
+      anomalies: [],
+      attributions: [],
+      decisions: [],
+      uiEvents: [],
+      traces: [],
+      embeddingSnapshot: null,
+      signalsById: {},
+      attributionsById: {},
+      decisionsById: {},
+      pendingApproval: null,
+      takeoverEvent: null,
+      selectedEventId: null,
+      approvedEventIds: new Set(),
+    })
+  }
+
   return (
     <section
       className={`reasoning-panel${compact ? ' reasoning-panel--compact' : ''}`}
@@ -57,7 +82,17 @@ export function ReasoningPanel({ compact = false }: Props) {
     >
       <div className="panel__header">
         <h2 id="reasoning-title">Reasoning trace</h2>
-        <span>{traces.length} lines</span>
+        <div className="reasoning-panel__head-actions">
+          <span>{traces.length} lines</span>
+          <button
+            type="button"
+            className="reasoning-panel__clear"
+            onClick={clear}
+            title="Reset all engine state — traces, anomalies, decisions, embeddings, action log, approvals"
+          >
+            reset
+          </button>
+        </div>
       </div>
       <div className="reasoning-panel__stream" ref={ref}>
         {traces.length === 0 ? (

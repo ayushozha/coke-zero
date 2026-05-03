@@ -119,6 +119,25 @@ export type ReasoningTrace = {
   payload: Record<string, unknown>
 }
 
+export type EmbeddingPoint = {
+  signal_id: string
+  summary: string
+  cluster_id: number
+  x: number
+  y: number
+  ts: string
+}
+
+export type OsintEmbeddingSnapshot = {
+  id: string
+  ts: string
+  points: EmbeddingPoint[]
+  cluster_count: number
+  similarity_threshold: number
+  model_name: string
+  embedding_dim: number
+}
+
 export type Recommendation = {
   id: string
   summary: string
@@ -146,6 +165,7 @@ export type CanopyMessage =
   | { type: 'decision'; topic?: string; data: Decision }
   | { type: 'ui_event'; topic?: string; data: UIEvent }
   | { type: 'trace'; topic?: string; data: ReasoningTrace }
+  | { type: 'embedding'; topic?: string; data: OsintEmbeddingSnapshot }
 
 export type CanopySocketState = {
   signals: Signal[]
@@ -197,3 +217,4 @@ export type WSEnvelope =
   | { topic: string; kind: 'decision'; data: Decision }
   | { topic: string; kind: 'ui_event'; data: UIEvent }
   | { topic: string; kind: 'trace'; data: ReasoningTrace }
+  | { topic: string; kind: 'embedding'; data: OsintEmbeddingSnapshot }

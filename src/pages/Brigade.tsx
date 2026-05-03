@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActionLog } from '../components/ActionLog'
 import { ApproveBanner } from '../components/ApproveBanner'
+import { EmbeddingViz } from '../components/EmbeddingViz'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
@@ -596,6 +597,7 @@ export function Brigade() {
             signals={signals}
           />
           <ActionLog compact />
+          <EmbeddingViz compact />
           <ReasoningPanel compact />
           <StressMode />
         </aside>

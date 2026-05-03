@@ -20,6 +20,7 @@ from halo.services.fusion import FusionService
 from halo.services.kb import KB
 from halo.services.llm import LLMClient
 from halo.services.orbit import OrbitService
+from halo.services.osint_cluster import OsintClusterService
 from halo.services.traces import Tracer
 from halo.services.ui_events import UIEventService
 
@@ -40,6 +41,7 @@ class Engine:
     attrib: AttribService
     decide: DecideService
     ui_events: UIEventService
+    osint_cluster: OsintClusterService
 
 
 def build_llm(*, provider: str, kb: KB) -> LLMClient:
@@ -115,6 +117,7 @@ def build_engine(
         tool_ctx=tool_ctx,
     )
     ui_events = UIEventService(bus)
+    osint_cluster = OsintClusterService(bus, tracer=tracer)
 
     return Engine(
         bus=bus,
@@ -126,14 +129,16 @@ def build_engine(
         attrib=attrib,
         decide=decide,
         ui_events=ui_events,
+        osint_cluster=osint_cluster,
     )
 
 
 def start_engine_tasks(engine: Engine) -> list[asyncio.Task]:
-    """Launch the four service runners. Returns the tasks for cancellation."""
+    """Launch the service runners. Returns the tasks for cancellation."""
     return [
         asyncio.create_task(engine.fusion.run(), name="fusion"),
         asyncio.create_task(engine.attrib.run(), name="attrib"),
         asyncio.create_task(engine.decide.run(), name="decide"),
         asyncio.create_task(engine.ui_events.run(), name="ui_events"),
+        asyncio.create_task(engine.osint_cluster.run(), name="osint_cluster"),
     ]
