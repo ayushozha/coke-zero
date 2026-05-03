@@ -2504,14 +2504,14 @@
   }
 
   .map-view-toggle {
-    top: 58px;
-    right: calc(var(--right-rail) + 16px);
+    top: 12px;
+    right: calc(var(--right-rail) + 8px);
     min-width: 176px;
   }
 
   .cesium-scenario-controls {
-    top: 104px;
-    right: calc(var(--right-rail) + 16px);
+    top: 58px;
+    right: calc(var(--right-rail) + 8px);
     gap: 5px;
   }
 
@@ -2539,8 +2539,8 @@
   }
 
   .aor-map__basemaps {
-    top: 104px;
-    right: calc(var(--right-rail) + 16px);
+    top: 58px;
+    right: calc(var(--right-rail) + 8px);
     gap: 5px;
     padding: 5px;
   }
