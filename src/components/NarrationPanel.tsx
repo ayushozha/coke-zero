@@ -15,7 +15,7 @@ export function NarrationPanel({
   return (
     <section className="narration" aria-labelledby="narration-title">
       <div className="panel__header">
-        <h2 id="narration-title">Plain-English Readout</h2>
+        <h2 id="narration-title">Assessment</h2>
         <span>
           {uiEvent
             ? uiEvent.severity
@@ -30,7 +30,7 @@ export function NarrationPanel({
           <p className="narration__plain">{uiEvent.message}</p>
           <details className="details-panel details-panel--nested">
             <summary>
-              <span>Why CANOPY says this</span>
+              <span>Evidence packet</span>
               <span>{Math.round(uiEvent.confidence * 100)}%</span>
             </summary>
             <dl className="narration__facts">
@@ -53,7 +53,7 @@ export function NarrationPanel({
           </p>
           <details className="details-panel details-panel--nested">
             <summary>
-              <span>Attribution Detail</span>
+              <span>Attribution packet</span>
               <span>{Math.round(attribution.confidence * 100)}%</span>
             </summary>
             <dl className="narration__facts">

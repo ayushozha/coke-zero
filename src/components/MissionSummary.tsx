@@ -40,7 +40,7 @@ export function MissionSummary({
   return (
     <section className="mission-summary" aria-label="Mission summary">
       <div className="mission-summary__topline">
-        <span>Current posture</span>
+        <span>Posture</span>
         <strong>{state}</strong>
       </div>
       <div className="mission-summary__main">
@@ -52,7 +52,7 @@ export function MissionSummary({
         <p>{summary}</p>
       </div>
       <div className="mission-summary__action">
-        <span>Recommended commander action</span>
+        <span>Commander action</span>
         <strong>{action}</strong>
       </div>
     </section>

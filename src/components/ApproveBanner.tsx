@@ -28,12 +28,12 @@ export function ApproveBanner({
   return (
     <section className="approve-banner" aria-label="Approval request">
       <div>
-        <span className="approve-banner__kicker">Commander Decision</span>
+        <span className="approve-banner__kicker">Decision Gate</span>
         <h2>{title}</h2>
         <p>Target: {target}</p>
         <details className="details-panel details-panel--compact">
           <summary>
-            <span>Why this needs approval</span>
+            <span>Approval basis</span>
             <span>{requestId}</span>
           </summary>
           <p>{rationale}</p>

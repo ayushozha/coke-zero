@@ -10,19 +10,19 @@ export function EventFeed({ signals }: EventFeedProps) {
     <section className="event-feed" aria-label="Incoming signals">
       <div className="event-feed__header">
         <div>
-          <span>Incoming Reports</span>
-          <h2>Signal Log</h2>
+          <span>ISR / EW / CSM</span>
+          <h2>Signal Stream</h2>
         </div>
-        <strong>{signals.length.toString().padStart(2, '0')} live</strong>
+        <strong>{signals.length.toString().padStart(2, '0')}</strong>
       </div>
       <div className="event-feed__table" role="table" aria-label="Signal log">
         <div className="event-feed__row event-feed__row--head" role="row">
           <span>Time</span>
-          <span>Feed</span>
-          <span>Commander meaning</span>
-          <span>Where</span>
-          <span>Next action</span>
-          <span>Confidence</span>
+          <span>Layer</span>
+          <span>Assessment</span>
+          <span>Grid</span>
+          <span>Action</span>
+          <span>Conf</span>
         </div>
         {signals.slice(0, 8).map((signal) => {
           const summary = commanderSignalSummary(signal)
