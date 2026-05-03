@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ActionLog } from '../components/ActionLog'
 import { ApproveBanner } from '../components/ApproveBanner'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
@@ -594,6 +595,7 @@ export function Brigade() {
             scenario={activeScenario}
             signals={signals}
           />
+          <ActionLog compact />
           <ReasoningPanel compact />
           <StressMode />
         </aside>
