@@ -25,6 +25,8 @@ export type N2YOSatelliteFamily =
   | 'SBIRS'
   | 'GSSAP'
   | 'GPS-3'
+  | 'CHINA'
+  | 'RUSSIA'
 
 export const isN2YOGeostationaryFamily = (family: N2YOSatelliteFamily) =>
   family === 'AEHF' ||
@@ -255,6 +257,102 @@ export const N2YO_SATELLITES: N2YOSatelliteConfig[] = [
     label: 'GPS-3 9',
     cacheUrl: '/orbital/n2yo_67588_positions.json',
   },
+  {
+    family: 'CHINA',
+    id: 29092,
+    label: 'YAOGAN 1',
+    cacheUrl: '/orbital/n2yo_29092_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 45461,
+    label: 'YAOGAN-30 S',
+    cacheUrl: '/orbital/n2yo_45461_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 57727,
+    label: 'YAOGAN-39 01A',
+    cacheUrl: '/orbital/n2yo_57727_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 60948,
+    label: 'YAOGAN-43 02D',
+    cacheUrl: '/orbital/n2yo_60948_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 31490,
+    label: 'YAOGAN 2',
+    cacheUrl: '/orbital/n2yo_31490_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 39410,
+    label: 'YAOGAN 19',
+    cacheUrl: '/orbital/n2yo_39410_positions.json',
+  },
+  {
+    family: 'CHINA',
+    id: 43030,
+    label: 'YAOGAN-30 F',
+    cacheUrl: '/orbital/n2yo_43030_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 32276,
+    label: 'COSMOS 2432',
+    cacheUrl: '/orbital/n2yo_32276_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 33467,
+    label: 'COSMOS 2449',
+    cacheUrl: '/orbital/n2yo_33467_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 29670,
+    label: 'COSMOS 2425',
+    cacheUrl: '/orbital/n2yo_29670_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 33378,
+    label: 'COSMOS 2442',
+    cacheUrl: '/orbital/n2yo_33378_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 33468,
+    label: 'COSMOS 2448',
+    cacheUrl: '/orbital/n2yo_33468_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 32393,
+    label: 'COSMOS 2434',
+    cacheUrl: '/orbital/n2yo_32393_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 29671,
+    label: 'COSMOS 2426',
+    cacheUrl: '/orbital/n2yo_29671_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 33379,
+    label: 'COSMOS 2443',
+    cacheUrl: '/orbital/n2yo_33379_positions.json',
+  },
+  {
+    family: 'RUSSIA',
+    id: 32395,
+    label: 'COSMOS 2436',
+    cacheUrl: '/orbital/n2yo_32395_positions.json',
+  },
 ]
 
 const MAP_FONT =
@@ -270,6 +368,8 @@ export const FAMILY_COLOR_HEX: Record<N2YOSatelliteFamily, string> = {
   SBIRS: '#ffb26b',
   GSSAP: '#b7a7a0',
   'GPS-3': '#e6d66f',
+  CHINA: '#ef4444',
+  RUSSIA: '#38bdf8',
 }
 
 export const FAMILY_SHORT_LABEL: Record<N2YOSatelliteFamily, string> = {
@@ -279,6 +379,8 @@ export const FAMILY_SHORT_LABEL: Record<N2YOSatelliteFamily, string> = {
   SBIRS: 'Missile warning',
   GSSAP: 'Space surveillance',
   'GPS-3': 'PNT timing',
+  CHINA: 'Chinese ISR',
+  RUSSIA: 'GLONASS / ISR',
 }
 
 const familyColor = (family: N2YOSatelliteFamily) =>

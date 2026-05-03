@@ -1383,7 +1383,7 @@
   right: 14px;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(7, minmax(40px, auto));
+  grid-template-columns: repeat(9, minmax(40px, auto));
   gap: 3px;
   padding: 3px;
   border: 1px solid rgba(154, 190, 180, 0.26);
