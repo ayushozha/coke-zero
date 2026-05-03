@@ -5,7 +5,6 @@ import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
 import { ScenarioRail } from '../components/ScenarioRail'
 import { ScenarioTimeline } from '../components/ScenarioTimeline'
-import { StatusCard } from '../components/StatusCard'
 import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
@@ -157,12 +156,6 @@ export function Brigade() {
             scenario={activeScenario}
             signals={signals}
           />
-
-          <div className="status-row" aria-label="Mission status">
-            <StatusCard {...missionState.statuses.spaceLayer} />
-            <StatusCard {...missionState.statuses.attribution} />
-            <StatusCard {...missionState.statuses.blosComms} />
-          </div>
 
           <EventFeed
             playback={socketState.signals.length ? null : playbackStatus}
