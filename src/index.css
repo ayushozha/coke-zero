@@ -10,6 +10,9 @@
   --panel: rgba(13, 23, 24, 0.9);
   --panel-strong: rgba(9, 17, 18, 0.96);
   --panel-soft: rgba(24, 38, 38, 0.76);
+  --control-surface: rgba(19, 30, 30, 0.58);
+  --control-surface-active: rgba(47, 82, 80, 0.66);
+  --control-line: rgba(154, 190, 180, 0.25);
   --line: rgba(220, 227, 213, 0.13);
   --line-bright: rgba(220, 227, 213, 0.28);
   --text-primary: #f5f7f0;
