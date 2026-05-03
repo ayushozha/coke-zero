@@ -266,8 +266,6 @@ export function AorMap({
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const signalMarkersRef = useRef<maplibregl.Marker[]>([])
-  const simCursorRef = useRef<maplibregl.Marker | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [zoomLevel, setZoomLevel] = useState(15.2)
@@ -331,6 +329,31 @@ export function AorMap({
   const mapDensity =
     zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
   const newestSignalId = signals[0]?.id ?? null
+
+  const signalFeatures = useMemo(
+    () =>
+      ({
+        type: 'FeatureCollection',
+        features: visibleSignals.map(({ point, signal }) => ({
+          type: 'Feature',
+          properties: {
+            id: signal.id,
+            label: labelForSignal(signal),
+            meta: `${signal.domain.toUpperCase()} ${Math.round(
+              signal.confidence * 100,
+            )}%`,
+            priority: priorityForSignal(signal),
+            focus: signal.id === focusSignalId,
+            correlated: correlatedSignalIds.includes(signal.id),
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: point,
+          },
+        })),
+      }) as GeoJSON.FeatureCollection,
+    [correlatedSignalIds, focusSignalId, visibleSignals],
+  )
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -465,6 +488,108 @@ export function AorMap({
         },
       })
 
+      map.addSource('aor-contacts', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: aorContacts.map((contact) => ({
+            type: 'Feature',
+            properties: {
+              label: contact.label,
+              grid: formatMgrs(contact.coordinate),
+              type: contact.type,
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: contact.coordinate,
+            },
+          })),
+        } as GeoJSON.FeatureCollection,
+      })
+      map.addLayer({
+        id: 'aor-contact-dot',
+        type: 'circle',
+        source: 'aor-contacts',
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'type'],
+            'friendly',
+            '#c9a457',
+            'asset',
+            '#f5f7f0',
+            'threat',
+            '#e05c4f',
+            '#33f2f0',
+          ],
+          'circle-opacity': 0.88,
+          'circle-radius': 6,
+          'circle-stroke-color': '#020404',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aor-contact-label',
+        type: 'symbol',
+        source: 'aor-contacts',
+        layout: {
+          'text-field': ['concat', ['get', 'label'], '\n', ['get', 'grid']],
+          'text-font': ['Open Sans Semibold'],
+          'text-offset': [0, -1.6],
+          'text-size': 11,
+        },
+        paint: {
+          'text-color': '#f5f7f0',
+          'text-halo-color': '#091112',
+          'text-halo-width': 1.5,
+        },
+      })
+
+      map.addSource('aor-signals', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      map.addLayer({
+        id: 'aor-signal-dot',
+        type: 'circle',
+        source: 'aor-signals',
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'priority'],
+            'high',
+            '#e05c4f',
+            'watch',
+            '#c9a457',
+            '#33f2f0',
+          ],
+          'circle-opacity': 0.9,
+          'circle-radius': ['case', ['get', 'focus'], 8, ['get', 'correlated'], 7, 5],
+          'circle-stroke-color': '#020404',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aor-signal-label',
+        type: 'symbol',
+        source: 'aor-signals',
+        layout: {
+          'text-field': ['concat', ['get', 'label'], '\n', ['get', 'meta']],
+          'text-font': ['Open Sans Semibold'],
+          'text-offset': [1.4, 0],
+          'text-size': 11,
+          'text-anchor': 'left',
+        },
+        paint: {
+          'text-color': '#f5f7f0',
+          'text-halo-color': '#091112',
+          'text-halo-width': 1.5,
+        },
+      })
+    })
+
+    map.on('mousemove', (event) => {
+      setCursorGrid(formatMgrs([event.lngLat.lng, event.lngLat.lat]))
     })
 
     map.on('zoom', () => {
@@ -472,10 +597,6 @@ export function AorMap({
     })
 
     return () => {
-      signalMarkersRef.current.forEach((marker) => marker.remove())
-      signalMarkersRef.current = []
-      simCursorRef.current?.remove()
-      simCursorRef.current = null
       map.remove()
       mapRef.current = null
       setIsMapReady(false)
@@ -488,113 +609,13 @@ export function AorMap({
       return
     }
 
-    ;(map.getSource('aor-zone') as maplibregl.GeoJSONSource | undefined)?.setData(
-      createAorPolygon(operationalBounds),
-    )
-    ;(map.getSource('mgrs-grid') as maplibregl.GeoJSONSource | undefined)?.setData(
-      createGrid(operationalBounds),
-    )
-    map.fitBounds(
-      [
-        [operationalBounds.west, operationalBounds.south],
-        [operationalBounds.east, operationalBounds.north],
-      ],
-      { duration: 420, maxZoom: 15.2, padding: 92 },
-    )
-  }, [isMapReady, operationalBounds, scenario.id])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !isMapReady) {
-      return
+    const source = map.getSource('aor-signals') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    if (source) {
+      source.setData(signalFeatures)
     }
-
-    ;(map.getSource('relay-route') as maplibregl.GeoJSONSource | undefined)?.setData(
-      createRoute(activeRoutePoints),
-    )
-  }, [activeRoutePoints, isMapReady])
-
-  useEffect(() => {
-    const map = mapRef.current
-    const cursorPoint = activeRoutePoints.at(-1)
-    if (!map || !isMapReady || !cursorPoint) {
-      simCursorRef.current?.remove()
-      simCursorRef.current = null
-      return
-    }
-
-    if (!simCursorRef.current) {
-      const marker = document.createElement('div')
-      marker.className = 'aor-sim-cursor'
-
-      const glyph = document.createElement('span')
-      glyph.className = 'aor-sim-cursor__glyph'
-      marker.appendChild(glyph)
-
-      const label = document.createElement('span')
-      label.className = 'aor-sim-cursor__label'
-      label.textContent = 'MISSION TRACK'
-      marker.appendChild(label)
-
-      simCursorRef.current = new maplibregl.Marker({
-        anchor: 'center',
-        element: marker,
-      })
-        .setLngLat(cursorPoint)
-        .addTo(map)
-      return
-    }
-
-    simCursorRef.current.setLngLat(cursorPoint)
-  }, [activeRoutePoints, isMapReady])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !isMapReady) {
-      return
-    }
-
-    signalMarkersRef.current.forEach((marker) => marker.remove())
-    signalMarkersRef.current = visibleSignals.map(({ point, signal }) => {
-      const priority = priorityForSignal(signal)
-      const marker = document.createElement('div')
-      marker.className = [
-        'aor-signal',
-        `aor-signal--${priority}`,
-        `aor-signal--effect-${signalEffectState(signal)}`,
-        `aor-signal--domain-${signal.domain}`,
-        signal.id === newestSignalId ? 'aor-signal--newest' : '',
-        signal.id === focusSignalId ? 'aor-signal--focus' : '',
-        correlatedSignalIds.includes(signal.id) ? 'aor-signal--correlated' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-      marker.title = `${labelForSignal(signal)} / ${formatMgrs(point)}`
-
-      const glyph = document.createElement('span')
-      glyph.className = 'aor-signal__glyph'
-      marker.appendChild(glyph)
-
-      const label = document.createElement('span')
-      label.className = 'aor-signal__label'
-      label.textContent = labelForSignal(signal)
-      marker.appendChild(label)
-
-      const meta = document.createElement('span')
-      meta.className = 'aor-signal__meta'
-      meta.textContent = `${signal.domain.toUpperCase()} ${Math.round(
-        signal.confidence * 100,
-      )}%`
-      marker.appendChild(meta)
-
-      return new maplibregl.Marker({
-        anchor: 'center',
-        element: marker,
-      })
-        .setLngLat(point)
-        .addTo(map)
-    })
-  }, [correlatedSignalIds, focusSignalId, isMapReady, newestSignalId, visibleSignals])
+  }, [isMapReady, signalFeatures])
 
   const switchBasemap = (nextBasemap: Basemap) => {
     const map = mapRef.current
