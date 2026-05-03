@@ -32,20 +32,29 @@ export function MapStage({
         focusSignalId={focusSignalId}
         signals={signals}
       />
-      <div className="map-view-toggle" aria-label="View mode">
+      <div
+        className={
+          isGlobe
+            ? 'map-view-toggle map-view-toggle--globe'
+            : 'map-view-toggle map-view-toggle--nav'
+        }
+        aria-label="View mode"
+      >
         <button
+          aria-pressed={!isGlobe}
           className={!isGlobe ? 'is-active' : ''}
           onClick={() => setViewMode('nav')}
           type="button"
         >
-          Nav
+          NAV
         </button>
         <button
+          aria-pressed={isGlobe}
           className={isGlobe ? 'is-active' : ''}
           onClick={() => setViewMode('globe')}
           type="button"
         >
-          Globe
+          GLOBE
         </button>
       </div>
       <div className="tak-map-chrome" aria-hidden="true">
