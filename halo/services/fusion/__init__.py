@@ -133,6 +133,7 @@ IGNORED_EVENT_TYPES: set[tuple[str, str]] = {
     ("rf_ew", "ew_bearing_refined"),
     ("rf_ew", "rf_bearing_crosscheck"),
     ("satcom", "backup_link_check"),
+    ("satcom", "ground_segment_baseline"),
     ("satcom", "local_cache_confirmed"),
     ("satcom", "priority_path_confirmed"),
     ("satcom", "satcom_priority_queue"),

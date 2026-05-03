@@ -196,6 +196,8 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
   overflow: hidden;
+  border-radius: 0;
+  clip-path: none;
 }
 
 .scenario-rail__header,
@@ -218,11 +220,11 @@
   z-index: 1;
   --scenario-current-accent: var(--cyan);
   border-bottom: 1px solid rgba(220, 227, 213, 0.12);
-  border-left: 3px solid var(--scenario-current-accent);
+  border-left: 0;
   background:
     linear-gradient(90deg, rgba(51, 242, 240, 0.075), transparent 76%),
     rgba(7, 11, 11, 0.5);
-  padding: 10px 12px 11px 10px;
+  padding: 10px 12px 11px;
 }
 
 .scenario-rail__current--iran {
@@ -639,13 +641,12 @@
   align-self: end;
   border-top: 1px solid rgba(51, 242, 240, 0.2);
   border-right: 0;
-  border-bottom: 0;
-  border-left: 3px solid var(--scenario-current-accent, var(--cyan));
-  background:
-    linear-gradient(90deg, rgba(51, 242, 240, 0.07), transparent 82%),
-    rgba(2, 7, 7, 0.7);
+  border-bottom: 1px solid rgba(51, 242, 240, 0.16);
+  border-left: 0;
+  border-radius: 0;
+  background: #020707;
   margin: 0;
-  padding: 8px 10px;
+  padding: 8px 12px;
   clip-path: none;
 }
 
@@ -656,6 +657,7 @@
 
 .scenario-rail > .mission-summary--compact .mission-summary__topline {
   gap: 8px;
+  justify-content: flex-start;
 }
 
 .scenario-rail > .mission-summary--compact .mission-summary__topline strong {
@@ -1380,9 +1382,9 @@
   top: 108px;
   right: 14px;
   z-index: 5;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(58px, auto));
   gap: 4px;
-  overflow: hidden;
   border: 1px solid rgba(154, 190, 180, 0.26);
   border-radius: 2px;
   background:
@@ -1395,29 +1397,67 @@
 }
 
 .satellite-family-controls button {
-  min-width: 46px;
-  min-height: 32px;
+  --satellite-family-color: rgba(245, 247, 240, 0.74);
+  min-width: 58px;
+  min-height: 44px;
   border: 0;
-  border-right: 1px solid rgba(154, 190, 180, 0.16);
+  border: 1px solid rgba(154, 190, 180, 0.14);
   border-radius: 0;
-  background: transparent;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--satellite-family-color) 10%, transparent),
+      rgba(245, 247, 240, 0.012)
+    ),
+    rgba(6, 12, 12, 0.62);
   color: rgba(245, 247, 240, 0.78);
   font-family: var(--font-sans);
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 7px 9px;
+  padding: 6px 8px;
+  text-align: left;
 }
 
-.satellite-family-controls button:last-child {
-  border-right: 0;
+.satellite-family-controls__swatch {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-bottom: 5px;
+  background: var(--satellite-family-color);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--satellite-family-color) 55%, transparent);
+}
+
+.satellite-family-controls__label,
+.satellite-family-controls__sub {
+  display: block;
+  line-height: 1.05;
+}
+
+.satellite-family-controls__label {
+  color: var(--satellite-family-color);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.satellite-family-controls__sub {
+  margin-top: 3px;
+  color: rgba(245, 247, 240, 0.58);
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .satellite-family-controls button:hover,
 .satellite-family-controls button.is-active {
   background:
-    linear-gradient(180deg, rgba(201, 164, 87, 0.12), rgba(51, 242, 240, 0.025)),
-    rgba(28, 35, 24, 0.78);
-  color: #f1d184;
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--satellite-family-color) 22%, transparent),
+      rgba(245, 247, 240, 0.02)
+    ),
+    rgba(19, 22, 18, 0.82);
+  border-color: color-mix(in srgb, var(--satellite-family-color) 58%, transparent);
 }
 
 .satellite-family-controls button:disabled {
@@ -3110,6 +3150,62 @@
 
 .event-feed__raw-detail code {
   font: inherit;
+}
+
+/* Final raw-tail readability pass: keep metadata compact, but let the
+   commander-facing message and event description wrap instead of disappearing
+   behind ellipses on wide Brigade layouts. */
+.event-feed__raw-row {
+  grid-template-columns: 68px 124px minmax(120px, 0.7fr) minmax(280px, 2.2fr) 44px;
+  grid-template-areas:
+    "time domain source payload confidence"
+    ". . . event .";
+  align-items: start;
+  min-height: 34px;
+  line-height: 1.22;
+  padding: 6px 8px 6px 7px;
+}
+
+.event-feed__raw-row span {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.event-feed__raw-time {
+  grid-area: time;
+}
+
+.event-feed__raw-domain {
+  grid-area: domain;
+}
+
+.event-feed__raw-source {
+  grid-area: source;
+}
+
+.event-feed__raw-payload {
+  grid-area: payload;
+  font-size: 0.64rem;
+  line-height: 1.22;
+}
+
+.event-feed__raw-confidence {
+  grid-area: confidence;
+}
+
+.event-feed__raw-event {
+  grid-area: event;
+  margin-top: 2px;
+  font-size: 0.56rem;
+  line-height: 1.2;
+}
+
+.event-feed__raw-time,
+.event-feed__raw-confidence {
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .event-feed__flow-view {
