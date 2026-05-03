@@ -527,6 +527,15 @@
     #020504;
 }
 
+.map-stage--globe::before {
+  background:
+    linear-gradient(180deg, transparent, rgba(224, 92, 79, 0.075), transparent),
+    linear-gradient(rgba(245, 247, 240, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 247, 240, 0.042) 1px, transparent 1px);
+  background-size: 100% 180px, 52px 52px, 52px 52px;
+  opacity: 0.46;
+}
+
 .map-stage::before {
   position: absolute;
   inset: 0;
@@ -575,20 +584,23 @@
   top: 14px;
   right: 14px;
   display: flex;
+  min-width: 194px;
   overflow: hidden;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
 
 .map-view-toggle button {
+  flex: 1 1 0;
   min-height: 36px;
   border: 0;
   border-right: 1px solid rgba(67, 221, 226, 0.25);
   background: transparent;
   color: var(--text-muted);
-  font: inherit;
-  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
   font-weight: 760;
-  padding: 8px 12px;
+  padding: 9px 14px;
+  text-align: center;
 }
 
 .map-view-toggle button:last-child {
@@ -599,6 +611,44 @@
 .map-view-toggle button.is-active {
   background: rgba(67, 221, 226, 0.12);
   color: #8df8f5;
+}
+
+.map-view-toggle--globe {
+  border-color: rgba(224, 92, 79, 0.48);
+  background:
+    linear-gradient(180deg, rgba(224, 92, 79, 0.12), rgba(0, 0, 0, 0.76)),
+    rgba(2, 3, 3, 0.9);
+}
+
+.map-view-toggle--globe button {
+  border-right-color: rgba(224, 92, 79, 0.34);
+}
+
+.map-view-toggle--globe button:hover,
+.map-view-toggle--globe button.is-active {
+  background: rgba(224, 92, 79, 0.14);
+  color: #ff8b7f;
+}
+
+.map-stage--globe .tak-map-chrome,
+.map-stage--globe .space-hud,
+.map-stage--globe .cesium-scenario-controls button {
+  border-color: rgba(224, 92, 79, 0.38);
+  background:
+    linear-gradient(180deg, rgba(224, 92, 79, 0.1), rgba(0, 0, 0, 0.78)),
+    rgba(2, 4, 4, 0.88);
+}
+
+.map-stage--globe .tak-map-chrome span,
+.map-stage--globe .space-hud span {
+  color: rgba(245, 247, 240, 0.7);
+}
+
+.map-stage--globe .tak-map-chrome em,
+.map-stage--globe .cesium-scenario-controls button:hover,
+.map-stage--globe .cesium-scenario-controls button.is-active {
+  border-color: #ff7b6d;
+  color: #ff7b6d;
 }
 
 .tak-map-chrome {
@@ -823,9 +873,10 @@
   border-radius: 2px;
   background: rgba(9, 17, 18, 0.82);
   color: var(--text-primary);
-  font: inherit;
-  padding: 8px 10px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  padding: 8px 11px;
+  font-weight: 760;
 }
 
 .cesium-scenario-controls button:hover,

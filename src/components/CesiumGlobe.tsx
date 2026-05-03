@@ -22,7 +22,7 @@ import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
 const MAP_FONT =
-  '12px Geist, "Aptos Display", Aptos, "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
+  '12px "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
 const MAP_RED = Color.fromCssColorString('#e05c4f')
 const MAP_AMBER = Color.fromCssColorString('#c9a457')
 const MAP_CYAN = Color.fromCssColorString('#33f2f0')
@@ -35,14 +35,17 @@ const markerSvg = (
 ) => {
   const inner =
     kind === 'satellite'
-      ? '<circle cx="18" cy="18" r="5"/><path d="M18 4v7M18 25v7M4 18h7M25 18h7M9.5 9.5l5 5M26.5 9.5l-5 5M9.5 26.5l5-5M26.5 26.5l-5-5"/>'
+      ? '<path d="M18 4l14 14-14 14L4 18z"/><path d="M18 8v5M18 23v5M8 18h5M23 18h5"/><circle cx="18" cy="18" r="4"/><path d="M2 10V2h8M26 2h8v8M34 26v8h-8M10 34H2v-8"/>'
       : kind === 'drone'
-        ? '<path d="M18 4l12 14-12 14L6 18z"/><path d="M18 10v16M10 18h16"/><circle cx="18" cy="18" r="3"/>'
-        : '<path d="M18 5l13 13-13 13L5 18z"/><circle cx="18" cy="18" r="4"/><path d="M18 1v6M18 29v6M1 18h6M29 18h6"/>'
+        ? '<path d="M18 4l12 14-12 14L6 18z"/><path d="M18 10v16M10 18h16"/><circle cx="18" cy="18" r="3"/><path d="M3 15v-6h6M27 9h6v6M33 21v6h-6M9 27H3v-6"/>'
+        : '<path d="M18 5l13 13-13 13L5 18z"/><circle cx="18" cy="18" r="4"/><path d="M18 1v6M18 29v6M1 18h6M29 18h6"/><path d="M4 4h7M4 4v7M32 4h-7M32 4v7M32 32h-7M32 32v-7M4 32h7M4 32v-7"/>'
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-      <g fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="${stroke}" flood-opacity="0.45"/>
+      </filter>
+      <g fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
         ${inner}
       </g>
     </svg>`,
@@ -258,11 +261,11 @@ const createSatelliteCzml = () => {
           650000, 360, 83, 37, 740000, 520, 104, 34, 720000,
         ],
       },
-      point: {
-        pixelSize: 12,
-        color: { rgba: [224, 92, 79, 255] },
-        outlineColor: { rgba: [2, 4, 4, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 32,
+        image: markerSvg('satellite', '#e05c4f'),
+        scale: 1,
+        width: 32,
       },
       label: {
         text: 'SAT-BRAVO',
@@ -297,11 +300,11 @@ const createSatelliteCzml = () => {
           420000, 360, 49, 44, 510000, 520, 24, 36, 530000,
         ],
       },
-      point: {
-        pixelSize: 10,
-        color: { rgba: [51, 242, 240, 255] },
-        outlineColor: { rgba: [2, 4, 4, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 30,
+        image: markerSvg('satellite', '#33f2f0'),
+        scale: 1,
+        width: 30,
       },
       label: {
         text: 'PNT-CUSTODY',
@@ -358,11 +361,11 @@ const createVehicleCzml = () => {
           -116.46, 35.05, 1240,
         ],
       },
-      point: {
-        pixelSize: 11,
-        color: { rgba: [201, 164, 87, 255] },
-        outlineColor: { rgba: [2, 4, 4, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 30,
+        image: markerSvg('drone', '#c9a457'),
+        scale: 1,
+        width: 30,
       },
       label: {
         text: 'RELAY TEAM 2',

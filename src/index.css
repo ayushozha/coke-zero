@@ -19,11 +19,10 @@
   --ambient-olive: rgba(145, 166, 92, 0.15);
   --ambient-violet: rgba(111, 101, 173, 0.12);
   --font-sans:
-    "IBM Plex Sans Condensed", "IBM Plex Sans", Geist, "Aptos Display", Aptos, "SF Pro Text",
-    "Helvetica Neue", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+    Aptos, "Aptos Display", "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text",
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display:
-    "IBM Plex Sans Condensed", "IBM Plex Sans", "Aptos Display", Geist, "SF Pro Display", "Helvetica Neue",
+    "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Display",
     ui-sans-serif, system-ui, sans-serif;
 
   font-family: var(--font-sans);
