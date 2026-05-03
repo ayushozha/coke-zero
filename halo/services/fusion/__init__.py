@@ -96,6 +96,20 @@ IGNORED_EVENT_TYPES: set[tuple[str, str]] = {
     ("osint", "public_report"),
 }
 
+# Orbit-domain event types handled by the orbital correlator below. Anything
+# in this set is "covered"; anything outside it on `domain == "orbit"` would
+# fall through silently. The coverage regression test imports this constant.
+ORBIT_EVENT_TYPES: set[str] = {
+    "collection_window_start",
+    "overhead_collection_window",
+    "collection_window_end",
+    "rpo_close_approach",
+    "proximity_operations",
+    "screening_overlay",
+    "orbital_context_shift",
+    "orbital_setup",
+}
+
 
 @dataclass
 class _CollectionWindow:
@@ -222,7 +236,7 @@ class FusionService:
 
         # 3) Orbital handlers.
         if domain == "orbit":
-            if event_type == "collection_window_start":
+            if event_type in ("collection_window_start", "overhead_collection_window"):
                 await self._handle_collection_start(signal)
             elif event_type == "collection_window_end":
                 self._handle_collection_end(signal)
