@@ -18,6 +18,13 @@ import {
 } from 'cesium'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import {
+  addN2YOSatelliteLayer,
+  clearN2YOSatelliteLayer,
+  fetchN2YOPositionCache,
+  flyToN2YOSatellite,
+  type N2YOLayerState,
+} from '../lib/n2yoSatelliteLayer'
 import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
@@ -219,13 +226,6 @@ const signalPolygon = (signal: Signal) => {
   return coords.length >= 6 ? coords : null
 }
 
-const cameraHeightForSignal = (signal: Signal, point: MapPoint) => {
-  if (signal.domain === 'orbit' || signal.domain === 'sda') {
-    return Math.max(point.height * 4, 2200000)
-  }
-  return 90000
-}
-
 const addMinutes = (date: Date, minutes: number) =>
   new Date(date.getTime() + minutes * 60000).toISOString()
 
@@ -400,9 +400,10 @@ export function CesiumGlobe({
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const signalEntityIdsRef = useRef<Set<string>>(new Set())
-  const focusFlightSignalIdRef = useRef<string | null>(null)
+  const n2yoLayerRef = useRef<N2YOLayerState | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
   const [imageryMode, setImageryMode] = useState('Loading imagery')
+  const [realSatelliteStatus, setRealSatelliteStatus] = useState('Real 45465')
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -673,8 +674,6 @@ export function CesiumGlobe({
         (item): item is { signal: Signal; point: MapPoint } =>
           item.point !== null,
       )
-    const focusSignalPoint =
-      signalPoints.find((item) => item.signal.id === focusSignalId) ?? null
     signals.forEach((signal) => {
       const entityId = `signal-${signal.id}`
       const color = colorForSignal(signal)
@@ -790,22 +789,6 @@ export function CesiumGlobe({
       signalEntityIdsRef.current.add(correlationId)
     }
 
-    if (
-      focusSignalPoint &&
-      focusSignalId &&
-      focusFlightSignalIdRef.current !== focusSignalId
-    ) {
-      focusFlightSignalIdRef.current = focusSignalId
-      viewer.camera.flyTo({
-        destination: Cartesian3.fromDegrees(
-          focusSignalPoint.point.lon,
-          focusSignalPoint.point.lat,
-          cameraHeightForSignal(focusSignalPoint.signal, focusSignalPoint.point),
-        ),
-        duration: 0.6,
-      })
-    }
-
     viewer.scene.requestRender()
   }, [correlatedSignalIds, focusSignalId, signals])
 
@@ -816,6 +799,8 @@ export function CesiumGlobe({
     }
 
     viewer.dataSources.removeAll()
+    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
+    n2yoLayerRef.current = null
     viewer.clock.shouldAnimate = true
     setActiveLayer('baseline')
     viewer.camera.flyTo({
@@ -831,6 +816,8 @@ export function CesiumGlobe({
     }
 
     viewer.dataSources.removeAll()
+    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
+    n2yoLayerRef.current = null
     void viewer.dataSources
       .add(CzmlDataSource.load(createSatelliteCzml()))
       .then(() => {
@@ -854,6 +841,8 @@ export function CesiumGlobe({
     }
 
     viewer.dataSources.removeAll()
+    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
+    n2yoLayerRef.current = null
     void viewer.dataSources.add(CzmlDataSource.load(createVehicleCzml())).then(() => {
       if (viewer.isDestroyed()) {
         return
@@ -871,6 +860,33 @@ export function CesiumGlobe({
         },
       })
     })
+  }
+
+  const loadRealSatellite = () => {
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+
+    setRealSatelliteStatus('Loading 45465')
+    viewer.dataSources.removeAll()
+    void fetchN2YOPositionCache()
+      .then((cache) => {
+        if (viewer.isDestroyed()) {
+          return
+        }
+
+        clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
+        n2yoLayerRef.current = addN2YOSatelliteLayer(viewer, cache)
+        viewer.clock.shouldAnimate = true
+        setActiveLayer('real-satellite')
+        setRealSatelliteStatus('Real 45465')
+        flyToN2YOSatellite(viewer, n2yoLayerRef.current)
+        viewer.scene.requestRender()
+      })
+      .catch(() => {
+        setRealSatelliteStatus('45465 unavailable')
+      })
   }
 
   useEffect(() => {
@@ -899,6 +915,13 @@ export function CesiumGlobe({
           type="button"
         >
           Local AOR
+        </button>
+        <button
+          className={activeLayer === 'real-satellite' ? 'is-active' : ''}
+          onClick={loadRealSatellite}
+          type="button"
+        >
+          {realSatelliteStatus}
         </button>
         <button onClick={resetDynamicSources} type="button">
           Reset
