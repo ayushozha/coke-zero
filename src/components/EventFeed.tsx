@@ -83,26 +83,22 @@ export function EventFeed({ playback, signals }: EventFeedProps) {
               className={`event-feed__entry event-feed__entry--${priority}`}
               data-newest={index === 0 ? 'true' : undefined}
               key={signal.id}
+              title={`${summary.oneLine} / ${summary.sourceLabel} / ${summary.location}`}
             >
-              <div className="event-feed__entry-top">
-                <span className="event-feed__time">
-                  {new Date(signal.ts).toLocaleTimeString([], {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-                <span className="event-feed__domain">{summary.label}</span>
-                <span className="event-feed__confidence">
-                  {summary.confidenceLabel}
-                </span>
-              </div>
-              <div className="event-feed__meaning">
-                <strong title={summary.oneLine}>{summary.oneLine}</strong>
-                <p title={`${summary.sourceLabel} / ${summary.location}`}>
-                  {summary.sourceLabel} / {summary.location}
-                </p>
-              </div>
+              <span className="event-feed__time">
+                {new Date(signal.ts).toLocaleTimeString([], {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+              <span className="event-feed__domain">{summary.label}</span>
+              <strong className="event-feed__message">
+                {summary.oneLine}
+              </strong>
+              <span className="event-feed__confidence">
+                {Math.round(signal.confidence * 100)}%
+              </span>
             </article>
           )
         })}
