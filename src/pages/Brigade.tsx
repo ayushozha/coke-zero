@@ -45,7 +45,7 @@ const randomBetween = ([min, max]: [number, number]) =>
 const demoConfidenceForSequence = (sequence: number) =>
   sequence % 5 === 0 ? randomBetween([0.86, 0.96]) : randomBetween([0.74, 0.85])
 
-const randomDemoDelay = () => 1000 + Math.floor(Math.random() * 4000)
+const randomDemoDelay = () => 10000 + Math.floor(Math.random() * 5000)
 
 const jitter = (value: number, amount: number) =>
   Number((value + (Math.random() - 0.5) * amount).toFixed(5))
