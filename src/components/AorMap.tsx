@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { forward as toMgrs } from 'mgrs'
+import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { Signal } from '../types/canopy'
 
 type Basemap = 'imagery' | 'streets'
+type AorMapProps = {
+  correlatedSignalIds: string[]
+  focusSignalId: string | null
+  signals: Signal[]
+}
 
 const aorCenter: [number, number] = [-116.52, 35.02]
 
@@ -48,6 +54,47 @@ const formatMgrs = ([lon, lat]: [number, number]) =>
     /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
     '$1 $2 $3 $4',
   )
+
+const signalPoint = (signal: Signal): [number, number] | null => {
+  if (
+    typeof signal.location.lng === 'number' &&
+    typeof signal.location.lat === 'number'
+  ) {
+    return [signal.location.lng, signal.location.lat]
+  }
+
+  if (!signal.location.mgrs) {
+    return null
+  }
+
+  try {
+    const [lon, lat] = mgrsToPoint(signal.location.mgrs)
+    return [lon, lat]
+  } catch {
+    return null
+  }
+}
+
+const isInsideAor = ([lon, lat]: [number, number]) =>
+  lon >= aorBounds.west &&
+  lon <= aorBounds.east &&
+  lat >= aorBounds.south &&
+  lat <= aorBounds.north
+
+const labelForSignal = (signal: Signal) =>
+  signal.location.label ??
+  signal.payload.asset ??
+  signal.payload.event_type.replaceAll('_', ' ').toUpperCase()
+
+const priorityForSignal = (signal: Signal) => {
+  if (signal.confidence >= 0.86) {
+    return 'high'
+  }
+  if (signal.confidence >= 0.74) {
+    return 'watch'
+  }
+  return 'low'
+}
 
 const createAorPolygon = () =>
   ({
@@ -133,12 +180,42 @@ const createGrid = () => {
   } as GeoJSON.FeatureCollection
 }
 
-export function AorMap() {
+export function AorMap({
+  correlatedSignalIds,
+  focusSignalId,
+  signals,
+}: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const [basemap, setBasemap] = useState<Basemap>('imagery')
+  const signalMarkersRef = useRef<maplibregl.Marker[]>([])
+  const [isMapReady, setIsMapReady] = useState(false)
+  const [basemap, setBasemap] = useState<Basemap>('streets')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoom, setZoom] = useState('15.2')
+
+  const visibleSignals = useMemo(
+    () =>
+      signals
+        .map((signal) => ({ point: signalPoint(signal), signal }))
+        .filter(
+          (entry): entry is { point: [number, number]; signal: Signal } =>
+            entry.point !== null && isInsideAor(entry.point),
+        )
+        .sort((a, b) => {
+          const focusScore = (signal: Signal) =>
+            signal.id === focusSignalId ? 1 : 0
+          const correlatedScore = (signal: Signal) =>
+            correlatedSignalIds.includes(signal.id) ? 1 : 0
+
+          return (
+            focusScore(b.signal) - focusScore(a.signal) ||
+            correlatedScore(b.signal) - correlatedScore(a.signal) ||
+            b.signal.confidence - a.signal.confidence
+          )
+        })
+        .slice(0, 5),
+    [correlatedSignalIds, focusSignalId, signals],
+  )
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -178,6 +255,9 @@ export function AorMap() {
             id: 'imagery',
             type: 'raster',
             source: 'esriWorldImagery',
+            layout: {
+              visibility: 'none',
+            },
             paint: {
               'raster-brightness-max': 0.78,
               'raster-brightness-min': 0.03,
@@ -190,15 +270,12 @@ export function AorMap() {
             id: 'streets',
             type: 'raster',
             source: 'osmStreets',
-            layout: {
-              visibility: 'none',
-            },
             paint: {
-              'raster-brightness-max': 0.64,
+              'raster-brightness-max': 0.7,
               'raster-brightness-min': 0.02,
-              'raster-contrast': 0.22,
+              'raster-contrast': 0.14,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.78,
+              'raster-saturation': -0.95,
             },
           },
         ],
@@ -216,6 +293,7 @@ export function AorMap() {
     const contactMarkers: maplibregl.Marker[] = []
 
     map.on('load', () => {
+      setIsMapReady(true)
       map.addSource('aor-zone', {
         type: 'geojson',
         data: createAorPolygon(),
@@ -225,8 +303,8 @@ export function AorMap() {
         type: 'fill',
         source: 'aor-zone',
         paint: {
-          'fill-color': '#ff2222',
-          'fill-opacity': 0.08,
+          'fill-color': '#e05c4f',
+          'fill-opacity': 0.045,
         },
       })
       map.addLayer({
@@ -234,9 +312,9 @@ export function AorMap() {
         type: 'line',
         source: 'aor-zone',
         paint: {
-          'line-color': '#ff2222',
-          'line-opacity': 0.88,
-          'line-width': 2,
+          'line-color': '#e05c4f',
+          'line-opacity': 0.64,
+          'line-width': 1.4,
         },
       })
 
@@ -264,9 +342,10 @@ export function AorMap() {
         type: 'line',
         source: 'relay-route',
         paint: {
-          'line-color': '#ffb300',
-          'line-opacity': 0.95,
-          'line-width': 4,
+          'line-color': '#c9a457',
+          'line-opacity': 0.78,
+          'line-width': 2.2,
+          'line-dasharray': [1.8, 1.2],
         },
       })
 
@@ -310,10 +389,58 @@ export function AorMap() {
 
     return () => {
       contactMarkers.forEach((marker) => marker.remove())
+      signalMarkersRef.current.forEach((marker) => marker.remove())
+      signalMarkersRef.current = []
       map.remove()
       mapRef.current = null
+      setIsMapReady(false)
     }
   }, [])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !isMapReady) {
+      return
+    }
+
+    signalMarkersRef.current.forEach((marker) => marker.remove())
+    signalMarkersRef.current = visibleSignals.map(({ point, signal }) => {
+      const priority = priorityForSignal(signal)
+      const marker = document.createElement('div')
+      marker.className = [
+        'aor-signal',
+        `aor-signal--${priority}`,
+        signal.id === focusSignalId ? 'aor-signal--focus' : '',
+        correlatedSignalIds.includes(signal.id) ? 'aor-signal--correlated' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+      marker.title = `${labelForSignal(signal)} / ${formatMgrs(point)}`
+
+      const glyph = document.createElement('span')
+      glyph.className = 'aor-signal__glyph'
+      marker.appendChild(glyph)
+
+      const label = document.createElement('span')
+      label.className = 'aor-signal__label'
+      label.textContent = labelForSignal(signal)
+      marker.appendChild(label)
+
+      const meta = document.createElement('span')
+      meta.className = 'aor-signal__meta'
+      meta.textContent = `${signal.domain.toUpperCase()} ${Math.round(
+        signal.confidence * 100,
+      )}%`
+      marker.appendChild(meta)
+
+      return new maplibregl.Marker({
+        anchor: 'center',
+        element: marker,
+      })
+        .setLngLat(point)
+        .addTo(map)
+    })
+  }, [correlatedSignalIds, focusSignalId, isMapReady, visibleSignals])
 
   const switchBasemap = (nextBasemap: Basemap) => {
     const map = mapRef.current
@@ -341,6 +468,25 @@ export function AorMap() {
         <span>AOR Mode</span>
         <strong>Relay Team 2</strong>
         <p>{cursorGrid}</p>
+      </div>
+      <div className="aor-map__legend" aria-hidden="true">
+        <span>
+          <i className="aor-map__legend-key aor-map__legend-key--friendly" />
+          Friendly
+        </span>
+        <span>
+          <i className="aor-map__legend-key aor-map__legend-key--watch" />
+          Watch
+        </span>
+        <span>
+          <i className="aor-map__legend-key aor-map__legend-key--threat" />
+          Threat
+        </span>
+      </div>
+      <div className="aor-map__ops-strip" aria-hidden="true">
+        <span>LIVE CONTACTS {visibleSignals.length}</span>
+        <span>FUSED {correlatedSignalIds.length}</span>
+        <span>{basemap.toUpperCase()}</span>
       </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
         <button

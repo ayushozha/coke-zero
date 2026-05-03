@@ -11,15 +11,72 @@ import {
   IonWorldImageryStyle,
   LabelStyle,
   NearFarScalar,
-  PolylineGlowMaterialProperty,
+  PolylineDashMaterialProperty,
   Rectangle,
   TileMapServiceImageryProvider,
   Viewer,
 } from 'cesium'
-import { forward as toMgrs } from 'mgrs'
+import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
+const MAP_FONT =
+  '12px "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
+const MAP_RED = Color.fromCssColorString('#e05c4f')
+const MAP_AMBER = Color.fromCssColorString('#c9a457')
+const MAP_CYAN = Color.fromCssColorString('#33f2f0')
+const MAP_PANEL = Color.fromCssColorString('#091112')
+
+const markerSvg = (
+  kind: 'satellite' | 'drone' | 'signal',
+  stroke: string,
+  fill = 'rgba(2,4,4,0.72)',
+) => {
+  const inner =
+    kind === 'satellite'
+      ? '<path d="M13 13h10v10H13z"/><path d="M5 16h6M25 16h6M5 20h6M25 20h6M18 7v4M18 25v4"/><circle cx="18" cy="18" r="2.4" fill="currentColor" stroke="none"/>'
+      : kind === 'drone'
+        ? '<path d="M18 6l10 20-10-5-10 5z"/><path d="M18 11v10M13 20h10"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
+        : '<path d="M18 7l11 11-11 11L7 18z"/><path d="M18 12v12M12 18h12"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 36 36">
+      <filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.72"/>
+      </filter>
+      <g color="${stroke}" fill="${fill}" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)">
+        ${inner}
+      </g>
+    </svg>`,
+  )}`
+}
+
+const markerColorHex = (color: Color) => color.toCssHexString()
+
+const markerKindForDomain = (domain?: Signal['domain']) => {
+  if (domain === 'sda' || domain === 'orbit' || domain === 'satcom') {
+    return 'satellite'
+  }
+  if (domain === 'drone' || domain === 'pnt' || domain === 'terrain') {
+    return 'drone'
+  }
+  return 'signal'
+}
+
+type CesiumGlobeProps = {
+  correlatedSignalIds?: string[]
+  displayMode?: 'nav' | 'globe'
+  focusSignalId?: string | null
+  signals?: Signal[]
+}
+
+type MapPoint = {
+  lon: number
+  lat: number
+  height: number
+  label: string
+}
 
 const contacts = [
   {
@@ -27,21 +84,21 @@ const contacts = [
     lon: 63.4,
     lat: 31.2,
     height: 650000,
-    color: Color.RED,
+    color: MAP_RED,
   },
   {
     name: 'PNT DRIFT',
     lon: 70.5,
     lat: 38.1,
     height: 420000,
-    color: Color.fromCssColorString('#ffb300'),
+    color: MAP_AMBER,
   },
   {
     name: 'RF BURST',
     lon: 51.9,
     lat: 34.8,
     height: 360000,
-    color: Color.WHITE,
+    color: MAP_CYAN,
   },
 ]
 
@@ -70,21 +127,21 @@ const localContacts = [
     lon: -116.52,
     lat: 35.02,
     height: 1210,
-    color: Color.fromCssColorString('#ffb300'),
+    color: MAP_AMBER,
   },
   {
     name: 'BLOS RELAY WEST',
     lon: -116.547,
     lat: 35.039,
     height: 1225,
-    color: Color.WHITE,
+    color: MAP_CYAN,
   },
   {
     name: 'RF HIT 11',
     lon: -116.485,
     lat: 35.012,
     height: 1230,
-    color: Color.RED,
+    color: MAP_RED,
   },
 ]
 
@@ -93,6 +150,81 @@ const formatMgrs = (lon: number, lat: number) =>
     /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
     '$1 $2 $3 $4',
   )
+
+const colorForSignal = (signal: Signal) => {
+  if (signal.confidence >= 0.86) {
+    return MAP_RED
+  }
+  if (signal.confidence >= 0.74) {
+    return MAP_AMBER
+  }
+  return MAP_CYAN
+}
+
+const signalLabel = (signal: Signal) =>
+  signal.location.label ??
+  signal.payload.asset ??
+  signal.payload.event_type.replaceAll('_', ' ').toUpperCase()
+
+const signalPoint = (signal: Signal): MapPoint | null => {
+  let lon = signal.location.lng
+  let lat = signal.location.lat
+
+  if (
+    (typeof lon !== 'number' || typeof lat !== 'number') &&
+    signal.location.mgrs
+  ) {
+    try {
+      const [mgrsLon, mgrsLat] = mgrsToPoint(signal.location.mgrs)
+      lon = mgrsLon
+      lat = mgrsLat
+    } catch {
+      return null
+    }
+  }
+
+  if (typeof lon !== 'number' || typeof lat !== 'number') {
+    return null
+  }
+
+  const height =
+    signal.location.alt_m ??
+    (signal.location.alt_km !== undefined
+      ? signal.location.alt_km * 1000
+      : signal.domain === 'orbit' || signal.domain === 'sda'
+        ? 400000
+        : 25)
+
+  return {
+    lon,
+    lat,
+    height,
+    label: signalLabel(signal),
+  }
+}
+
+const signalPolygon = (signal: Signal) => {
+  const match = signal.location.area_wkt?.match(/POLYGON\s*\(\((.+)\)\)/i)
+  if (!match) {
+    return null
+  }
+
+  const coords = match[1]
+    .split(',')
+    .flatMap((pair) => {
+      const [lon, lat] = pair.trim().split(/\s+/).map(Number)
+      return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : []
+    })
+
+  return coords.length >= 6 ? coords : null
+}
+
+const cameraHeightForSignal = (signal: Signal, point: MapPoint) => {
+  if (signal.domain === 'orbit' || signal.domain === 'sda') {
+    return Math.max(point.height * 4, 2200000)
+  }
+  return 90000
+}
 
 const addMinutes = (date: Date, minutes: number) =>
   new Date(date.getTime() + minutes * 60000).toISOString()
@@ -111,7 +243,7 @@ const createSatelliteCzml = () => {
       clock: {
         interval,
         currentTime: epoch,
-        multiplier: 45,
+        multiplier: 8,
         range: 'LOOP_STOP',
         step: 'SYSTEM_CLOCK_MULTIPLIER',
       },
@@ -129,27 +261,28 @@ const createSatelliteCzml = () => {
           650000, 360, 83, 37, 740000, 520, 104, 34, 720000,
         ],
       },
-      point: {
-        pixelSize: 12,
-        color: { rgba: [255, 34, 34, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 20,
+        image: markerSvg('satellite', '#e05c4f'),
+        scale: 1,
+        width: 20,
       },
       label: {
         text: 'SAT-BRAVO',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
-        leadTime: 160,
-        trailTime: 420,
-        width: 3,
+        leadTime: 0,
+        trailTime: 900,
+        width: 1.1,
         material: {
           solidColor: {
-            color: { rgba: [255, 179, 0, 210] },
+            color: { rgba: [201, 164, 87, 116] },
           },
         },
       },
@@ -167,27 +300,28 @@ const createSatelliteCzml = () => {
           420000, 360, 49, 44, 510000, 520, 24, 36, 530000,
         ],
       },
-      point: {
-        pixelSize: 10,
-        color: { rgba: [255, 179, 0, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 20,
+        image: markerSvg('satellite', '#33f2f0'),
+        scale: 1,
+        width: 20,
       },
       label: {
         text: 'PNT-CUSTODY',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
-        leadTime: 160,
-        trailTime: 420,
-        width: 2,
+        leadTime: 0,
+        trailTime: 900,
+        width: 1,
         material: {
           solidColor: {
-            color: { rgba: [255, 255, 255, 155] },
+            color: { rgba: [245, 247, 240, 84] },
           },
         },
       },
@@ -209,7 +343,7 @@ const createVehicleCzml = () => {
       clock: {
         interval,
         currentTime: epoch,
-        multiplier: 20,
+        multiplier: 4,
         range: 'LOOP_STOP',
         step: 'SYSTEM_CLOCK_MULTIPLIER',
       },
@@ -227,27 +361,28 @@ const createVehicleCzml = () => {
           -116.46, 35.05, 1240,
         ],
       },
-      point: {
-        pixelSize: 11,
-        color: { rgba: [255, 179, 0, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
-        outlineWidth: 2,
+      billboard: {
+        height: 20,
+        image: markerSvg('drone', '#c9a457'),
+        scale: 1,
+        width: 20,
       },
       label: {
         text: 'RELAY TEAM 2',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
+        show: false,
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [9, 17, 18, 220] },
         pixelOffset: { cartesian2: [0, -26] },
       },
       path: {
-        leadTime: 60,
-        trailTime: 360,
-        width: 4,
+        leadTime: 0,
+        trailTime: 240,
+        width: 1.6,
         material: {
           solidColor: {
-            color: { rgba: [255, 179, 0, 230] },
+            color: { rgba: [201, 164, 87, 128] },
           },
         },
       },
@@ -255,10 +390,17 @@ const createVehicleCzml = () => {
   ]
 }
 
-export function CesiumGlobe() {
+export function CesiumGlobe({
+  correlatedSignalIds = [],
+  displayMode = 'nav',
+  focusSignalId = null,
+  signals = [],
+}: CesiumGlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
+  const signalEntityIdsRef = useRef<Set<string>>(new Set())
+  const focusFlightSignalIdRef = useRef<string | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
   const [imageryMode, setImageryMode] = useState('Loading imagery')
 
@@ -285,7 +427,6 @@ export function CesiumGlobe() {
       sceneModePicker: false,
       selectionIndicator: false,
       shouldAnimate: true,
-      skyAtmosphere: false,
       skyBox: false,
       timeline: false,
       useBrowserRecommendedResolution: false,
@@ -294,11 +435,11 @@ export function CesiumGlobe() {
     viewerRef.current = viewer
 
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
-    viewer.scene.backgroundColor = Color.BLACK
-    viewer.scene.globe.baseColor = Color.fromCssColorString('#080808')
-    viewer.scene.globe.enableLighting = false
+    viewer.scene.backgroundColor = Color.fromCssColorString('#07100f')
+    viewer.scene.globe.baseColor = Color.fromCssColorString('#0c1514')
+    viewer.scene.globe.enableLighting = true
     viewer.scene.globe.maximumScreenSpaceError = 1
-    viewer.scene.globe.showGroundAtmosphere = false
+    viewer.scene.globe.showGroundAtmosphere = true
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 42000000
 
@@ -398,9 +539,9 @@ export function CesiumGlobe() {
       rectangle: {
         coordinates: Rectangle.fromDegrees(47, 25, 77, 43),
         fill: true,
-        material: Color.RED.withAlpha(0.08),
+        material: MAP_RED.withAlpha(0.08),
         outline: true,
-        outlineColor: Color.RED.withAlpha(0.75),
+        outlineColor: MAP_RED.withAlpha(0.65),
       },
     })
 
@@ -415,9 +556,9 @@ export function CesiumGlobe() {
           localAorBounds.north,
         ),
         fill: true,
-        material: Color.RED.withAlpha(0.06),
+        material: MAP_RED.withAlpha(0.06),
         outline: true,
-        outlineColor: Color.RED.withAlpha(0.75),
+        outlineColor: MAP_RED.withAlpha(0.65),
       },
     })
 
@@ -426,12 +567,12 @@ export function CesiumGlobe() {
       name: 'Relay Team 2 Route',
       polyline: {
         clampToGround: true,
-        material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#ffb300').withAlpha(0.85),
-          glowPower: 0.14,
+        material: new PolylineDashMaterialProperty({
+          color: MAP_AMBER.withAlpha(0.68),
+          dashLength: 18,
         }),
         positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
-        width: 5,
+        width: 2,
       },
     })
 
@@ -440,19 +581,21 @@ export function CesiumGlobe() {
         id: `local-${contact.name.toLowerCase().replaceAll(' ', '-')}`,
         name: contact.name,
         position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
-        point: {
-          color: contact.color,
+        billboard: {
+          color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.BLACK,
-          outlineWidth: 2,
-          pixelSize: 12,
+          height: 20,
+          image: markerSvg('drone', markerColorHex(contact.color)),
+          scaleByDistance: new NearFarScalar(50000, 0.82, 900000, 0.42),
+          width: 20,
         },
         label: {
-          backgroundColor: Color.BLACK.withAlpha(0.76),
+          backgroundColor: MAP_PANEL.withAlpha(0.82),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
           fillColor: Color.WHITE,
-          font: '13px Share Tech Mono',
+          font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -28),
+          show: false,
           showBackground: true,
           style: LabelStyle.FILL,
           text: `${contact.name}\n${formatMgrs(contact.lon, contact.lat)}`,
@@ -464,20 +607,21 @@ export function CesiumGlobe() {
       viewer.entities.add({
         name: contact.name,
         position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
-        point: {
-          color: contact.color,
+        billboard: {
+          color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.BLACK,
-          outlineWidth: 2,
-          pixelSize: 10,
-          scaleByDistance: new NearFarScalar(1500000, 1.5, 25000000, 0.75),
+          height: 20,
+          image: markerSvg('satellite', markerColorHex(contact.color)),
+          scaleByDistance: new NearFarScalar(1500000, 0.86, 25000000, 0.38),
+          width: 20,
         },
         label: {
-          backgroundColor: Color.BLACK.withAlpha(0.72),
+          backgroundColor: MAP_PANEL.withAlpha(0.82),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
           fillColor: Color.WHITE,
-          font: '13px Share Tech Mono',
+          font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -22),
+          show: false,
           showBackground: true,
           style: LabelStyle.FILL,
           text: contact.name,
@@ -489,12 +633,12 @@ export function CesiumGlobe() {
       name: 'Cross-domain correlation',
       polyline: {
         clampToGround: false,
-        material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#ffb300').withAlpha(0.8),
-          glowPower: 0.16,
+        material: new PolylineDashMaterialProperty({
+          color: MAP_AMBER.withAlpha(0.46),
+          dashLength: 28,
         }),
         positions: arcPositions,
-        width: 3,
+        width: 1,
       },
     })
 
@@ -511,6 +655,160 @@ export function CesiumGlobe() {
     }
   }, [])
 
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+
+    signalEntityIdsRef.current.forEach((id) => {
+      viewer.entities.removeById(id)
+    })
+    signalEntityIdsRef.current.clear()
+
+    const correlatedIds = new Set(correlatedSignalIds)
+    const signalPoints = signals
+      .map((signal) => ({ signal, point: signalPoint(signal) }))
+      .filter(
+        (item): item is { signal: Signal; point: MapPoint } =>
+          item.point !== null,
+      )
+    const focusSignalPoint =
+      signalPoints.find((item) => item.signal.id === focusSignalId) ?? null
+    signals.forEach((signal) => {
+      const entityId = `signal-${signal.id}`
+      const color = colorForSignal(signal)
+      const point = signalPoint(signal)
+      const polygon = signalPolygon(signal)
+      const isFocus = signal.id === focusSignalId
+      const isCorrelated = correlatedIds.has(signal.id)
+      const shouldLabel = isFocus && signals.length <= 8
+      const markerKind = markerKindForDomain(signal.domain)
+
+      if (point) {
+        viewer.entities.add({
+          id: entityId,
+          name: point.label,
+          position: Cartesian3.fromDegrees(point.lon, point.lat, point.height),
+          billboard: {
+            color: Color.WHITE,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            height: isFocus ? 24 : isCorrelated ? 21 : 18,
+            image: markerSvg(markerKind, markerColorHex(color)),
+            scaleByDistance: new NearFarScalar(1500000, 0.84, 25000000, 0.36),
+            width: isFocus ? 24 : isCorrelated ? 21 : 18,
+          },
+          label: {
+            backgroundColor: MAP_PANEL.withAlpha(0.84),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            fillColor: Color.WHITE,
+            font: MAP_FONT,
+            pixelOffset: new Cartesian2(0, -28),
+            scaleByDistance: new NearFarScalar(800000, 1, 22000000, 0.62),
+            show: shouldLabel,
+            showBackground: true,
+            style: LabelStyle.FILL,
+            text: 'FOCUS',
+          },
+          description: signal.payload.summary,
+        })
+        signalEntityIdsRef.current.add(entityId)
+
+        if (isFocus || isCorrelated) {
+          const pulseId = `${entityId}-pulse`
+          viewer.entities.add({
+            id: pulseId,
+            name: `${point.label} focus ring`,
+            position: Cartesian3.fromDegrees(point.lon, point.lat, 0),
+            ellipse: {
+              semiMajorAxis: isFocus ? 14000 : 9500,
+              semiMinorAxis: isFocus ? 14000 : 9500,
+              material: color.withAlpha(isFocus ? 0.03 : 0.018),
+              outline: true,
+              outlineColor: color.withAlpha(isFocus ? 0.42 : 0.26),
+            },
+          })
+          signalEntityIdsRef.current.add(pulseId)
+        }
+      } else if (polygon) {
+        viewer.entities.add({
+          id: entityId,
+          name: signalLabel(signal),
+          polygon: {
+            hierarchy: Cartesian3.fromDegreesArray(polygon),
+            material: color.withAlpha(0.08),
+            outline: true,
+            outlineColor: color.withAlpha(0.8),
+          },
+          description: signal.payload.summary,
+        })
+        signalEntityIdsRef.current.add(entityId)
+      }
+    })
+
+    const thread = signalPoints.slice(0, 6).flatMap(({ point }) => [
+      point.lon,
+      point.lat,
+      Math.max(point.height, 400),
+    ])
+    if (thread.length >= 6) {
+      const threadId = 'signal-thread'
+      viewer.entities.add({
+        id: threadId,
+        name: 'Live signal thread',
+        polyline: {
+          clampToGround: false,
+          material: new PolylineDashMaterialProperty({
+            color: Color.WHITE.withAlpha(0.24),
+            dashLength: 20,
+          }),
+          positions: Cartesian3.fromDegreesArrayHeights(thread),
+          width: 1,
+        },
+      })
+      signalEntityIdsRef.current.add(threadId)
+    }
+
+    const correlation = signalPoints
+      .filter(({ signal }) => correlatedIds.has(signal.id))
+      .flatMap(({ point }) => [point.lon, point.lat, Math.max(point.height, 400)])
+    if (correlation.length >= 6) {
+      const correlationId = 'signal-correlation'
+      viewer.entities.add({
+        id: correlationId,
+        name: 'Fused signal correlation',
+        polyline: {
+          clampToGround: false,
+          material: new PolylineDashMaterialProperty({
+            color: MAP_AMBER.withAlpha(0.5),
+            dashLength: 24,
+          }),
+          positions: Cartesian3.fromDegreesArrayHeights(correlation),
+          width: 1.4,
+        },
+      })
+      signalEntityIdsRef.current.add(correlationId)
+    }
+
+    if (
+      focusSignalPoint &&
+      focusSignalId &&
+      focusFlightSignalIdRef.current !== focusSignalId
+    ) {
+      focusFlightSignalIdRef.current = focusSignalId
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(
+          focusSignalPoint.point.lon,
+          focusSignalPoint.point.lat,
+          cameraHeightForSignal(focusSignalPoint.signal, focusSignalPoint.point),
+        ),
+        duration: 0.6,
+      })
+    }
+
+    viewer.scene.requestRender()
+  }, [correlatedSignalIds, focusSignalId, signals])
+
   const resetDynamicSources = () => {
     const viewer = viewerRef.current
     if (!viewer || viewer.isDestroyed()) {
@@ -522,7 +820,7 @@ export function CesiumGlobe() {
     setActiveLayer('baseline')
     viewer.camera.flyTo({
       destination: Cartesian3.fromDegrees(58, 28, 18500000),
-      duration: 1.1,
+      duration: 0.6,
     })
   }
 
@@ -543,7 +841,7 @@ export function CesiumGlobe() {
         viewer.clock.shouldAnimate = true
         viewer.camera.flyTo({
           destination: Cartesian3.fromDegrees(58, 28, 18500000),
-          duration: 0.7,
+          duration: 0.6,
         })
         setActiveLayer('satellites')
       })
@@ -565,7 +863,7 @@ export function CesiumGlobe() {
       setActiveLayer('local-aor')
       viewer.camera.flyTo({
         destination: Cartesian3.fromDegrees(-116.52, 35.02, 22000),
-        duration: 3.2,
+        duration: 0.8,
         orientation: {
           heading: 6,
           pitch: -1.08,
@@ -574,6 +872,15 @@ export function CesiumGlobe() {
       })
     })
   }
+
+  useEffect(() => {
+    if (displayMode === 'globe') {
+      loadSatellites()
+      return
+    }
+
+    loadVehicle()
+  }, [displayMode])
 
   return (
     <>

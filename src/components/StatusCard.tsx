@@ -21,7 +21,7 @@ export function StatusCard({
         <span className="status-card__label">{label}</span>
         <span className="status-card__state">
           <span className="status-card__lamp" aria-hidden="true" />
-          {state}
+          {state.toUpperCase()}
         </span>
       </div>
       <h2>{title}</h2>
