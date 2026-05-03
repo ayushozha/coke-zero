@@ -3,14 +3,12 @@ import type { Decision, UIEvent } from '../types/canopy'
 type ApproveBannerProps = {
   decision: Decision | null
   uiEvent?: UIEvent | null
-  isApproved: boolean
-  onApprove: () => void
+  onApprove: (id: string) => void
 }
 
 export function ApproveBanner({
   decision,
   uiEvent = null,
-  isApproved,
   onApprove,
 }: ApproveBannerProps) {
   const recommendation = uiEvent?.recommendation
@@ -21,6 +19,7 @@ export function ApproveBanner({
 
   const title = recommendation?.summary ?? decision?.action ?? 'Review request'
   const requestId = recommendation?.id ?? decision?.id ?? 'pending'
+  const approvalId = uiEvent?.id ?? decision?.id ?? requestId
   const rationale = uiEvent?.message ?? decision?.rationale ?? ''
   const target = decision?.target ?? 'higher-authority review'
   const approveLabel = recommendation?.approveLabel ?? 'Approve'
@@ -42,10 +41,9 @@ export function ApproveBanner({
       <button
         className="approve-banner__button"
         type="button"
-        onClick={onApprove}
-        disabled={isApproved}
+        onClick={() => onApprove(approvalId)}
       >
-        {isApproved ? 'Approved' : approveLabel}
+        {approveLabel}
       </button>
     </section>
   )

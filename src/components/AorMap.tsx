@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
+import { forward as toMgrs } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
+import { boundsForSignals, signalCoordinate } from '../lib/signalLocation'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
@@ -10,6 +12,7 @@ type Basemap = 'imagery' | 'muted'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  focusRequestId?: number
   playback: PlaybackStatus | null
   scenario: ScenarioDefinition
   signals: Signal[]
@@ -72,54 +75,8 @@ const aorContacts: Array<{
   },
 ]
 
-const signalPoint = (signal: Signal): [number, number] | null => {
-  if (
-    typeof signal.location.lng === 'number' &&
-    typeof signal.location.lat === 'number'
-  ) {
-    return [signal.location.lng, signal.location.lat]
-  }
-
-  if (!signal.location.mgrs) {
-    const match = signal.location.area_wkt?.match(/POLYGON\s*\(\((.+)\)\)/i)
-    if (!match) {
-      return null
-    }
-
-    const points = match[1]
-      .split(',')
-      .map((pair) => pair.trim().split(/\s+/).map(Number))
-      .filter(
-        (point): point is [number, number] =>
-          point.length === 2 &&
-          Number.isFinite(point[0]) &&
-          Number.isFinite(point[1]),
-      )
-
-    if (!points.length) {
-      return null
-    }
-
-    const [lonTotal, latTotal] = points.reduce(
-      ([lonSum, latSum], [lon, lat]) => [lonSum + lon, latSum + lat],
-      [0, 0],
-    )
-
-    return [lonTotal / points.length, latTotal / points.length]
-  }
-
-  try {
-    const [lon, lat] = mgrsToPoint(signal.location.mgrs)
-    return [lon, lat]
-  } catch {
-    return null
-  }
-}
-
 const labelForSignal = (signal: Signal) =>
-  signal.location.label ??
-  signal.payload.asset ??
-  signal.payload.event_type.replaceAll('_', ' ').toUpperCase()
+  commanderSignalSummary(signal).location
 
 const priorityForSignal = (signal: Signal) => {
   if (signal.confidence >= 0.86) {
@@ -231,10 +188,13 @@ const createGrid = (bounds: AorBounds) => {
 export function AorMap({
   correlatedSignalIds,
   focusSignalId,
+  focusRequestId = 0,
+  scenario,
   signals,
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const handledFocusRequestRef = useRef(0)
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [zoomLevel, setZoomLevel] = useState(15.2)
@@ -242,12 +202,23 @@ export function AorMap({
   const coordinateSignals = useMemo(
     () =>
       signals
-        .map((signal) => ({ point: signalPoint(signal), signal }))
+        .map((signal) => ({ point: signalCoordinate(signal), signal }))
         .filter(
           (entry): entry is { point: [number, number]; signal: Signal } =>
             entry.point !== null,
         ),
     [signals],
+  )
+  const scenarioBounds = useMemo(
+    () => boundsForSignals(scenario.signals, aorBounds),
+    [scenario.signals],
+  )
+  const scenarioRoute = useMemo(
+    () =>
+      scenario.signals
+        .map(signalCoordinate)
+        .filter((point): point is [number, number] => point !== null),
+    [scenario.signals],
   )
   const contactDisplayLimit = zoomLevel >= 12.2 ? 8 : zoomLevel >= 10.4 ? 4 : 2
   const visibleSignals = useMemo(
@@ -281,7 +252,7 @@ export function AorMap({
           properties: {
             id: signal.id,
             label: labelForSignal(signal),
-            meta: `${signal.domain.toUpperCase()} ${Math.round(
+            meta: `${domainLabel(signal.domain)} ${Math.round(
               signal.confidence * 100,
             )}%`,
             priority: priorityForSignal(signal),
@@ -304,7 +275,7 @@ export function AorMap({
 
     const map = new maplibregl.Map({
       attributionControl: false,
-      center: centerFromBounds(aorBounds),
+      center: centerFromBounds(scenarioBounds),
       container: containerRef.current,
       maxZoom: 19,
       minZoom: 5,
@@ -367,7 +338,7 @@ export function AorMap({
       setIsMapReady(true)
       map.addSource('aor-zone', {
         type: 'geojson',
-        data: createAorPolygon(aorBounds),
+        data: createAorPolygon(scenarioBounds),
       })
       map.addLayer({
         id: 'aor-zone-fill',
@@ -391,7 +362,7 @@ export function AorMap({
 
       map.addSource('mgrs-grid', {
         type: 'geojson',
-        data: createGrid(aorBounds),
+        data: createGrid(scenarioBounds),
       })
       map.addLayer({
         id: 'mgrs-grid-line',
@@ -406,7 +377,7 @@ export function AorMap({
 
       map.addSource('relay-route', {
         type: 'geojson',
-        data: createRoute([]),
+        data: createRoute(scenarioRoute),
       })
       map.addLayer({
         id: 'relay-route-line',
@@ -554,6 +525,66 @@ export function AorMap({
       source.setData(signalFeatures)
     }
   }, [isMapReady, signalFeatures])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !isMapReady) {
+      return
+    }
+
+    const zoneSource = map.getSource('aor-zone') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    const gridSource = map.getSource('mgrs-grid') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    const routeSource = map.getSource('relay-route') as
+      | maplibregl.GeoJSONSource
+      | undefined
+
+    zoneSource?.setData(createAorPolygon(scenarioBounds))
+    gridSource?.setData(createGrid(scenarioBounds))
+    routeSource?.setData(createRoute(scenarioRoute))
+    const { width, height } = map.getContainer().getBoundingClientRect()
+    const isWide = width >= 1080 && height >= 560
+    map.fitBounds(
+      [
+        [scenarioBounds.west, scenarioBounds.south],
+        [scenarioBounds.east, scenarioBounds.north],
+      ],
+      {
+        animate: true,
+        duration: 900,
+        maxZoom: 12,
+        padding: isWide
+          ? { top: 96, right: 420, bottom: 260, left: 360 }
+          : { top: 72, right: 48, bottom: 96, left: 48 },
+      },
+    )
+  }, [isMapReady, scenario.id, scenarioBounds, scenarioRoute])
+
+  useEffect(() => {
+    const map = mapRef.current
+    const focusSignal = signals.find((signal) => signal.id === focusSignalId)
+    const focusPoint = focusSignal ? signalCoordinate(focusSignal) : null
+    if (
+      !map ||
+      !isMapReady ||
+      !focusPoint ||
+      focusRequestId === 0 ||
+      handledFocusRequestRef.current === focusRequestId
+    ) {
+      return
+    }
+
+    handledFocusRequestRef.current = focusRequestId
+    map.flyTo({
+      center: focusPoint,
+      duration: 650,
+      essential: true,
+      zoom: Math.max(map.getZoom(), 11.5),
+    })
+  }, [focusRequestId, focusSignalId, isMapReady, signals])
 
   const switchBasemap = (nextBasemap: Basemap) => {
     const map = mapRef.current

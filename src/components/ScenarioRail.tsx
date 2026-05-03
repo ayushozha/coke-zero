@@ -1,31 +1,65 @@
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { MissionSummary } from './MissionSummary'
+import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
+import type { PlaybackStatus } from '../types/playback'
+import type { Attribution, Decision, Signal, UIEvent } from '../types/canopy'
 
 type ScenarioRailProps = {
   activeScenarioId: string
+  attribution: Attribution | null
+  decision: Decision | null
+  latestSignal: Signal | null
   onSelectScenario: (scenarioId: string) => void
+  offsets: number[]
+  playback: PlaybackStatus
   scenarios: ScenarioDefinition[]
+  signalCount: number
+  uiEvent?: UIEvent | null
   collapsed?: boolean
 }
 
 const familyLabel = (family: ScenarioDefinition['family']) => {
   if (family === 'iran') {
-    return 'Iran sim'
+    return 'CENTCOM'
   }
   if (family === 'army') {
-    return 'Army sim'
+    return 'Army'
   }
-  return 'Reg sim'
+  return 'Regional'
 }
 
 export function ScenarioRail({
   activeScenarioId,
+  attribution,
+  decision,
+  latestSignal,
   onSelectScenario,
+  offsets,
+  playback,
   scenarios,
+  signalCount,
+  uiEvent = null,
   collapsed = false,
 }: ScenarioRailProps) {
   const activeScenario =
     scenarios.find((scenario) => scenario.id === activeScenarioId) ??
     scenarios[0]
+  const completedInjects = activeScenario
+    ? Math.min(
+        activeScenario.signals.length,
+        Math.max(
+          1,
+          offsets.filter((offset) => offset <= playback.elapsedMs).length,
+        ),
+      )
+    : 0
+  const currentSignal =
+    activeScenario?.signals[Math.max(0, completedInjects - 1)] ?? null
+  const currentSummary = currentSignal
+    ? commanderSignalSummary(currentSignal)
+    : null
+  const activeDomains =
+    activeScenario?.domains.map(domainLabel).join(' / ') ?? 'No domains'
 
   return (
     <aside
@@ -33,27 +67,17 @@ export function ScenarioRail({
       aria-label="Scenario library"
       aria-hidden={collapsed}
     >
-      <div className="scenario-rail__header">
-        <span>Scenario Stack</span>
-        <strong>{scenarios.length} simulations loaded</strong>
-        <div className="scenario-rail__legend" aria-hidden="true">
-          <i className="scenario-rail__key scenario-rail__key--iran">Iran sim</i>
-          <i className="scenario-rail__key scenario-rail__key--army">Army sim</i>
-          <i className="scenario-rail__key scenario-rail__key--regional">
-            Reg sim
-          </i>
-        </div>
-      </div>
-
       {activeScenario ? (
         <div className={`scenario-rail__current scenario-rail__current--${activeScenario.family}`}>
-          <span>Current scenario</span>
+          <span>{familyLabel(activeScenario.family)} scenario</span>
           <strong>{activeScenario.shortName}</strong>
-          <p>{activeScenario.theater}</p>
+          <p>{currentSummary?.oneLine ?? activeScenario.objective}</p>
           <em>
-            {activeScenario.signals.length.toString().padStart(2, '0')} reports /{' '}
-            {activeScenario.domains.length} domains
+            {completedInjects.toString().padStart(2, '0')} /{' '}
+            {activeScenario.signals.length.toString().padStart(2, '0')} reports
+            · {activeScenario.theater}
           </em>
+          <small>{activeDomains}</small>
         </div>
       ) : null}
 
@@ -81,10 +105,17 @@ export function ScenarioRail({
         })}
       </nav>
 
-      <div className="scenario-rail__footer">
-        <span>Replay source</span>
-        <strong>Scenario JSONL</strong>
-      </div>
+      {activeScenario ? (
+        <MissionSummary
+          attribution={attribution}
+          compact
+          decision={decision}
+          latestSignal={latestSignal}
+          scenario={activeScenario}
+          signalCount={signalCount}
+          uiEvent={uiEvent}
+        />
+      ) : null}
     </aside>
   )
 }

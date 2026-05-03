@@ -171,7 +171,7 @@ export function EmbeddingViz({ compact = false }: Props) {
           <span>·</span>
           <span>{snapshot.embedding_dim}-dim</span>
           <span>·</span>
-          <span>sim ≥ {snapshot.similarity_threshold.toFixed(2)}</span>
+          <span>similarity ≥ {snapshot.similarity_threshold.toFixed(2)}</span>
         </div>
       ) : null}
     </section>
