@@ -170,15 +170,23 @@ const sourceAliases: Record<string, string> = {
   'brigade-satcom-controller': 'Brigade SATCOM controller',
   'brigade-siem': 'Brigade cyber sensor',
   'brigade-spectrum-team': 'Brigade EW team',
+  'bde-spectrum-team': 'Brigade EW team',
+  'bde-siem': 'Brigade cyber sensor',
+  'cached-aor-terrain': 'Terrain model',
   'canopy-correlation-engine': 'CANOPY mission cell',
   'convoy-pnt-health-monitor': 'Convoy GPS monitor',
+  'gateway-siem': 'Gateway cyber sensor',
   'gnss-integrity-fusion': 'GPS integrity fusion',
   'gnss-integrity-monitor': 'GPS integrity monitor',
+  'gnss-monitor-guam': 'Guam GPS monitor',
   'gnss-monitor-luzon': 'Luzon GPS monitor',
   'joint-spectrum-operations-cell': 'Joint EW cell',
+  'leo-custody-track': 'LEO custody track',
+  'leo-telemetry-downlink': 'LEO telemetry monitor',
   'orbit-pass-screen': 'Space tracking cell',
   'rpo-close-approach-overlay': 'Space tracking cell',
   'satcom-network-controller': 'SATCOM controller',
+  'space-track-cache': 'Space tracking cell',
   'spectrum-monitor-guam': 'Guam EW monitor',
   'telemetry-quality-monitor': 'Telemetry monitor',
   'uas-swarm-controller': 'UAS swarm controller',
@@ -241,6 +249,20 @@ const clampOneLine = (value: string, maxLength = 112) => {
   return `${clipped.slice(0, clipped.lastIndexOf(' '))}.`
 }
 
+const titleCaseSlug = (value: string) =>
+  value
+    .replace(/^bde\b/i, 'brigade')
+    .replace(/^gnss\b/i, 'gps')
+    .replace(/^uas\b/i, 'drone')
+    .replaceAll(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase())
+    .replace(/\bGps\b/g, 'GPS')
+    .replace(/\bEw\b/g, 'EW')
+    .replace(/\bUas\b/g, 'UAS')
+    .replace(/\bLeo\b/g, 'LEO')
+    .replace(/\bSatcom\b/g, 'SATCOM')
+    .replace(/\bSiem\b/g, 'SIEM')
+
 const shortActionByDomain: Record<Domain, string> = {
   orbit: 'watch space support',
   sda: 'keep custody in view',
@@ -257,10 +279,10 @@ const shortActionByDomain: Record<Domain, string> = {
 const friendlySourceLabel = (signal: Signal) => {
   const asset = signal.payload.asset
   if (typeof asset === 'string') {
-    return assetAliases[asset] ?? asset.replaceAll('-', ' ')
+    return assetAliases[asset] ?? titleCaseSlug(asset)
   }
 
-  return sourceAliases[signal.source] ?? signal.source.replaceAll('-', ' ')
+  return sourceAliases[signal.source] ?? titleCaseSlug(signal.source)
 }
 
 const oneLineForSignal = (signal: Signal) => {
@@ -399,6 +421,8 @@ const oneLineForSignal = (signal: Signal) => {
       return 'Human report flags imagery demand; corroborate before moving.'
     case 'route_chokepoint_check':
       return 'Route chokepoints make GPS timing riskier; prep alternate route.'
+    case 'convoy_timing_risk':
+      return 'Convoy timing risk is rising; hold GPS-dependent movement until cross-checks agree.'
     case 'local_route_report':
       return 'Route congestion is building; decide hold or release soon.'
     case 'convoy_release_update':
@@ -432,6 +456,16 @@ const oneLineForSignal = (signal: Signal) => {
       return 'Base warning and sensor custody held through degraded space support.'
     case 'commander_orbit_cue':
       return 'Orbit cue is a watch item, not attribution; protect routing.'
+    case 'orbital_setup':
+      return 'Baseline satellite pass is established; watch for support changes.'
+    case 'orbital_context_shift':
+      return 'Satellite geometry now matters to the ground operation; refresh support timing.'
+    case 'telemetry_update':
+      return 'Drone telemetry baseline is established; watch for drift or dropouts.'
+    case 'ground_segment_baseline':
+      return 'Gateway baseline is established; compare new anomalies against this state.'
+    case 'public_report':
+      return 'Public reporting adds context; do not treat it as proof.'
     case 'missile_uas_capability_context':
       return 'Missile/UAS threat raises need for warning, GPS, ISR, and SATCOM.'
     case 'counterspace_capability_context':
@@ -443,7 +477,7 @@ const oneLineForSignal = (signal: Signal) => {
     case 'blockade_notice':
       return 'Theater warning starts the convoy space-support clock.'
     default:
-      return `${plainEventName(signal)}; ${shortActionByDomain[signal.domain]}.`
+      return `${signal.payload.summary}; ${shortActionByDomain[signal.domain]}.`
     }
   })()
 
@@ -464,7 +498,7 @@ export function commanderSignalSummary(signal: Signal): {
   const copy = domainCopy[signal.domain]
   const confidence = Math.round(signal.confidence * 100)
   const observables = signal.payload.observables
-  const demoAction =
+  const operationalAction =
     typeof observables?.demo_action === 'string'
       ? observables.demo_action.replaceAll('_', ' ')
       : null
@@ -472,7 +506,7 @@ export function commanderSignalSummary(signal: Signal): {
     typeof observables?.space_dependency === 'string'
       ? observables.space_dependency
       : null
-  const action = demoAction ?? actionByDomain[signal.domain]
+  const action = operationalAction ?? actionByDomain[signal.domain]
 
   return {
     label: copy.label,

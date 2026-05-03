@@ -45,7 +45,7 @@ export function EventCard({ event, onClick }: Props) {
       <div className="event-card__top">
         <span className="event-card__severity">{event.severity}</span>
         {event.demoBeat ? (
-          <span className="event-card__beat">Beat {event.demoBeat}</span>
+          <span className="event-card__beat">Phase {event.demoBeat}</span>
         ) : null}
         <span className="event-card__time">{formatTime(event.timestamp)}</span>
       </div>

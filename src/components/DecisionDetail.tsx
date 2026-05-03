@@ -30,7 +30,7 @@ export function DecisionDetail() {
     <div className="detail-panel">
       <div className="detail-panel__head">
         <span>
-          Detail · {uiEvent.demoBeat ? `Beat ${uiEvent.demoBeat} · ` : ""}
+          Detail · {uiEvent.demoBeat ? `Phase ${uiEvent.demoBeat} · ` : ""}
           {uiEvent.severity.toUpperCase()}
         </span>
         <button

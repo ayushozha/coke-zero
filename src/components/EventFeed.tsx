@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import {
+  commanderSignalSummary,
+  domainLabel,
+  plainEventName,
+} from '../lib/commanderLanguage'
 import type { Signal } from '../types/canopy'
 
 type EventFeedProps = {
@@ -65,28 +70,6 @@ const formatTime = (ts: string, includeSeconds = false) =>
     second: includeSeconds ? '2-digit' : undefined,
   })
 
-const compactSource = (source: string) =>
-  source
-    .replace(/^brigade-/i, 'bde-')
-    .replace(/^canopy-/i, 'canopy-')
-    .replace(/controller/gi, 'ctrl')
-    .replace(/commercial/gi, 'com')
-    .replace(/\s+/g, '_')
-    .toLowerCase()
-
-const compactPayload = (signal: Signal) => {
-  const eventType = signal.payload.event_type
-  const asset = signal.payload.asset
-  const summary = signal.payload.summary
-  const fragments = [eventType, asset, summary].filter(Boolean)
-
-  if (fragments.length) {
-    return fragments.join(' | ')
-  }
-
-  return signal.source
-}
-
 const numericSignalSequence = (signal: Signal) => {
   const streamSequence = signal.payload.observables?.stream_sequence
   if (typeof streamSequence === 'number') {
@@ -126,9 +109,9 @@ const buildDummyDecisionFlow = (
   const schemaAccepted = sequence % 9 !== 0
   const actionThreshold = signal.domain === 'sda' ? 0.84 : 0.86
   const actionReady = signal.confidence >= actionThreshold
-  const source = compactSource(signal.source)
+  const source = commanderSignalSummary(signal).sourceLabel
   const confidence = signal.confidence.toFixed(2)
-  const baseDetail = `${signal.domain} / ${source} / conf=${confidence}`
+  const baseDetail = `${domainLabel(signal.domain)} / ${source} / confidence ${confidence}`
   const frames: DecisionFlowFrame[] = [
     {
       activeEdges: ['signal-schema'],
@@ -371,7 +354,7 @@ export function EventFeed({
     activeView === 'raw'
       ? isLive
         ? 'live'
-        : 'demo'
+        : 'scenario'
       : activeView === 'flow'
         ? 'flow'
         : feedState.toLowerCase()
@@ -379,7 +362,7 @@ export function EventFeed({
     activeView === 'raw'
       ? isLive
         ? 'LIVE BUS'
-        : 'DEMO BUS'
+        : 'FEED'
       : activeView === 'flow'
         ? 'FLOW'
         : feedState
@@ -426,7 +409,7 @@ export function EventFeed({
     >
       <div className="event-feed__header">
         <div>
-          <span>ISR / EW / CSM</span>
+          <span>Operational feed</span>
           <h2>Signal Stream</h2>
         </div>
         <div className="event-feed__header-actions">
@@ -732,7 +715,7 @@ export function EventFeed({
             <span>signals.* topics</span>
             <span>{arrivalTimes.length} events/min</span>
             <span>{activeDomains} domains active</span>
-            <strong>{isLive ? 'live' : 'demo'}</strong>
+            <strong>{isLive ? 'engine live' : 'feed'}</strong>
             <div
               className="event-feed__sparkline"
               aria-label="Event rate over the last minute"
@@ -757,6 +740,7 @@ export function EventFeed({
                 const priority = priorityForSignal(signal)
                 const isNewest = index === 0
                 const isSelected = signal.id === selectedSignalId
+                const summary = commanderSignalSummary(signal)
 
                 return (
                   <article
@@ -777,16 +761,19 @@ export function EventFeed({
                         {formatTime(signal.ts, true)}
                       </span>
                       <span className="event-feed__raw-domain">
-                        {signal.domain}
+                        {domainLabel(signal.domain)}
                       </span>
                       <span className="event-feed__raw-source">
-                        {compactSource(signal.source)}
+                        {summary.sourceLabel}
                       </span>
                       <span className="event-feed__raw-payload">
-                        {compactPayload(signal)}
+                        {summary.oneLine}
                       </span>
                       <span className="event-feed__raw-confidence">
-                        conf={signal.confidence.toFixed(2)}
+                        {Math.round(signal.confidence * 100)}%
+                      </span>
+                      <span className="event-feed__raw-event">
+                        {plainEventName(signal)}
                       </span>
                     </button>
                     {isSelected ? (

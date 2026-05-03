@@ -23,6 +23,7 @@ export function MapStage({
   signals,
 }: MapStageProps) {
   const [viewMode, setViewMode] = useState<'nav' | 'globe'>('nav')
+  const [focusRequestId, setFocusRequestId] = useState(0)
   const isGlobe = viewMode === 'globe'
   const latestSignal = signals[0] ?? null
   const effectState = signalEffectState(latestSignal)
@@ -49,12 +50,20 @@ export function MapStage({
         <AorMap
           correlatedSignalIds={correlatedSignalIds}
           focusSignalId={focusSignalId}
+          focusRequestId={focusRequestId}
           playback={playback}
           scenario={scenario}
           signals={signals}
         />
       )}
-      <MissionAlert playback={playback} signal={latestSignal} />
+      <MissionAlert
+        onFocusLocation={() => {
+          setViewMode('nav')
+          setFocusRequestId((current) => current + 1)
+        }}
+        playback={playback}
+        signal={latestSignal}
+      />
       <div
         className={
           isGlobe

@@ -33,6 +33,7 @@ import {
   type N2YOLayerState,
   type N2YOSatelliteFamily,
 } from '../lib/n2yoSatelliteLayer'
+import { commanderSignalSummary } from '../lib/commanderLanguage'
 import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
@@ -161,9 +162,7 @@ const colorForSignal = (signal: Signal) => {
 }
 
 const signalLabel = (signal: Signal) =>
-  signal.location.label ??
-  signal.payload.asset ??
-  signal.payload.event_type.replaceAll('_', ' ').toUpperCase()
+  commanderSignalSummary(signal).location
 
 const signalPoint = (signal: Signal): MapPoint | null => {
   let lon = signal.location.lng
@@ -623,7 +622,7 @@ export function CesiumGlobe({
             style: LabelStyle.FILL,
             text: 'FOCUS',
           },
-          description: signal.payload.summary,
+          description: commanderSignalSummary(signal).oneLine,
         })
         signalEntityIdsRef.current.add(entityId)
 
@@ -653,7 +652,7 @@ export function CesiumGlobe({
             outline: true,
             outlineColor: color.withAlpha(0.8),
           },
-          description: signal.payload.summary,
+          description: commanderSignalSummary(signal).oneLine,
         })
         signalEntityIdsRef.current.add(entityId)
       }

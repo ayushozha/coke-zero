@@ -75,7 +75,6 @@ export function ScenarioTimeline({
   const currentSummary = currentSignal
     ? commanderSignalSummary(currentSignal)
     : null
-  const nextSummary = nextSignal ? commanderSignalSummary(nextSignal) : null
   const nextLabel = playback
     ? playback.nextInjectMs === null
       ? 'HOLD'
@@ -83,11 +82,8 @@ export function ScenarioTimeline({
     : nextSignal
       ? 'QUEUED'
       : 'HOLD'
-  const visibleStart = Math.max(
-    0,
-    Math.min(currentIndex - 1, totalInjects - 4),
-  )
-  const visibleSignals = scenario.signals.slice(visibleStart, visibleStart + 4)
+  const visibleStart = Math.max(0, completedInjects - 4)
+  const visibleSignals = scenario.signals.slice(visibleStart, completedInjects)
 
   return (
     <section className="panel scenario-timeline" aria-label="Scenario timeline">
@@ -104,7 +100,7 @@ export function ScenarioTimeline({
 
       <div className="scenario-timeline__meta">
         <span>
-          <b>{playback ? 'SIM PLAYBACK' : 'LIVE INGEST'}</b>
+          <b>{playback ? 'FEED PLAYBACK' : 'LIVE INGEST'}</b>
           {phase}
         </span>
         <span>
@@ -122,7 +118,7 @@ export function ScenarioTimeline({
           className="scenario-timeline__rail-fill"
           style={{ width: `${Math.min(progress, 100)}%` }}
         />
-        {scenario.signals.map((signal, index) => {
+        {scenario.signals.slice(0, completedInjects).map((signal, index) => {
           const offset = offsets[index] ?? 0
           const left = Math.min(
             100,
@@ -143,14 +139,28 @@ export function ScenarioTimeline({
             />
           )
         })}
+        {nextIndex >= 0 ? (
+          <i
+            className="scenario-timeline__marker scenario-timeline__marker--next"
+            style={{
+              left: `${Math.min(
+                100,
+                Math.max(
+                  0,
+                  ((offsets[nextIndex] ?? 0) / Math.max(durationMs, 1)) * 100,
+                ),
+              )}%`,
+            }}
+          />
+        ) : null}
       </div>
 
       <div className="scenario-timeline__focus">
         <span>Current phase</span>
-        <strong>{currentSummary?.headline ?? scenario.objective}</strong>
+        <strong>{currentSummary?.oneLine ?? scenario.objective}</strong>
         <p>
-          {nextSummary
-            ? `Next: ${nextSummary.detail}`
+          {nextSignal
+            ? 'Next update pending.'
             : currentSummary?.action ?? 'Scenario complete; hold commander view.'}
         </p>
       </div>
@@ -177,10 +187,17 @@ export function ScenarioTimeline({
               <span className="scenario-timeline__row-domain">
                 {domainLabel(signal.domain)}
               </span>
-              <strong>{summary.headline}</strong>
+              <strong>{summary.oneLine}</strong>
             </li>
           )
         })}
+        {nextSignal ? (
+          <li className="scenario-timeline__row scenario-timeline__row--next">
+            <span className="scenario-timeline__row-time">{nextLabel}</span>
+            <span className="scenario-timeline__row-domain">Pending</span>
+            <strong>Next update pending.</strong>
+          </li>
+        ) : null}
       </ol>
     </section>
   )

@@ -1,9 +1,10 @@
-import { commanderSignalSummary } from '../lib/commanderLanguage'
+import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
 import { signalEffectLabel, signalEffectState } from '../lib/signalEffects'
 import type { Signal } from '../types/canopy'
 import type { PlaybackStatus } from '../types/playback'
 
 type MissionAlertProps = {
+  onFocusLocation?: () => void
   playback: PlaybackStatus | null
   signal: Signal | null
 }
@@ -20,7 +21,11 @@ const formatDuration = (milliseconds: number) => {
   return `${minutes}M`
 }
 
-export function MissionAlert({ playback, signal }: MissionAlertProps) {
+export function MissionAlert({
+  onFocusLocation,
+  playback,
+  signal,
+}: MissionAlertProps) {
   if (!signal) {
     return null
   }
@@ -42,9 +47,18 @@ export function MissionAlert({ playback, signal }: MissionAlertProps) {
       <p>{location}</p>
       <footer className="mission-alert__telemetry">
         <b>{playback ? `MET ${formatDuration(playback.elapsedMs)}` : 'LIVE'}</b>
-        <i>{signal.domain.toUpperCase()}</i>
+        <i>{domainLabel(signal.domain)}</i>
         <i>{Math.round(signal.confidence * 100)}% CONF</i>
       </footer>
+      {onFocusLocation ? (
+        <button
+          className="mission-alert__focus"
+          onClick={onFocusLocation}
+          type="button"
+        >
+          Focus map
+        </button>
+      ) : null}
     </aside>
   )
 }
