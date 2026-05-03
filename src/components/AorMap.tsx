@@ -6,7 +6,7 @@ import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
-type Basemap = 'imagery' | 'terrain'
+type Basemap = 'imagery' | 'muted'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
@@ -310,6 +310,7 @@ export function AorMap({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const signalMarkersRef = useRef<maplibregl.Marker[]>([])
+  const simCursorRef = useRef<maplibregl.Marker | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
@@ -423,16 +424,6 @@ export function AorMap({
             attribution:
               'Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
           },
-          esriTerrain: {
-            type: 'raster',
-            tiles: [
-              'https://services.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution:
-              'Sources: Esri, USGS, NOAA, Garmin, FAO, NPS, and the GIS User Community',
-          },
         },
         layers: [
           {
@@ -448,18 +439,18 @@ export function AorMap({
             },
           },
           {
-            id: 'terrain',
+            id: 'muted',
             type: 'raster',
-            source: 'esriTerrain',
+            source: 'esriWorldImagery',
             layout: {
               visibility: 'none',
             },
             paint: {
-              'raster-brightness-max': 0.5,
+              'raster-brightness-max': 0.46,
               'raster-brightness-min': 0.02,
-              'raster-contrast': 0.18,
+              'raster-contrast': 0.26,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.75,
+              'raster-saturation': -0.92,
             },
           },
         ],
@@ -559,6 +550,8 @@ export function AorMap({
     return () => {
       signalMarkersRef.current.forEach((marker) => marker.remove())
       signalMarkersRef.current = []
+      simCursorRef.current?.remove()
+      simCursorRef.current = null
       map.remove()
       mapRef.current = null
       setIsMapReady(false)
@@ -599,6 +592,40 @@ export function AorMap({
     ;(map.getSource('relay-route') as maplibregl.GeoJSONSource | undefined)?.setData(
       createRoute(activeRoutePoints),
     )
+  }, [activeRoutePoints, isMapReady])
+
+  useEffect(() => {
+    const map = mapRef.current
+    const cursorPoint = activeRoutePoints.at(-1)
+    if (!map || !isMapReady || !cursorPoint) {
+      simCursorRef.current?.remove()
+      simCursorRef.current = null
+      return
+    }
+
+    if (!simCursorRef.current) {
+      const marker = document.createElement('div')
+      marker.className = 'aor-sim-cursor'
+
+      const glyph = document.createElement('span')
+      glyph.className = 'aor-sim-cursor__glyph'
+      marker.appendChild(glyph)
+
+      const label = document.createElement('span')
+      label.className = 'aor-sim-cursor__label'
+      label.textContent = 'MISSION TRACK'
+      marker.appendChild(label)
+
+      simCursorRef.current = new maplibregl.Marker({
+        anchor: 'center',
+        element: marker,
+      })
+        .setLngLat(cursorPoint)
+        .addTo(map)
+      return
+    }
+
+    simCursorRef.current.setLngLat(cursorPoint)
   }, [activeRoutePoints, isMapReady])
 
   useEffect(() => {
@@ -659,9 +686,9 @@ export function AorMap({
       nextBasemap === 'imagery' ? 'visible' : 'none',
     )
     map.setLayoutProperty(
-      'terrain',
+      'muted',
       'visibility',
-      nextBasemap === 'terrain' ? 'visible' : 'none',
+      nextBasemap === 'muted' ? 'visible' : 'none',
     )
     setBasemap(nextBasemap)
   }
@@ -678,7 +705,9 @@ export function AorMap({
         <em className={`aor-map__posture aor-map__posture--${leadPriority}`}>
           {leadSignal
             ? `${priorityLabel(leadPriority)} / ${labelForSignal(leadSignal)}`
-            : 'MONITOR / NO LOCAL SIGNALS'}
+            : activeRoutePoints.length
+              ? 'TRACK / MISSION CLOCK'
+              : 'MONITOR / AWAITING LOCAL SIGNALS'}
         </em>
       </div>
       <div className="aor-map__legend" aria-hidden="true">
@@ -716,11 +745,11 @@ export function AorMap({
           Imagery
         </button>
         <button
-          className={basemap === 'terrain' ? 'is-active' : ''}
-          onClick={() => switchBasemap('terrain')}
+          className={basemap === 'muted' ? 'is-active' : ''}
+          onClick={() => switchBasemap('muted')}
           type="button"
         >
-          Terrain
+          Muted
         </button>
       </div>
       <div className="aor-map__scale">

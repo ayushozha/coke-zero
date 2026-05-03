@@ -1,11 +1,29 @@
 import type { Signal } from '../types/canopy'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
+import type { PlaybackStatus } from '../types/playback'
 
 type EventFeedProps = {
+  playback: PlaybackStatus | null
   signals: Signal[]
 }
 
-export function EventFeed({ signals }: EventFeedProps) {
+const formatDuration = (milliseconds: number) => {
+  if (milliseconds > 0 && milliseconds < 60 * 1000) {
+    return '<1M'
+  }
+
+  const totalMinutes = Math.max(0, Math.round(milliseconds / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours > 0) {
+    return `${hours}H ${minutes.toString().padStart(2, '0')}M`
+  }
+
+  return `${minutes}M`
+}
+
+export function EventFeed({ playback, signals }: EventFeedProps) {
   const latestSignal = signals[0] ?? null
   const latestSummary = latestSignal
     ? commanderSignalSummary(latestSignal)
@@ -28,7 +46,7 @@ export function EventFeed({ signals }: EventFeedProps) {
         {latestSignal && latestSummary ? (
           <div className="event-feed__update-cue" key={latestSignal.id}>
             <span>New report</span>
-            <strong>{latestSummary.label}</strong>
+            <strong>{latestSummary.detail}</strong>
           </div>
         ) : null}
         <div className="event-feed__status">
@@ -36,6 +54,16 @@ export function EventFeed({ signals }: EventFeedProps) {
           <strong>{signals.length.toString().padStart(2, '0')}</strong>
         </div>
       </div>
+      {playback ? (
+        <div className="event-feed__clock">
+          <span>MET {formatDuration(playback.elapsedMs)}</span>
+          <span>
+            {playback.nextInjectMs === null
+              ? 'ENDEX hold'
+              : `Next inject ${formatDuration(playback.nextInjectMs)}`}
+          </span>
+        </div>
+      ) : null}
       <div
         className="event-feed__stream"
         role="log"
@@ -71,9 +99,10 @@ export function EventFeed({ signals }: EventFeedProps) {
               </div>
               <div className="event-feed__meaning">
                 <strong>{summary.headline}</strong>
-                <p>{summary.whyItMatters}</p>
+                <p>{summary.detail}</p>
               </div>
               <div className="event-feed__entry-meta">
+                <span>{summary.sourceLabel}</span>
                 <span>{summary.location}</span>
                 <span>{summary.action}</span>
               </div>
