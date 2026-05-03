@@ -4,8 +4,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from collections.abc import Callable
+
 from halo.services.bus import Bus
-from halo.services.schemas.events import Anomaly, Signal
+from halo.services.schemas.events import Anomaly, Domain, Signal
+from halo.services.traces import Tracer
 
 log = logging.getLogger(__name__)
 
@@ -193,8 +196,16 @@ class FusionService:
     produces an `rf_anomaly` directly and also feeds the orbital correlator).
     """
 
-    def __init__(self, bus: Bus) -> None:
+    def __init__(
+        self,
+        bus: Bus,
+        *,
+        tracer: Tracer | None = None,
+        blocked_domains: Callable[[], set[Domain]] | None = None,
+    ) -> None:
         self._bus = bus
+        self._tracer = tracer
+        self._blocked_domains = blocked_domains
         self._state = _State()
 
     async def run(self) -> None:
@@ -215,6 +226,23 @@ class FusionService:
 
         event_type = signal.payload.event_type
         domain = signal.domain
+
+        # Stress mode: drop signals from blocked domains entirely. The trace
+        # makes the loss visible to the operator so the engine doesn't go
+        # silent without explanation.
+        if self._blocked_domains is not None:
+            blocked = self._blocked_domains()
+            if domain in blocked:
+                if self._tracer is not None:
+                    await self._tracer.emit(
+                        "stress",
+                        "warn",
+                        f"input dropped: {domain} blocked",
+                        ref_id=signal.id,
+                        domain=domain,
+                        event_type=event_type,
+                    )
+                return
 
         if (domain, event_type) in IGNORED_EVENT_TYPES:
             log.debug("fusion: ignoring baseline %s/%s", domain, event_type)
@@ -289,6 +317,16 @@ class FusionService:
             anomaly.kind,
             anomaly.severity,
         )
+        if self._tracer is not None:
+            await self._tracer.emit(
+                "fusion",
+                "info",
+                f"new anomaly: {anomaly.kind} @ severity {anomaly.severity:.2f}",
+                ref_id=anomaly.id,
+                kind=anomaly.kind,
+                severity=anomaly.severity,
+                source_signal=anomaly.source_signal,
+            )
 
     def _build_anomaly(
         self,

@@ -3,6 +3,7 @@ import { ApproveBanner } from '../components/ApproveBanner'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
 import { MissionSummary } from '../components/MissionSummary'
+import { ReasoningPanel } from '../components/ReasoningPanel'
 import { ScenarioRail } from '../components/ScenarioRail'
 import { ScenarioTimeline } from '../components/ScenarioTimeline'
 import { defaultScenario, scenarios } from '../data/scenarioLibrary'
@@ -41,6 +42,11 @@ const buildPlaybackTimeline = (signals: Signal[]) => {
         ? (index / (signals.length - 1)) * durationMs
         : 0
     }
+
+type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
+  confidence: [number, number]
+  cadence?: 'normal' | 'surge'
+}
 
 type DemoSignalTemplate = Omit<MockSignalInput, 'id' | 'ts' | 'confidence'> & {
   confidence: [number, number]

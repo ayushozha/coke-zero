@@ -5,6 +5,7 @@ import type {
   CanopyMessage,
   CanopySocketState,
   Decision,
+  ReasoningTrace,
   Signal,
   UIEvent,
 } from '../types/canopy'
@@ -21,6 +22,7 @@ const initialState: CanopySocketState = {
   attributions: [],
   decisions: [],
   uiEvents: [],
+  traces: [],
   isConnected: false,
   lastError: null,
 }
@@ -39,7 +41,7 @@ function isCanopyMessage(value: unknown): value is CanopyMessage {
   const candidate = value as { type?: unknown; data?: unknown }
   return (
     typeof candidate.type === 'string' &&
-    ['signal', 'anomaly', 'attribution', 'decision', 'ui_event'].includes(
+    ['signal', 'anomaly', 'attribution', 'decision', 'ui_event', 'trace'].includes(
       candidate.type,
     ) &&
     typeof candidate.data === 'object' &&
@@ -80,6 +82,11 @@ function reduceMessage(
       return {
         ...state,
         uiEvents: prependLimited<UIEvent>(state.uiEvents, message.data, 20),
+      }
+    case 'trace':
+      return {
+        ...state,
+        traces: [...state.traces, message.data as ReasoningTrace].slice(-500),
       }
   }
 }
