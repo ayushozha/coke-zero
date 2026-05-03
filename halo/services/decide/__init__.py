@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from halo.services.bus import Bus
 from halo.services.llm import LLMClient
 from halo.services.orbit import (
-    DEFAULT_PLANNING_LEAD_S,
+    MIN_OPERATIONAL_LEAD_S,
     OrbitService,
 )
 from halo.services.schemas.events import Action, Anomaly, Attribution, Decision
@@ -141,14 +141,26 @@ class DecideService:
         if pre_miss_km is None:
             pre_miss_km = 10.0  # placeholder when neither observable is set
 
-        t_burn = _ensure_utc(rpo.ts) + _AUTHORIZATION_LATENCY
         t_tca = _parse_tca(observables.get("time_of_closest_approach"))
-        if t_tca is not None:
-            lead_s = max(0.0, (t_tca - t_burn).total_seconds())
-        else:
-            lead_s = DEFAULT_PLANNING_LEAD_S
+        signal_burn_time = _ensure_utc(rpo.ts) + _AUTHORIZATION_LATENCY
 
-        dv_m_s = self._orbit.recommended_dv(pre_miss_km, lead_s)
+        # The "actual" lead is what the engine would have between the signal
+        # arriving and the close approach. Real conjunction analysis provides
+        # hours of advance notice though, so we floor the lead at
+        # MIN_OPERATIONAL_LEAD_S — that's the planning horizon a real cell
+        # would have. The maneuver math represents what the operator could
+        # achieve with that horizon, not what they could achieve in the
+        # seconds remaining of a compressed scenario timeline.
+        if t_tca is not None:
+            actual_lead_s = max(0.0, (t_tca - signal_burn_time).total_seconds())
+            effective_lead_s = max(actual_lead_s, MIN_OPERATIONAL_LEAD_S)
+            t_burn = t_tca - timedelta(seconds=effective_lead_s)
+        else:
+            actual_lead_s = None
+            effective_lead_s = MIN_OPERATIONAL_LEAD_S
+            t_burn = signal_burn_time
+
+        dv_m_s = self._orbit.recommended_dv(pre_miss_km, effective_lead_s)
 
         try:
             result = self._orbit.simulate_maneuver(
@@ -173,6 +185,9 @@ class DecideService:
             "t_burn_utc": _format_utc(result.t_burn),
             "lead_seconds": round(result.lead_seconds, 0)
             if result.lead_seconds is not None
+            else None,
+            "actual_lead_seconds": round(actual_lead_s, 0)
+            if actual_lead_s is not None
             else None,
         }
         packet["pre_miss_km"] = result.pre_miss_km

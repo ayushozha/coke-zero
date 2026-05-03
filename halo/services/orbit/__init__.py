@@ -17,6 +17,7 @@ __all__ = [
     "DEFAULT_DV_CAP_M_S",
     "DEFAULT_TARGET_MISS_KM",
     "DEFAULT_PLANNING_LEAD_S",
+    "MIN_OPERATIONAL_LEAD_S",
 ]
 
 
@@ -31,10 +32,24 @@ LEO_MEAN_MOTION_RAD_S = 1.08e-3
 DEFAULT_DV_CAP_M_S = 5.0
 DEFAULT_TARGET_MISS_KM = 100.0
 
-# Default lead time used when a close-approach signal arrives without a
-# time_of_closest_approach observable. 90 minutes ≈ one LEO orbit, the
-# horizon over which a single prograde impulse fully accumulates.
-DEFAULT_PLANNING_LEAD_S = 5400.0
+# Minimum planning lead the engine assumes when sizing a maneuver — the
+# horizon a real conjunction-analysis cell typically has between threat
+# detection and time-of-closest-approach. USSPACECOM screening services
+# routinely produce 24–48 h of advance notice for high-interest conjunctions;
+# we pick 6 h as a conservative floor that still credits the operator for
+# standard tactical planning.
+#
+# Used in two places:
+#   • DecideService: ``effective_lead = max(TCA-derived_lead, this)``.
+#     Scenarios that compress the timeline (TCA in 7 minutes) still get a
+#     realistic recommendation, framed as "what would be achievable with the
+#     normal advance warning."
+#   • OrbitService.simulate_maneuver: fallback when no TCA is observable.
+MIN_OPERATIONAL_LEAD_S = 6 * 3600.0
+
+# Backward-compat alias retained so external callers don't break — both names
+# refer to the same operational floor.
+DEFAULT_PLANNING_LEAD_S = MIN_OPERATIONAL_LEAD_S
 
 
 @dataclass(frozen=True)

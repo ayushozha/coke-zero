@@ -88,22 +88,30 @@ EXPECTED_UI_EVENT_TITLE = "Active defense escort recommended — China"
 # Maneuver enrichment from DecideService + OrbitService. The first
 # orbital_rpo_risk anomaly in this scenario fires from army-chain-001 — a
 # screening_overlay signal whose observables carry range_km=18.5 and
-# time_of_closest_approach=2026-06-18T15:55:30Z. The signal arrives at
-# 15:40:00Z, the engine adds a 60 s authorization buffer (t_burn=15:41:00Z),
-# lead = 870 s. Real Clohessy-Wiltshire physics: with a 5 m/s prograde Δv
-# (capped) over an 870 s lead, you gain ~4.2 km of LVLH drift, which bumps
-# the miss from 18.5 → 19.0 km. Honest physics, modest gain — bigger numbers
-# come from longer-lead scenarios.
+# time_of_closest_approach=2026-06-18T15:55:30Z (TCA 14.5 minutes after the
+# signal). The engine floors the planning lead at MIN_OPERATIONAL_LEAD_S =
+# 6 h to reflect realistic conjunction-warning timelines, so:
+#   • effective_lead = 21600 s (6 h)
+#   • t_burn         = TCA - 6 h = 09:55:30Z (the time the operator would
+#                      have needed to burn given standard advance notice)
+#   • actual_lead    = 870 s (kept in the packet as the literal scenario
+#                      timing, for audit)
+#
+# Clohessy-Wiltshire over a 6 h lead with ~1.5 m/s prograde Δv yields ~100
+# km of along-track drift, so the recommender hits its 100 km target with a
+# small burn. Numbers are uniform across scenarios because they all converge
+# on "what's achievable with realistic ops planning."
 EXPECTED_MANEUVER_FRIENDLY = "CANOPY-LEO-07"
 EXPECTED_MANEUVER_INSPECTOR = "UNKNOWN-RSO-441"
 EXPECTED_PRE_MISS_KM = 18.5
-EXPECTED_POST_MISS_KM = 19.0
-EXPECTED_DV_M_S = 5.0
-EXPECTED_LEAD_SECONDS = 870.0
-EXPECTED_BURN_UTC = "2026-06-18T15:41:00Z"
+EXPECTED_POST_MISS_KM = 100.3
+EXPECTED_DV_M_S = 1.44
+EXPECTED_LEAD_SECONDS = 21600.0
+EXPECTED_ACTUAL_LEAD_SECONDS = 870.0
+EXPECTED_BURN_UTC = "2026-06-18T09:55:30Z"
 EXPECTED_MANEUVER_CLAUSE = (
-    "Recommended maneuver: CANOPY-LEO-07 5.0 m/s burn, "
-    "miss 18.5 → 19.0 km (+0.5 km separation)."
+    "Recommended maneuver with 6 h planning lead: CANOPY-LEO-07 1.44 m/s "
+    "prograde burn, miss 18.5 → 100.3 km (+81.8 km separation)."
 )
 
 
@@ -210,10 +218,15 @@ def test_decision_request_packet_carries_maneuver_math(pipeline_output) -> None:
     assert burn["sat"] == EXPECTED_MANEUVER_FRIENDLY
     assert burn["against"] == EXPECTED_MANEUVER_INSPECTOR
     assert burn["dv_m_s"] == pytest.approx(EXPECTED_DV_M_S)
-    # t_burn_utc = signal.ts + 60 s authorization buffer.
+    # t_burn_utc = TCA - effective_lead. With the 6 h ops floor, t_burn lands
+    # 6 hours before the close approach.
     assert burn["t_burn_utc"] == EXPECTED_BURN_UTC
-    # lead_seconds = TCA - t_burn, used by Clohessy-Wiltshire.
+    # effective lead used by Clohessy-Wiltshire (floored at MIN_OPERATIONAL_LEAD_S)
     assert burn["lead_seconds"] == pytest.approx(EXPECTED_LEAD_SECONDS)
+    # The literal scenario lead is preserved for audit even when floored.
+    assert burn["actual_lead_seconds"] == pytest.approx(
+        EXPECTED_ACTUAL_LEAD_SECONDS
+    )
 
 
 def test_ui_event(pipeline_output) -> None:
