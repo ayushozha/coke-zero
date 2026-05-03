@@ -2,24 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { signalEffectState } from '../lib/signalEffects'
+import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
-type Basemap = 'imagery' | 'streets'
+type Basemap = 'imagery' | 'muted'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  playback: PlaybackStatus | null
+  scenario: ScenarioDefinition
   signals: Signal[]
 }
-
-const aorCenter: [number, number] = [-116.52, 35.02]
-
-const relayRoute: [number, number][] = [
-  [-116.57, 35.0],
-  [-116.55, 35.015],
-  [-116.52, 35.02],
-  [-116.49, 35.035],
-  [-116.46, 35.05],
-]
 
 const aorBounds = {
   west: -116.61,
@@ -28,32 +23,25 @@ const aorBounds = {
   north: 35.08,
 }
 
-const aorContacts = [
-  {
-    id: 'relay-team-2',
-    label: 'RELAY TEAM 2',
-    type: 'friendly',
-    coordinate: [-116.52, 35.02] as [number, number],
-  },
-  {
-    id: 'blos-relay-west',
-    label: 'BLOS RELAY WEST',
-    type: 'asset',
-    coordinate: [-116.547, 35.039] as [number, number],
-  },
-  {
-    id: 'rf-hit-11',
-    label: 'RF HIT 11',
-    type: 'threat',
-    coordinate: [-116.485, 35.012] as [number, number],
-  },
-]
+type AorBounds = typeof aorBounds
 
-const formatMgrs = ([lon, lat]: [number, number]) =>
-  toMgrs([lon, lat], 4).replace(
+const formatMgrs = ([lon, lat]: [number, number]) => {
+  if (
+    !Number.isFinite(lon) ||
+    !Number.isFinite(lat) ||
+    lat < -80 ||
+    lat > 84
+  ) {
+    const latLabel = `${Math.abs(lat).toFixed(2)}${lat >= 0 ? 'N' : 'S'}`
+    const lonLabel = `${Math.abs(lon).toFixed(2)}${lon >= 0 ? 'E' : 'W'}`
+    return `${latLabel} ${lonLabel}`
+  }
+
+  return toMgrs([lon, lat], 4).replace(
     /^(\d{1,2}[A-Z])([A-Z]{2})(\d{4})(\d{4})$/,
     '$1 $2 $3 $4',
   )
+}
 
 const signalPoint = (signal: Signal): [number, number] | null => {
   if (
@@ -64,7 +52,31 @@ const signalPoint = (signal: Signal): [number, number] | null => {
   }
 
   if (!signal.location.mgrs) {
-    return null
+    const match = signal.location.area_wkt?.match(/POLYGON\s*\(\((.+)\)\)/i)
+    if (!match) {
+      return null
+    }
+
+    const points = match[1]
+      .split(',')
+      .map((pair) => pair.trim().split(/\s+/).map(Number))
+      .filter(
+        (point): point is [number, number] =>
+          point.length === 2 &&
+          Number.isFinite(point[0]) &&
+          Number.isFinite(point[1]),
+      )
+
+    if (!points.length) {
+      return null
+    }
+
+    const [lonTotal, latTotal] = points.reduce(
+      ([lonSum, latSum], [lon, lat]) => [lonSum + lon, latSum + lat],
+      [0, 0],
+    )
+
+    return [lonTotal / points.length, latTotal / points.length]
   }
 
   try {
@@ -74,12 +86,6 @@ const signalPoint = (signal: Signal): [number, number] | null => {
     return null
   }
 }
-
-const isInsideAor = ([lon, lat]: [number, number]) =>
-  lon >= aorBounds.west &&
-  lon <= aorBounds.east &&
-  lat >= aorBounds.south &&
-  lat <= aorBounds.north
 
 const labelForSignal = (signal: Signal) =>
   signal.location.label ??
@@ -96,7 +102,39 @@ const priorityForSignal = (signal: Signal) => {
   return 'low'
 }
 
-const createAorPolygon = () =>
+const signalTimeMs = (signal: Signal | undefined) => {
+  const time = Date.parse(signal?.ts ?? '')
+  return Number.isFinite(time) ? time : null
+}
+
+const boundsFromPoints = (points: [number, number][]): AorBounds => {
+  if (!points.length) {
+    return aorBounds
+  }
+
+  const lons = points.map(([lon]) => lon)
+  const lats = points.map(([, lat]) => lat)
+  const west = Math.min(...lons)
+  const east = Math.max(...lons)
+  const south = Math.min(...lats)
+  const north = Math.max(...lats)
+  const lonPad = Math.max((east - west) * 0.28, 0.08)
+  const latPad = Math.max((north - south) * 0.28, 0.08)
+
+  return {
+    west: west - lonPad,
+    south: south - latPad,
+    east: east + lonPad,
+    north: north + latPad,
+  }
+}
+
+const centerFromBounds = (bounds: AorBounds): [number, number] => [
+  (bounds.west + bounds.east) / 2,
+  (bounds.south + bounds.north) / 2,
+]
+
+const createAorPolygon = (bounds: AorBounds) =>
   ({
     type: 'FeatureCollection',
     features: [
@@ -107,11 +145,11 @@ const createAorPolygon = () =>
           type: 'Polygon',
           coordinates: [
             [
-              [aorBounds.west, aorBounds.south],
-              [aorBounds.east, aorBounds.south],
-              [aorBounds.east, aorBounds.north],
-              [aorBounds.west, aorBounds.north],
-              [aorBounds.west, aorBounds.south],
+              [bounds.west, bounds.south],
+              [bounds.east, bounds.south],
+              [bounds.east, bounds.north],
+              [bounds.west, bounds.north],
+              [bounds.west, bounds.south],
             ],
           ],
         },
@@ -119,28 +157,67 @@ const createAorPolygon = () =>
     ],
   }) as GeoJSON.FeatureCollection
 
-const createRoute = () =>
+const createRoute = (points: [number, number][]) =>
   ({
     type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: relayRoute,
-        },
-      },
-    ],
+    features:
+      points.length > 1
+        ? [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: points,
+              },
+            },
+          ]
+        : [],
   }) as GeoJSON.FeatureCollection
 
-const createGrid = () => {
+const interpolatePoint = (
+  start: [number, number],
+  end: [number, number],
+  progress: number,
+): [number, number] => [
+  start[0] + (end[0] - start[0]) * progress,
+  start[1] + (end[1] - start[1]) * progress,
+]
+
+const routeProgressPoints = (
+  points: [number, number][],
+  progress: number,
+) => {
+  if (points.length < 2) {
+    return points
+  }
+
+  const clampedProgress = Math.min(100, Math.max(0, progress))
+  const routePosition = (clampedProgress / 100) * (points.length - 1)
+  const completedSegment = Math.floor(routePosition)
+  const segmentProgress = routePosition - completedSegment
+  const result = points.slice(0, completedSegment + 1)
+
+  if (completedSegment < points.length - 1) {
+    result.push(
+      interpolatePoint(
+        points[completedSegment],
+        points[completedSegment + 1],
+        segmentProgress,
+      ),
+    )
+  }
+
+  return result
+}
+
+const createGrid = (bounds: AorBounds) => {
   const features: GeoJSON.Feature[] = []
   const step = 0.01
 
   for (
-    let lon = Math.ceil(aorBounds.west / step) * step;
-    lon <= aorBounds.east;
+    let lon = Math.ceil(bounds.west / step) * step;
+    lon <= bounds.east;
     lon += step
   ) {
     features.push({
@@ -149,16 +226,16 @@ const createGrid = () => {
       geometry: {
         type: 'LineString',
         coordinates: [
-          [Number(lon.toFixed(5)), aorBounds.south],
-          [Number(lon.toFixed(5)), aorBounds.north],
+          [Number(lon.toFixed(5)), bounds.south],
+          [Number(lon.toFixed(5)), bounds.north],
         ],
       },
     })
   }
 
   for (
-    let lat = Math.ceil(aorBounds.south / step) * step;
-    lat <= aorBounds.north;
+    let lat = Math.ceil(bounds.south / step) * step;
+    lat <= bounds.north;
     lat += step
   ) {
     features.push({
@@ -167,8 +244,8 @@ const createGrid = () => {
       geometry: {
         type: 'LineString',
         coordinates: [
-          [aorBounds.west, Number(lat.toFixed(5))],
-          [aorBounds.east, Number(lat.toFixed(5))],
+          [bounds.west, Number(lat.toFixed(5))],
+          [bounds.east, Number(lat.toFixed(5))],
         ],
       },
     })
@@ -183,23 +260,56 @@ const createGrid = () => {
 export function AorMap({
   correlatedSignalIds,
   focusSignalId,
+  playback,
+  scenario,
   signals,
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
-  const [basemap, setBasemap] = useState<Basemap>('streets')
-  const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
-  const [zoom, setZoom] = useState('15.2')
+  const [basemap, setBasemap] = useState<Basemap>('imagery')
+  const [zoomLevel, setZoomLevel] = useState(15.2)
 
-  const visibleSignals = useMemo(
+  const scenarioCoordinateSignals = useMemo(
+    () =>
+      scenario.signals
+        .map((signal) => ({ point: signalPoint(signal), signal }))
+        .filter(
+          (entry): entry is { point: [number, number]; signal: Signal } =>
+            entry.point !== null,
+        ),
+    [scenario.signals],
+  )
+  const coordinateSignals = useMemo(
     () =>
       signals
         .map((signal) => ({ point: signalPoint(signal), signal }))
         .filter(
           (entry): entry is { point: [number, number]; signal: Signal } =>
-            entry.point !== null && isInsideAor(entry.point),
-        )
+            entry.point !== null,
+        ),
+    [signals],
+  )
+  const routePoints = useMemo(
+    () => scenarioCoordinateSignals.map(({ point }) => point),
+    [scenarioCoordinateSignals],
+  )
+  const activeRoutePoints = useMemo(
+    () =>
+      playback
+        ? routeProgressPoints(routePoints, playback.progress)
+        : coordinateSignals.map(({ point }) => point).reverse(),
+    [coordinateSignals, playback, routePoints],
+  )
+  const operationalBounds = useMemo(
+    () => boundsFromPoints(scenarioCoordinateSignals.map(({ point }) => point)),
+    [scenarioCoordinateSignals],
+  )
+
+  const contactDisplayLimit = zoomLevel >= 12.2 ? 8 : zoomLevel >= 10.4 ? 4 : 2
+  const visibleSignals = useMemo(
+    () =>
+      [...coordinateSignals]
         .sort((a, b) => {
           const focusScore = (signal: Signal) =>
             signal.id === focusSignalId ? 1 : 0
@@ -209,12 +319,16 @@ export function AorMap({
           return (
             focusScore(b.signal) - focusScore(a.signal) ||
             correlatedScore(b.signal) - correlatedScore(a.signal) ||
+            (signalTimeMs(b.signal) ?? 0) - (signalTimeMs(a.signal) ?? 0) ||
             b.signal.confidence - a.signal.confidence
           )
         })
-        .slice(0, 5),
-    [correlatedSignalIds, focusSignalId, signals],
+        .slice(0, contactDisplayLimit),
+    [contactDisplayLimit, coordinateSignals, correlatedSignalIds, focusSignalId],
   )
+  const mapDensity =
+    zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
+  const newestSignalId = signals[0]?.id ?? null
 
   const signalFeatures = useMemo(
     () =>
@@ -248,10 +362,10 @@ export function AorMap({
 
     const map = new maplibregl.Map({
       attributionControl: false,
-      center: aorCenter,
+      center: centerFromBounds(aorBounds),
       container: containerRef.current,
       maxZoom: 19,
-      minZoom: 12,
+      minZoom: 5,
       pitch: 0,
       style: {
         version: 8,
@@ -266,40 +380,33 @@ export function AorMap({
             attribution:
               'Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
           },
-          osmStreets: {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution: 'OpenStreetMap contributors',
-          },
         },
         layers: [
           {
             id: 'imagery',
             type: 'raster',
             source: 'esriWorldImagery',
+            paint: {
+              'raster-brightness-max': 0.64,
+              'raster-brightness-min': 0.03,
+              'raster-contrast': 0.2,
+              'raster-fade-duration': 0,
+              'raster-saturation': -0.22,
+            },
+          },
+          {
+            id: 'muted',
+            type: 'raster',
+            source: 'esriWorldImagery',
             layout: {
               visibility: 'none',
             },
             paint: {
-              'raster-brightness-max': 0.78,
-              'raster-brightness-min': 0.03,
-              'raster-contrast': 0.16,
-              'raster-fade-duration': 0,
-              'raster-saturation': -0.18,
-            },
-          },
-          {
-            id: 'streets',
-            type: 'raster',
-            source: 'osmStreets',
-            paint: {
-              'raster-brightness-max': 0.7,
+              'raster-brightness-max': 0.46,
               'raster-brightness-min': 0.02,
-              'raster-contrast': 0.14,
+              'raster-contrast': 0.26,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.95,
+              'raster-saturation': -0.92,
             },
           },
         ],
@@ -318,15 +425,15 @@ export function AorMap({
       setIsMapReady(true)
       map.addSource('aor-zone', {
         type: 'geojson',
-        data: createAorPolygon(),
+        data: createAorPolygon(aorBounds),
       })
       map.addLayer({
         id: 'aor-zone-fill',
         type: 'fill',
         source: 'aor-zone',
         paint: {
-          'fill-color': '#e05c4f',
-          'fill-opacity': 0.045,
+          'fill-color': '#c9a457',
+          'fill-opacity': 0.012,
         },
       })
       map.addLayer({
@@ -334,30 +441,30 @@ export function AorMap({
         type: 'line',
         source: 'aor-zone',
         paint: {
-          'line-color': '#e05c4f',
-          'line-opacity': 0.64,
-          'line-width': 1.4,
+          'line-color': '#c9a457',
+          'line-opacity': 0.34,
+          'line-width': 0.9,
         },
       })
 
       map.addSource('mgrs-grid', {
         type: 'geojson',
-        data: createGrid(),
+        data: createGrid(aorBounds),
       })
       map.addLayer({
         id: 'mgrs-grid-line',
         type: 'line',
         source: 'mgrs-grid',
         paint: {
-          'line-color': '#ffffff',
-          'line-opacity': 0.22,
-          'line-width': 1,
+          'line-color': '#f5f7f0',
+          'line-opacity': 0.07,
+          'line-width': 0.7,
         },
       })
 
       map.addSource('relay-route', {
         type: 'geojson',
-        data: createRoute(),
+        data: createRoute([]),
       })
       map.addLayer({
         id: 'relay-route-line',
@@ -365,8 +472,18 @@ export function AorMap({
         source: 'relay-route',
         paint: {
           'line-color': '#c9a457',
-          'line-opacity': 0.78,
-          'line-width': 2.2,
+          'line-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            5,
+            0.18,
+            10,
+            0.42,
+            13,
+            0.78,
+          ],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.1, 13, 2.2],
           'line-dasharray': [1.8, 1.2],
         },
       })
@@ -476,7 +593,7 @@ export function AorMap({
     })
 
     map.on('zoom', () => {
-      setZoom(map.getZoom().toFixed(1))
+      setZoomLevel(map.getZoom())
     })
 
     return () => {
@@ -512,40 +629,16 @@ export function AorMap({
       nextBasemap === 'imagery' ? 'visible' : 'none',
     )
     map.setLayoutProperty(
-      'streets',
+      'muted',
       'visibility',
-      nextBasemap === 'streets' ? 'visible' : 'none',
+      nextBasemap === 'muted' ? 'visible' : 'none',
     )
     setBasemap(nextBasemap)
   }
 
   return (
-    <div className="aor-map" aria-label="AOR tactical map">
+    <div className={`aor-map aor-map--${mapDensity}`} aria-label="AOR tactical map">
       <div className="aor-map__canvas" ref={containerRef} />
-      <div className="aor-map__hud">
-        <span>AOR Mode</span>
-        <strong>Relay Team 2</strong>
-        <p>{cursorGrid}</p>
-      </div>
-      <div className="aor-map__legend" aria-hidden="true">
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--friendly" />
-          Friendly
-        </span>
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--watch" />
-          Watch
-        </span>
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--threat" />
-          Threat
-        </span>
-      </div>
-      <div className="aor-map__ops-strip" aria-hidden="true">
-        <span>LIVE CONTACTS {visibleSignals.length}</span>
-        <span>FUSED {correlatedSignalIds.length}</span>
-        <span>{basemap.toUpperCase()}</span>
-      </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
         <button
           className={basemap === 'imagery' ? 'is-active' : ''}
@@ -555,16 +648,12 @@ export function AorMap({
           Imagery
         </button>
         <button
-          className={basemap === 'streets' ? 'is-active' : ''}
-          onClick={() => switchBasemap('streets')}
+          className={basemap === 'muted' ? 'is-active' : ''}
+          onClick={() => switchBasemap('muted')}
           type="button"
         >
-          Streets
+          Muted
         </button>
-      </div>
-      <div className="aor-map__scale">
-        <span>Zoom {zoom}</span>
-        <span>10m MGRS labels</span>
       </div>
     </div>
   )
