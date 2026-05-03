@@ -232,6 +232,16 @@ export function AorMap({
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoom, setZoom] = useState('15.2')
 
+  const scenarioCoordinateSignals = useMemo(
+    () =>
+      scenario.signals
+        .map((signal) => ({ point: signalPoint(signal), signal }))
+        .filter(
+          (entry): entry is { point: [number, number]; signal: Signal } =>
+            entry.point !== null,
+        ),
+    [scenario.signals],
+  )
   const coordinateSignals = useMemo(
     () =>
       signals
@@ -243,12 +253,12 @@ export function AorMap({
     [signals],
   )
   const routePoints = useMemo(
-    () => coordinateSignals.map(({ point }) => point).slice().reverse(),
-    [coordinateSignals],
+    () => scenarioCoordinateSignals.map(({ point }) => point),
+    [scenarioCoordinateSignals],
   )
   const operationalBounds = useMemo(
-    () => boundsFromPoints(coordinateSignals.map(({ point }) => point)),
-    [coordinateSignals],
+    () => boundsFromPoints(scenarioCoordinateSignals.map(({ point }) => point)),
+    [scenarioCoordinateSignals],
   )
 
   const visibleSignals = useMemo(
@@ -447,7 +457,7 @@ export function AorMap({
       ],
       { duration: 420, maxZoom: 15.2, padding: 92 },
     )
-  }, [isMapReady, operationalBounds, routePoints])
+  }, [isMapReady, operationalBounds, routePoints, scenario.id])
 
   useEffect(() => {
     const map = mapRef.current

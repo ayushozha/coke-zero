@@ -22,7 +22,9 @@ export function Brigade() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setBeatIndex((current) => (current % activeScenario.signals.length) + 1)
+      setBeatIndex((current) =>
+        Math.min(current + 1, activeScenario.signals.length),
+      )
     }, 1500)
 
     return () => window.clearInterval(timer)
