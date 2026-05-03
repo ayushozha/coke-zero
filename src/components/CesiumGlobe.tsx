@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import {
   ArcGisMapServerImageryProvider,
   Cartesian2,
@@ -25,6 +26,8 @@ import {
   clearN2YOSatelliteLayers,
   deselectN2YOSatellite,
   fetchN2YOPositionCache,
+  FAMILY_COLOR_HEX,
+  FAMILY_SHORT_LABEL,
   isN2YOGeostationaryFamily,
   latestN2YOAltitudeKm,
   N2YO_SATELLITES,
@@ -47,7 +50,16 @@ const MAP_PANEL = Color.fromCssColorString('#091112')
 const RESET_CAMERA_DESTINATION = Cartesian3.fromDegrees(0, 0, 22_000_000)
 
 const markerSvg = (
-  kind: 'satellite' | 'drone' | 'signal',
+  kind:
+    | 'satellite'
+    | 'drone'
+    | 'signal'
+    | 'ew'
+    | 'gps'
+    | 'cyber'
+    | 'satcom'
+    | 'terrain'
+    | 'intel',
   stroke: string,
   fill = 'rgba(2,4,4,0.72)',
 ) => {
@@ -56,6 +68,18 @@ const markerSvg = (
       ? '<path d="M13 13h10v10H13z"/><path d="M5 16h6M25 16h6M5 20h6M25 20h6M18 7v4M18 25v4"/><circle cx="18" cy="18" r="2.4" fill="currentColor" stroke="none"/>'
       : kind === 'drone'
         ? '<path d="M18 6l10 20-10-5-10 5z"/><path d="M18 11v10M13 20h10"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
+        : kind === 'ew'
+          ? '<path d="M8 26l20-16"/><path d="M13 26c0-5 4-10 10-12M18 28c1-4 4-7 8-9"/><circle cx="9" cy="27" r="2.4" fill="currentColor" stroke="none"/>'
+          : kind === 'gps'
+            ? '<path d="M18 6l5 10-5 14-5-14z"/><path d="M11 15h14M13 23h10"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
+            : kind === 'cyber'
+              ? '<path d="M10 11h16v14H10z"/><path d="M14 11V7M22 11V7M14 25v4M22 25v4M6 16h4M6 21h4M26 16h4M26 21h4"/>'
+              : kind === 'satcom'
+                ? '<path d="M9 25c5-1 10-5 14-14"/><path d="M13 26c2 2 7 0 12-5"/><path d="M23 11l5-4M23 11l-2-6"/><circle cx="12" cy="24" r="2.3" fill="currentColor" stroke="none"/>'
+                : kind === 'terrain'
+                  ? '<path d="M5 25l7-11 5 7 4-5 10 9z"/><path d="M12 14l2 5M21 16l2 6"/>'
+                  : kind === 'intel'
+                    ? '<path d="M9 8h18v20H9z"/><path d="M13 14h10M13 19h10M13 24h6"/>'
         : '<path d="M18 7l11 11-11 11L7 18z"/><path d="M18 12v12M12 18h12"/><circle cx="18" cy="18" r="2.2" fill="currentColor" stroke="none"/>'
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -72,14 +96,41 @@ const markerSvg = (
 
 const markerColorHex = (color: Color) => color.toCssHexString()
 
-const markerKindForDomain = (domain?: Signal['domain']) => {
-  if (domain === 'sda' || domain === 'orbit' || domain === 'satcom') {
+const markerKindForSignal = (signal: Signal) => {
+  const configured = signal.payload.observables?.visual_category
+  if (
+    configured === 'ew' ||
+    configured === 'gps' ||
+    configured === 'cyber' ||
+    configured === 'satcom' ||
+    configured === 'drone' ||
+    configured === 'terrain' ||
+    configured === 'intel'
+  ) {
+    return configured
+  }
+  if (signal.domain === 'sda' || signal.domain === 'orbit') {
     return 'satellite'
   }
-  if (domain === 'drone' || domain === 'pnt' || domain === 'terrain') {
+  if (signal.domain === 'rf_ew') {
+    return 'ew'
+  }
+  if (signal.domain === 'pnt') {
+    return 'gps'
+  }
+  if (signal.domain === 'cyber') {
+    return 'cyber'
+  }
+  if (signal.domain === 'satcom') {
+    return 'satcom'
+  }
+  if (signal.domain === 'drone') {
     return 'drone'
   }
-  return 'signal'
+  if (signal.domain === 'terrain') {
+    return 'terrain'
+  }
+  return 'intel'
 }
 
 type CesiumGlobeProps = {
@@ -624,7 +675,7 @@ export function CesiumGlobe({
       const isFocus = signal.id === focusSignalId
       const isCorrelated = correlatedIds.has(signal.id)
       const shouldLabel = isFocus && signals.length <= 8
-      const markerKind = markerKindForDomain(signal.domain)
+      const markerKind = markerKindForSignal(signal)
 
       if (point) {
         viewer.entities.add({
@@ -990,9 +1041,30 @@ export function CesiumGlobe({
                 disabled={n2yoLayersRef.current.length === 0}
                 key={familyFilter}
                 onClick={() => applySatelliteFamilyFilter(familyFilter)}
+                style={
+                  familyFilter === 'all'
+                    ? undefined
+                    : ({
+                        '--satellite-family-color':
+                          FAMILY_COLOR_HEX[familyFilter],
+                      } as CSSProperties)
+                }
                 type="button"
+                title={
+                  familyFilter === 'all'
+                    ? 'Show every satellite family'
+                    : `${familyFilter}: ${FAMILY_SHORT_LABEL[familyFilter]}`
+                }
               >
-                {familyFilter === 'all' ? 'All' : familyFilter}
+                <span aria-hidden="true" className="satellite-family-controls__swatch" />
+                <span className="satellite-family-controls__label">
+                  {familyFilter === 'all' ? 'All' : familyFilter}
+                </span>
+                {familyFilter !== 'all' ? (
+                  <span className="satellite-family-controls__sub">
+                    {FAMILY_SHORT_LABEL[familyFilter]}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
@@ -1013,6 +1085,13 @@ export function CesiumGlobe({
           <span>Selected Satellite</span>
           <strong>{selectedSatellite.satelliteName}</strong>
           <dl>
+            <div>
+              <dt>Family</dt>
+              <dd>
+                {selectedSatellite.satelliteFamily} ·{' '}
+                {FAMILY_SHORT_LABEL[selectedSatellite.satelliteFamily]}
+              </dd>
+            </div>
             <div>
               <dt>NORAD</dt>
               <dd>{selectedSatellite.satelliteId}</dd>

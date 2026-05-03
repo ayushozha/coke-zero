@@ -128,6 +128,7 @@ const eventTypeOverrides: Record<string, string> = {
   relay_mesh_status: 'Drone relay mesh status changed.',
   relay_resilience_assessment: 'CANOPY confirms relay resilience held.',
   response_action: 'Mission cell hardened the gateway profile.',
+  rf_bearing_crosscheck: 'EW bearing cross-check narrowed the affected area.',
   rpo_close_approach: 'Nearby space object entered the protected watch box.',
   route_chokepoint_check: 'Route chokepoints raise PNT-dependent convoy risk.',
   satcom_degradation: 'SATCOM link quality is degrading.',
@@ -137,6 +138,7 @@ const eventTypeOverrides: Record<string, string> = {
   satcom_rf_spike: 'RF spike overlaps SATCOM backup routing.',
   satcom_route_shed: 'SATCOM shed nonessential traffic to preserve command updates.',
   sda_catalog_match: 'Orbital catalog match supports collection risk.',
+  screening_overlay: 'Space screening overlay entered the watch shell.',
   space_support_option: 'Alternate space-support pass is available soon.',
   space_enabled_base_defense_assessment: 'CANOPY fused the base-defense space-support problem.',
   space_support_hold_recommendation: 'CANOPY recommends a space-support hold.',
@@ -149,6 +151,8 @@ const eventTypeOverrides: Record<string, string> = {
   ground_segment_baseline: 'Gateway baseline established.',
   iran_counter_c5isr_assessment: 'CANOPY fused the counter-C5ISR event set.',
   missile_uas_capability_context: 'Missile and UAS capability context added.',
+  osint_context: 'Public reporting adds context to the watch item.',
+  pnt_rf_alignment: 'GPS and RF anomalies align on the same route.',
 }
 
 const actionByDomain: Record<Domain, string> = {
@@ -330,6 +334,8 @@ const oneLineForSignal = (signal: Signal) => {
     case 'ew_bearing_refined':
     case 'rf_bearing_crosscheck':
       return 'EW bearing narrowed the affected corridor; route traffic around it.'
+    case 'pnt_rf_alignment':
+      return 'GPS bias and EW bearing align on the priority route; keep routing defensive.'
     case 'emission_cluster_detected':
       return `${emissionCount ? `${Math.round(emissionCount)} emitters` : 'Emitters'} active in collection footprint; reduce emissions.`
     case 'emission_posture_risk':
@@ -359,7 +365,10 @@ const oneLineForSignal = (signal: Signal) => {
     case 'cross_sensor_position_check':
       return 'Drone sensors agree; GPS is the suspect input.'
     case 'degraded_telemetry':
+    case 'telemetry_degradation':
       return 'Drone telemetry is degraded; keep ISR but lower coordinate trust.'
+    case 'drone_spoofing':
+      return 'UAS track identity is unreliable; hold custody with radar and EO.'
     case 'fdir_recovery_action':
       return `${signal.payload.asset ?? 'Drone'} isolated bad GPS input; ISR continues with reduced coordinate confidence.`
     case 'fdir_assessment':
@@ -403,6 +412,8 @@ const oneLineForSignal = (signal: Signal) => {
       return 'Alternate space-support pass is available; preserve priority traffic.'
     case 'overhead_warning_quality_drop':
       return `Warning refresh slowed${refreshIntervalSeconds ? ` to ${Math.round(refreshIntervalSeconds)}s` : ''}; cache products locally.`
+    case 'overhead_ir_cue':
+      return 'Overhead IR cue is late but usable; push warning to local sensors.'
     case 'overhead_collection_window':
       return 'Adversary overhead collection window is opening; mask movement and emissions.'
     case 'sda_catalog_match':
@@ -438,6 +449,7 @@ const oneLineForSignal = (signal: Signal) => {
     case 'local_cache_confirmed':
       return 'Overhead-warning cache is local; use it while SATCOM is degraded.'
     case 'attack_chain_correlation':
+    case 'convergence':
       return 'EW, GPS, cyber, and SATCOM now form one attack chain.'
     case 'multi_domain_attack_assessment':
     case 'attack_chain_commander_update':
@@ -458,6 +470,8 @@ const oneLineForSignal = (signal: Signal) => {
       return 'Orbit cue is a watch item, not attribution; protect routing.'
     case 'orbital_setup':
       return 'Baseline satellite pass is established; watch for support changes.'
+    case 'screening_overlay':
+      return 'Space screening object entered the watch shell; protect support routing.'
     case 'orbital_context_shift':
       return 'Satellite geometry now matters to the ground operation; refresh support timing.'
     case 'telemetry_update':
@@ -465,7 +479,10 @@ const oneLineForSignal = (signal: Signal) => {
     case 'ground_segment_baseline':
       return 'Gateway baseline is established; compare new anomalies against this state.'
     case 'public_report':
+    case 'osint_context':
       return 'Public reporting adds context; do not treat it as proof.'
+    case 'response_action':
+      return 'Gateway hardening is active; keep automated changes frozen.'
     case 'missile_uas_capability_context':
       return 'Missile/UAS threat raises need for warning, GPS, ISR, and SATCOM.'
     case 'counterspace_capability_context':
