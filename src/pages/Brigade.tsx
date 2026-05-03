@@ -10,6 +10,8 @@ import { StressMode } from '../components/StressMode'
 import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
+import { triggerReplay } from '../hooks/useEngineSocket'
+import { useEventStore } from '../store/eventStore'
 import type { PlaybackStatus } from '../types/playback'
 import type { Attribution, Decision, Signal } from '../types/canopy'
 
@@ -471,6 +473,19 @@ export function Brigade() {
     setActiveScenarioId(scenarioId)
     setSimElapsedMs(0)
     setIsApproved(false)
+
+    // Fire the scenario through the live engine. The gateway cancels any
+    // in-flight replay before starting the new one, so clicking through
+    // scenarios rapidly is safe. Clear the traces buffer so the reasoning
+    // panel shows just this scenario's run instead of accumulating across
+    // selections.
+    const scenario = scenarios.find((s) => s.id === scenarioId)
+    if (scenario) {
+      useEventStore.setState({ traces: [] })
+      void triggerReplay(scenario.file, 5).catch((err) => {
+        console.warn('scenario replay failed:', err)
+      })
+    }
   }
 
   useEffect(() => {
