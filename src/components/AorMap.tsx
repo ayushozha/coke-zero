@@ -13,6 +13,7 @@ type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
   focusRequestId?: number
+  offsets: number[]
   playback: PlaybackStatus | null
   scenario: ScenarioDefinition
   signals: Signal[]
@@ -42,6 +43,7 @@ type SignalVisualCategory =
   | 'intel'
 
 type CoordinateSignal = { point: [number, number]; signal: Signal }
+type PlaybackCoordinateSignal = CoordinateSignal & { offsetMs: number }
 
 const categoryColors: Record<SignalVisualCategory, string> = {
   space: '#78c4ff',
@@ -276,6 +278,55 @@ const aorContacts: Array<{
 const labelForSignal = (signal: Signal) =>
   commanderSignalSummary(signal).location
 
+const mapLabelForSignal = (signal: Signal) => {
+  switch (signal.payload.event_type) {
+  case 'approach_masking_check':
+    return 'Masked UAS lane'
+  case 'overhead_ir_cue':
+    return 'Overhead warning'
+  case 'uas_control_link_detected':
+    return 'UAS control signal'
+  case 'track_handoff_success':
+    return 'UAS track handoff'
+  case 'gps_spoof':
+  case 'pnt_spoofing':
+    return 'GPS bias'
+  case 'rf_interference':
+  case 'ew_bearing_refined':
+  case 'rf_bearing_crosscheck':
+    return 'EW interference'
+  case 'satcom_degradation':
+  case 'satcom_link_margin_drop':
+  case 'satcom_queue_pressure':
+    return 'SATCOM degraded'
+  case 'rpo_close_approach':
+  case 'proximity_operations':
+    return 'LEO close approach'
+  case 'screening_overlay':
+    return 'Space object watch'
+  case 'overhead_collection_window':
+  case 'collection_cue':
+  case 'sda_catalog_match':
+    return 'Collection risk'
+  case 'orbital_setup':
+    return 'Satellite pass'
+  case 'custody_quality_change':
+  case 'custody_update':
+    return 'Space custody'
+  case 'terrain_masking_risk':
+  case 'line_of_sight_forecast':
+    return 'Relay masking risk'
+  default:
+    return domainLabel(signal.domain)
+  }
+}
+
+const mapMetaForSignal = (signal: Signal) => {
+  const location = labelForSignal(signal)
+  const confidence = `${Math.round(signal.confidence * 100)}%`
+  return location ? `${location} / ${confidence}` : confidence
+}
+
 const priorityForSignal = (signal: Signal) => {
   if (signal.confidence >= 0.86) {
     return 'high'
@@ -319,24 +370,6 @@ const createAorPolygon = (bounds: AorBounds) =>
     ],
   }) as GeoJSON.FeatureCollection
 
-const createRoute = (points: [number, number][]) =>
-  ({
-    type: 'FeatureCollection',
-    features:
-      points.length > 1
-        ? [
-            {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: points,
-              },
-            },
-          ]
-        : [],
-  }) as GeoJSON.FeatureCollection
-
 const numberObservable = (signal: Signal, key: string) => {
   const value = signal.payload.observables?.[key]
   return typeof value === 'number' && Number.isFinite(value) ? value : null
@@ -345,6 +378,27 @@ const numberObservable = (signal: Signal, key: string) => {
 const stringObservable = (signal: Signal, key: string) => {
   const value = signal.payload.observables?.[key]
   return typeof value === 'string' ? value : null
+}
+
+const movementVectorForSignal = (signal: Signal) => {
+  const value = signal.payload.observables?.movement_vector
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const vector = value as Record<string, unknown>
+  const bearing = vector.bearing_deg
+  const speed = vector.speed_mps
+  if (
+    typeof bearing !== 'number' ||
+    typeof speed !== 'number' ||
+    !Number.isFinite(bearing) ||
+    !Number.isFinite(speed)
+  ) {
+    return null
+  }
+
+  return { bearingDeg: bearing, speedMps: speed }
 }
 
 const visualCategoryForSignal = (signal: Signal): SignalVisualCategory => {
@@ -494,8 +548,50 @@ const trackIdForSignal = (signal: Signal) =>
   stringObservable(signal, 'route_id') ??
   (signal.domain === 'drone' ? signal.payload.asset : null)
 
-const createSignalTracks = (entries: CoordinateSignal[]) => {
-  const tracks = new Map<string, CoordinateSignal[]>()
+const interpolatePoint = (
+  from: [number, number],
+  to: [number, number],
+  progress: number,
+): [number, number] => [
+  from[0] + (to[0] - from[0]) * progress,
+  from[1] + (to[1] - from[1]) * progress,
+]
+
+const bearingBetweenPoints = (from: [number, number], to: [number, number]) =>
+  (Math.atan2(to[0] - from[0], to[1] - from[1]) * 180) / Math.PI
+
+const featureForSignalHead = (
+  signal: Signal,
+  point: [number, number],
+  focusSignalId: string | null,
+  correlatedSignalIds: string[],
+): GeoJSON.Feature => ({
+  type: 'Feature',
+  properties: {
+    id: signal.id,
+    label: mapLabelForSignal(signal),
+    meta: mapMetaForSignal(signal),
+    color: visualColorForSignal(signal),
+    symbol: visualSymbolForSignal(signal),
+    category: visualCategoryForSignal(signal),
+    icon: iconNameForCategory(visualCategoryForSignal(signal)),
+    priority: priorityForSignal(signal),
+    focus: signal.id === focusSignalId,
+    correlated: correlatedSignalIds.includes(signal.id),
+  },
+  geometry: {
+    type: 'Point',
+    coordinates: point,
+  },
+})
+
+const createSignalTracks = (
+  entries: PlaybackCoordinateSignal[],
+  elapsedMs: number,
+  focusSignalId: string | null,
+  correlatedSignalIds: string[],
+) => {
+  const tracks = new Map<string, PlaybackCoordinateSignal[]>()
 
   entries.forEach((entry) => {
     const trackId = trackIdForSignal(entry.signal)
@@ -508,21 +604,75 @@ const createSignalTracks = (entries: CoordinateSignal[]) => {
 
   const lineFeatures: GeoJSON.Feature[] = []
   const arrowFeatures: GeoJSON.Feature[] = []
+  const headFeatures: GeoJSON.Feature[] = []
+  const activeTrackIds = new Set<string>()
 
   tracks.forEach((trackEntries, trackId) => {
     const ordered = [...trackEntries].sort(
-      (a, b) => (signalTimeMs(a.signal) ?? 0) - (signalTimeMs(b.signal) ?? 0),
+      (a, b) => a.offsetMs - b.offsetMs,
     )
-    if (ordered.length < 2) {
+    if (!ordered.length || elapsedMs < ordered[0].offsetMs) {
       return
     }
 
-    const points = ordered.map((entry) => entry.point)
-    const last = points[points.length - 1]
-    const previous = points[points.length - 2]
-    const bearing =
-      (Math.atan2(last[0] - previous[0], last[1] - previous[1]) * 180) / Math.PI
-    const color = visualColorForSignal(ordered[ordered.length - 1].signal)
+    const completed = ordered.filter((entry) => entry.offsetMs <= elapsedMs)
+    const previousEntry = completed[completed.length - 1] ?? ordered[0]
+    const nextEntry =
+      ordered.find((entry) => entry.offsetMs > elapsedMs) ?? previousEntry
+    const spanMs = Math.max(nextEntry.offsetMs - previousEntry.offsetMs, 1)
+    const progress =
+      nextEntry === previousEntry
+        ? 1
+        : Math.min(1, Math.max(0, (elapsedMs - previousEntry.offsetMs) / spanMs))
+    let headPoint = interpolatePoint(
+      previousEntry.point,
+      nextEntry.point,
+      progress,
+    )
+    let points = [...completed.map((entry) => entry.point)]
+    const headSignal = previousEntry.signal
+    let bearing =
+      points.length > 0
+        ? bearingBetweenPoints(points[points.length - 1], headPoint)
+        : 0
+
+    if (ordered.length === 1) {
+      const vector = movementVectorForSignal(previousEntry.signal)
+      if (!vector) {
+        return
+      }
+
+      const travelSeconds = Math.min(240, Math.max(60, 2400 / vector.speedMps))
+      const startOffsetMs = Math.max(
+        0,
+        previousEntry.offsetMs - travelSeconds * 1000,
+      )
+      const vectorProgress = Math.min(
+        1,
+        Math.max(
+          0,
+          (elapsedMs - startOffsetMs) /
+            Math.max(previousEntry.offsetMs - startOffsetMs, 1),
+        ),
+      )
+      const startPoint = destinationPoint(
+        previousEntry.point,
+        vector.bearingDeg + 180,
+        vector.speedMps * travelSeconds,
+      )
+      headPoint = interpolatePoint(startPoint, previousEntry.point, vectorProgress)
+      points = [startPoint, headPoint]
+      bearing = vector.bearingDeg
+    } else if (nextEntry !== previousEntry) {
+      points = [...points, headPoint]
+    }
+
+    if (points.length < 2) {
+      return
+    }
+
+    activeTrackIds.add(trackId)
+    const color = visualColorForSignal(headSignal)
 
     lineFeatures.push({
       type: 'Feature',
@@ -541,12 +691,25 @@ const createSignalTracks = (entries: CoordinateSignal[]) => {
       },
       geometry: {
         type: 'Point',
-        coordinates: last,
+        coordinates: headPoint,
       },
     })
+    headFeatures.push(
+      featureForSignalHead(
+        headSignal,
+        headPoint,
+        focusSignalId,
+        correlatedSignalIds,
+      ),
+    )
   })
 
   return {
+    activeTrackIds,
+    heads: {
+      type: 'FeatureCollection',
+      features: headFeatures,
+    } as GeoJSON.FeatureCollection,
     lines: {
       type: 'FeatureCollection',
       features: lineFeatures,
@@ -608,6 +771,8 @@ export function AorMap({
   correlatedSignalIds,
   focusSignalId,
   focusRequestId = 0,
+  offsets,
+  playback,
   scenario,
   signals,
 }: AorMapProps) {
@@ -631,17 +796,38 @@ export function AorMap({
     () => boundsForSignals(scenario.signals, aorBounds),
     [scenario.signals],
   )
-  const scenarioRoute = useMemo(
+  const scenarioCoordinateSignals = useMemo(
     () =>
       scenario.signals
-        .map(signalCoordinate)
-        .filter((point): point is [number, number] => point !== null),
-    [scenario.signals],
+        .map((signal, index) => ({
+          point: signalCoordinate(signal),
+          signal,
+          offsetMs: offsets[index] ?? 0,
+        }))
+        .filter(
+          (entry): entry is PlaybackCoordinateSignal => entry.point !== null,
+        ),
+    [offsets, scenario.signals],
+  )
+  const elapsedMs = playback?.elapsedMs ?? Number.MAX_SAFE_INTEGER
+  const signalTracks = useMemo(
+    () =>
+      createSignalTracks(
+        scenarioCoordinateSignals,
+        elapsedMs,
+        focusSignalId,
+        correlatedSignalIds,
+      ),
+    [correlatedSignalIds, elapsedMs, focusSignalId, scenarioCoordinateSignals],
   )
   const contactDisplayLimit = zoomLevel >= 12.2 ? 8 : zoomLevel >= 10.4 ? 4 : 2
   const visibleSignals = useMemo(
     () =>
       [...coordinateSignals]
+        .filter(({ signal }) => {
+          const trackId = trackIdForSignal(signal)
+          return !trackId || !signalTracks.activeTrackIds.has(trackId)
+        })
         .sort((a, b) => {
           const focusScore = (signal: Signal) =>
             signal.id === focusSignalId ? 1 : 0
@@ -656,7 +842,13 @@ export function AorMap({
           )
         })
         .slice(0, contactDisplayLimit),
-    [contactDisplayLimit, coordinateSignals, correlatedSignalIds, focusSignalId],
+    [
+      contactDisplayLimit,
+      coordinateSignals,
+      correlatedSignalIds,
+      focusSignalId,
+      signalTracks.activeTrackIds,
+    ],
   )
   const mapDensity =
     zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
@@ -665,37 +857,18 @@ export function AorMap({
     () =>
       ({
         type: 'FeatureCollection',
-        features: visibleSignals.map(({ point, signal }) => ({
-          type: 'Feature',
-          properties: {
-            id: signal.id,
-            label: labelForSignal(signal),
-            meta: `${domainLabel(signal.domain)} ${Math.round(
-              signal.confidence * 100,
-            )}%`,
-            color: visualColorForSignal(signal),
-            symbol: visualSymbolForSignal(signal),
-            category: visualCategoryForSignal(signal),
-            icon: iconNameForCategory(visualCategoryForSignal(signal)),
-            priority: priorityForSignal(signal),
-            focus: signal.id === focusSignalId,
-            correlated: correlatedSignalIds.includes(signal.id),
-          },
-          geometry: {
-            type: 'Point',
-            coordinates: point,
-          },
-        })),
+        features: [
+          ...signalTracks.heads.features,
+          ...visibleSignals.map(({ point, signal }) =>
+            featureForSignalHead(signal, point, focusSignalId, correlatedSignalIds),
+          ),
+        ],
       }) as GeoJSON.FeatureCollection,
-    [correlatedSignalIds, focusSignalId, visibleSignals],
+    [correlatedSignalIds, focusSignalId, signalTracks.heads, visibleSignals],
   )
   const signalZones = useMemo(
     () => createSignalZones(visibleSignals),
     [visibleSignals],
-  )
-  const signalTracks = useMemo(
-    () => createSignalTracks(coordinateSignals),
-    [coordinateSignals],
   )
 
   useEffect(() => {
@@ -705,7 +878,7 @@ export function AorMap({
 
     const map = new maplibregl.Map({
       attributionControl: false,
-      center: centerFromBounds(scenarioBounds),
+      center: centerFromBounds(aorBounds),
       container: containerRef.current,
       maxZoom: 19,
       minZoom: 5,
@@ -783,7 +956,7 @@ export function AorMap({
       })
       map.addSource('aor-zone', {
         type: 'geojson',
-        data: createAorPolygon(scenarioBounds),
+        data: createAorPolygon(aorBounds),
       })
       map.addLayer({
         id: 'aor-zone-fill',
@@ -807,7 +980,7 @@ export function AorMap({
 
       map.addSource('mgrs-grid', {
         type: 'geojson',
-        data: createGrid(scenarioBounds),
+        data: createGrid(aorBounds),
       })
       map.addLayer({
         id: 'mgrs-grid-line',
@@ -817,32 +990,6 @@ export function AorMap({
           'line-color': '#f5f7f0',
           'line-opacity': 0.07,
           'line-width': 0.7,
-        },
-      })
-
-      map.addSource('relay-route', {
-        type: 'geojson',
-        data: createRoute(scenarioRoute),
-      })
-      map.addLayer({
-        id: 'relay-route-line',
-        type: 'line',
-        source: 'relay-route',
-        paint: {
-          'line-color': '#c9a457',
-          'line-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            5,
-            0.18,
-            10,
-            0.42,
-            13,
-            0.78,
-          ],
-          'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.1, 13, 2.2],
-          'line-dasharray': [1.8, 1.2],
         },
       })
 
@@ -1111,13 +1258,9 @@ export function AorMap({
     const gridSource = map.getSource('mgrs-grid') as
       | maplibregl.GeoJSONSource
       | undefined
-    const routeSource = map.getSource('relay-route') as
-      | maplibregl.GeoJSONSource
-      | undefined
 
     zoneSource?.setData(createAorPolygon(scenarioBounds))
     gridSource?.setData(createGrid(scenarioBounds))
-    routeSource?.setData(createRoute(scenarioRoute))
     const { width, height } = map.getContainer().getBoundingClientRect()
     const isWide = width >= 1080 && height >= 560
     map.fitBounds(
@@ -1134,7 +1277,7 @@ export function AorMap({
           : { top: 72, right: 48, bottom: 96, left: 48 },
       },
     )
-  }, [isMapReady, scenario.id, scenarioBounds, scenarioRoute])
+  }, [isMapReady, scenario.id, scenarioBounds])
 
   useEffect(() => {
     const map = mapRef.current

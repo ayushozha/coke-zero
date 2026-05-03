@@ -32,7 +32,7 @@ export function MissionAlert({
 
   const summary = commanderSignalSummary(signal)
   const state = signalEffectState(signal)
-  const location = signal.location.label ?? signal.payload.asset ?? signal.source
+  const location = summary.location
 
   return (
     <aside

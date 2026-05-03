@@ -23,7 +23,12 @@ export function SeverityRibbon() {
   const attributions = useEventStore((s) => s.attributions);
 
   const { severity, actor } = useMemo(() => {
-    const cutoff = Date.now() - RECENT_WINDOW_MS;
+    const referenceTime = Math.max(
+      0,
+      ...uiEvents.map((e) => new Date(e.timestamp).getTime()),
+      ...attributions.map((a) => new Date(a.ts).getTime()),
+    );
+    const cutoff = referenceTime - RECENT_WINDOW_MS;
     const recent = uiEvents.filter(
       (e) => new Date(e.timestamp).getTime() >= cutoff,
     );

@@ -196,6 +196,22 @@ const sourceAliases: Record<string, string> = {
   'uas-swarm-controller': 'UAS swarm controller',
 }
 
+const locationAliases: Record<string, string> = {
+  'Brigade support area collection cone': 'Collection window',
+  'CANOPY-LEO-07 downlink footprint': 'LEO downlink',
+  'CANOPY-LEO-07 ground track': 'LEO support pass',
+  'CANOPY-LEO-07 pass footprint': 'LEO pass',
+  'CANOPY-LEO-07 relative motion frame': 'LEO close approach',
+  'Division support area orbital track': 'LEO watch track',
+  'Friendly LEO support architecture': 'LEO support',
+  'Friendly LEO support relative motion frame': 'LEO close approach',
+  'LEO pass over brigade support area': 'Overhead pass',
+  'Base western perimeter': 'West sensors',
+  'Overhead watch box west of base': 'Overhead warning area',
+  'Western Pacific orbital custody box': 'LEO custody box',
+  'Western Iraq base approach sector': 'Masked west approach',
+}
+
 const assetAliases: Record<string, string> = {
   'BASE-CUAS-SENSOR-NET': 'Base C-UAS sensors',
   'BDE-C2-GATEWAY': 'Brigade C2 gateway',
@@ -287,6 +303,29 @@ const friendlySourceLabel = (signal: Signal) => {
   }
 
   return sourceAliases[signal.source] ?? titleCaseSlug(signal.source)
+}
+
+const friendlyLocationLabel = (signal: Signal) => {
+  const rawLabel =
+    typeof signal.location.label === 'string' ? signal.location.label : null
+  if (!rawLabel) {
+    return sourceAliases[signal.source] ?? titleCaseSlug(signal.source)
+  }
+
+  const aliased = locationAliases[rawLabel]
+  if (aliased) {
+    return aliased
+  }
+
+  return rawLabel
+    .replace(/\brelative motion frame\b/gi, 'close approach')
+    .replace(/\bcollection cone\b/gi, 'collection window')
+    .replace(/\bpass footprint\b/gi, 'pass')
+    .replace(/\boperating area\b/gi, 'AO')
+    .replace(/\bsupport area\b/gi, 'support AO')
+    .replace(/\bsupport node\b/gi, 'node')
+    .replace(/\bground gateway\b/gi, 'gateway')
+    .replace(/\bmonitoring shell\b/gi, 'watch shell')
 }
 
 const oneLineForSignal = (signal: Signal) => {
@@ -532,7 +571,7 @@ export function commanderSignalSummary(signal: Signal): {
     detail: plainEventName(signal),
     whyItMatters: spaceDependency ?? copy.meaning,
     action,
-    location: signal.location.label ?? signal.source,
+    location: friendlyLocationLabel(signal),
     confidenceLabel: `${confidence}% confidence`,
     sourceLabel: friendlySourceLabel(signal),
   }
