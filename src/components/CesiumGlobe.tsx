@@ -23,9 +23,43 @@ import type { Signal } from '../types/canopy'
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
 const MAP_FONT =
   '12px Geist, "Aptos Display", Aptos, "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
-const MAP_RED = Color.fromCssColorString('#d05f58')
-const MAP_AMBER = Color.fromCssColorString('#d8a63a')
+const MAP_RED = Color.fromCssColorString('#e05c4f')
+const MAP_AMBER = Color.fromCssColorString('#c9a457')
+const MAP_CYAN = Color.fromCssColorString('#33f2f0')
 const MAP_PANEL = Color.fromCssColorString('#091112')
+
+const markerSvg = (
+  kind: 'satellite' | 'drone' | 'signal',
+  stroke: string,
+  fill = '#020404',
+) => {
+  const inner =
+    kind === 'satellite'
+      ? '<circle cx="18" cy="18" r="5"/><path d="M18 4v7M18 25v7M4 18h7M25 18h7M9.5 9.5l5 5M26.5 9.5l-5 5M9.5 26.5l5-5M26.5 26.5l-5-5"/>'
+      : kind === 'drone'
+        ? '<path d="M18 4l12 14-12 14L6 18z"/><path d="M18 10v16M10 18h16"/><circle cx="18" cy="18" r="3"/>'
+        : '<path d="M18 5l13 13-13 13L5 18z"/><circle cx="18" cy="18" r="4"/><path d="M18 1v6M18 29v6M1 18h6M29 18h6"/>'
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+      <g fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${inner}
+      </g>
+    </svg>`,
+  )}`
+}
+
+const markerColorHex = (color: Color) => color.toCssHexString()
+
+const markerKindForDomain = (domain?: Signal['domain']) => {
+  if (domain === 'sda' || domain === 'orbit' || domain === 'satcom') {
+    return 'satellite'
+  }
+  if (domain === 'drone' || domain === 'pnt' || domain === 'terrain') {
+    return 'drone'
+  }
+  return 'signal'
+}
 
 type CesiumGlobeProps = {
   correlatedSignalIds?: string[]
@@ -61,7 +95,7 @@ const contacts = [
     lon: 51.9,
     lat: 34.8,
     height: 360000,
-    color: Color.WHITE,
+    color: MAP_CYAN,
   },
 ]
 
@@ -97,7 +131,7 @@ const localContacts = [
     lon: -116.547,
     lat: 35.039,
     height: 1225,
-    color: Color.WHITE,
+    color: MAP_CYAN,
   },
   {
     name: 'RF HIT 11',
@@ -121,7 +155,7 @@ const colorForSignal = (signal: Signal) => {
   if (signal.confidence >= 0.74) {
     return MAP_AMBER
   }
-  return Color.WHITE
+  return MAP_CYAN
 }
 
 const signalLabel = (signal: Signal) =>
@@ -226,8 +260,8 @@ const createSatelliteCzml = () => {
       },
       point: {
         pixelSize: 12,
-        color: { rgba: [199, 91, 85, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
+        color: { rgba: [224, 92, 79, 255] },
+        outlineColor: { rgba: [2, 4, 4, 255] },
         outlineWidth: 2,
       },
       label: {
@@ -265,8 +299,8 @@ const createSatelliteCzml = () => {
       },
       point: {
         pixelSize: 10,
-        color: { rgba: [201, 154, 46, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
+        color: { rgba: [51, 242, 240, 255] },
+        outlineColor: { rgba: [2, 4, 4, 255] },
         outlineWidth: 2,
       },
       label: {
@@ -326,8 +360,8 @@ const createVehicleCzml = () => {
       },
       point: {
         pixelSize: 11,
-        color: { rgba: [201, 154, 46, 255] },
-        outlineColor: { rgba: [0, 0, 0, 255] },
+        color: { rgba: [201, 164, 87, 255] },
+        outlineColor: { rgba: [2, 4, 4, 255] },
         outlineWidth: 2,
       },
       label: {
@@ -544,12 +578,13 @@ export function CesiumGlobe({
         id: `local-${contact.name.toLowerCase().replaceAll(' ', '-')}`,
         name: contact.name,
         position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
-        point: {
-          color: contact.color,
+        billboard: {
+          color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.fromCssColorString('#07100f'),
-          outlineWidth: 2,
-          pixelSize: 12,
+          height: 28,
+          image: markerSvg('drone', markerColorHex(contact.color)),
+          scaleByDistance: new NearFarScalar(50000, 1.1, 900000, 0.68),
+          width: 28,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -569,13 +604,13 @@ export function CesiumGlobe({
       viewer.entities.add({
         name: contact.name,
         position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
-        point: {
-          color: contact.color,
+        billboard: {
+          color: Color.WHITE,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.fromCssColorString('#07100f'),
-          outlineWidth: 2,
-          pixelSize: 10,
+          height: 28,
+          image: markerSvg('satellite', markerColorHex(contact.color)),
           scaleByDistance: new NearFarScalar(1500000, 1.5, 25000000, 0.75),
+          width: 28,
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
@@ -645,19 +680,20 @@ export function CesiumGlobe({
       const isFocus = signal.id === focusSignalId
       const isCorrelated = correlatedIds.has(signal.id)
       const shouldLabel = isFocus && signals.length <= 8
+      const markerKind = markerKindForDomain(signal.domain)
 
       if (point) {
         viewer.entities.add({
           id: entityId,
           name: point.label,
           position: Cartesian3.fromDegrees(point.lon, point.lat, point.height),
-          point: {
-            color,
+          billboard: {
+            color: Color.WHITE,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            outlineColor: Color.fromCssColorString('#07100f'),
-            outlineWidth: isFocus ? 4 : 2,
-            pixelSize: isFocus ? 18 : isCorrelated ? 14 : 10,
+            height: isFocus ? 34 : isCorrelated ? 30 : 24,
+            image: markerSvg(markerKind, markerColorHex(color)),
             scaleByDistance: new NearFarScalar(1500000, 1.4, 25000000, 0.7),
+            width: isFocus ? 34 : isCorrelated ? 30 : 24,
           },
           label: {
             backgroundColor: MAP_PANEL.withAlpha(0.84),
