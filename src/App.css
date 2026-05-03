@@ -3,7 +3,7 @@
   height: 100svh;
   overflow: hidden;
   padding: 18px;
-  background: #000;
+  background: linear-gradient(180deg, #111821 0%, #0d1117 100%);
   color: var(--text-primary);
 }
 
@@ -38,9 +38,10 @@
 .app-header__right a {
   color: var(--text-primary);
   text-decoration: none;
-  text-transform: uppercase;
   border: 1px solid var(--line-bright);
-  padding: 10px 12px;
+  border-radius: 4px;
+  padding: 9px 12px;
+  font-weight: 600;
 }
 
 .app-header a:hover,
@@ -49,10 +50,10 @@
 }
 
 .app-header__eyebrow {
-  color: var(--amber);
+  color: var(--text-muted);
   font-size: 0.86rem;
   margin-bottom: 8px;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .app-header__right {
@@ -62,15 +63,17 @@
 }
 
 .socket-status {
-  border: 1px solid var(--amber);
-  color: var(--amber);
-  padding: 10px 12px;
-  text-transform: uppercase;
+  border: 1px solid rgba(111, 159, 121, 0.5);
+  border-radius: 4px;
+  color: var(--green);
+  padding: 9px 12px;
+  font-weight: 650;
 }
 
 .socket-status--online {
-  border-color: var(--white);
-  color: var(--white);
+  border-color: rgba(111, 159, 121, 0.7);
+  background: rgba(111, 159, 121, 0.1);
+  color: #9ac6a1;
 }
 
 .mission-summary {
@@ -85,13 +88,14 @@
 .mission-summary__main,
 .mission-summary__action {
   border: 1px solid var(--line-bright);
+  border-radius: 6px;
   background: var(--panel);
   padding: 16px;
 }
 
 .mission-summary__status {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: rgba(201, 154, 46, 0.55);
+  color: var(--amber);
 }
 
 .mission-summary__status span,
@@ -101,23 +105,22 @@
 .details-panel summary {
   color: var(--text-muted);
   font-size: 0.8rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .mission-summary__status strong {
   display: block;
-  color: var(--red);
+  color: var(--amber);
   font-size: 1.45rem;
-  font-weight: 400;
+  font-weight: 650;
   line-height: 1;
   margin-top: 10px;
-  text-transform: uppercase;
 }
 
 .mission-summary__main h2 {
   color: var(--text-primary);
   font-size: 1.8rem;
-  font-weight: 400;
+  font-weight: 650;
   line-height: 1.05;
   margin: 4px 0;
 }
@@ -126,7 +129,7 @@
 .mission-summary__action strong {
   color: var(--text-primary);
   font-size: 0.98rem;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .mission-summary__action strong {
@@ -145,16 +148,17 @@
 .status-card {
   min-width: 0;
   border: 1px solid var(--line-bright);
+  border-radius: 6px;
   background: var(--panel);
   padding: 10px 12px;
 }
 
 .status-card--amber {
-  border-color: var(--amber);
+  border-color: rgba(201, 154, 46, 0.55);
 }
 
 .status-card--red {
-  border-color: var(--red);
+  border-color: rgba(199, 91, 85, 0.55);
 }
 
 .status-card__topline {
@@ -164,7 +168,7 @@
   gap: 10px;
   color: var(--text-muted);
   font-size: 0.72rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .status-card__state {
@@ -198,7 +202,7 @@
   margin: 7px 0 4px;
   color: var(--text-primary);
   font-size: 1.04rem;
-  font-weight: 400;
+  font-weight: 650;
 }
 
 .status-card__metric {
@@ -234,7 +238,8 @@
   position: relative;
   min-height: 0;
   border: 1px solid var(--line-bright);
-  background: #020202;
+  border-radius: 6px;
+  background: #111821;
   overflow: hidden;
 }
 
@@ -260,11 +265,12 @@
 .aor-map__basemaps button {
   min-height: 36px;
   border: 1px solid var(--line-bright);
-  background: rgba(0, 0, 0, 0.72);
+  border-radius: 4px;
+  background: rgba(23, 30, 38, 0.86);
   color: var(--text-primary);
   font: inherit;
   padding: 8px 10px;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .aor-map__basemaps button:hover,
@@ -285,11 +291,12 @@
 .cesium-scenario-controls button {
   min-height: 36px;
   border: 1px solid var(--line-bright);
-  background: rgba(0, 0, 0, 0.72);
+  border-radius: 4px;
+  background: rgba(23, 30, 38, 0.86);
   color: var(--text-primary);
   font: inherit;
   padding: 8px 10px;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .cesium-scenario-controls button:hover,
@@ -325,11 +332,12 @@
   left: 14px;
   z-index: 4;
   border: 1px solid var(--line-bright);
-  background: rgba(0, 0, 0, 0.72);
+  border-radius: 4px;
+  background: rgba(23, 30, 38, 0.86);
   color: var(--text-muted);
   padding: 8px 10px;
   pointer-events: none;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .map-stage__readout span,
@@ -338,7 +346,7 @@
   color: var(--amber);
   font-size: 0.78rem;
   margin-bottom: 6px;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .map-stage__readout strong {
@@ -349,7 +357,6 @@
   max-width: min(520px, 54vw);
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -361,7 +368,8 @@
 }
 
 .aor-map {
-  background: #020202;
+  background: #111821;
+  border-radius: 6px;
 }
 
 .aor-map__canvas .maplibregl-canvas {
@@ -382,9 +390,9 @@
 .aor-map .maplibregl-ctrl,
 .aor-map .maplibregl-ctrl-attrib {
   border-radius: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(23, 30, 38, 0.86);
   color: var(--text-muted);
-  font: 0.7rem/1.2 'Share Tech Mono', 'Courier New', monospace;
+  font: 0.7rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 .aor-map .maplibregl-ctrl button {
@@ -396,8 +404,9 @@
 .aor-map__scale {
   position: absolute;
   z-index: 7;
-  background: rgba(0, 0, 0, 0.74);
+  background: rgba(23, 30, 38, 0.86);
   border: 1px solid var(--line-bright);
+  border-radius: 4px;
 }
 
 .aor-map__hud {
@@ -412,7 +421,7 @@
   display: block;
   color: var(--text-muted);
   font-size: 0.74rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .aor-map__hud strong {
@@ -420,8 +429,7 @@
   margin-top: 6px;
   color: var(--text-primary);
   font-size: 1.2rem;
-  font-weight: 400;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .aor-map__hud p {
@@ -458,7 +466,7 @@
 .aor-marker__dot {
   width: 16px;
   height: 16px;
-  border: 2px solid #000;
+  border: 2px solid #0d1117;
   background: currentColor;
   box-shadow: 0 0 0 1px currentColor;
 }
@@ -481,10 +489,11 @@
   left: 50%;
   min-width: max-content;
   border: 1px solid rgba(255, 255, 255, 0.32);
-  background: rgba(0, 0, 0, 0.78);
+  border-radius: 3px;
+  background: rgba(23, 30, 38, 0.88);
   padding: 2px 5px;
   transform: translateX(-50%);
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .aor-marker__label {
@@ -505,6 +514,7 @@
 .panel {
   background: var(--panel);
   border: 1px solid var(--line-bright);
+  border-radius: 6px;
 }
 
 .narration,
@@ -526,8 +536,7 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 1rem;
-  font-weight: 400;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .narration__plain {
@@ -585,7 +594,7 @@
 .narration__facts dt {
   color: var(--text-muted);
   font-size: 0.75rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .narration__facts dd {
@@ -602,7 +611,7 @@
 }
 
 .approve-banner {
-  border-color: var(--red);
+  border-color: rgba(199, 91, 85, 0.62);
 }
 
 .approve-banner__kicker {
@@ -619,10 +628,11 @@
   min-height: 48px;
   margin-top: 12px;
   border: 1px solid var(--white);
+  border-radius: 4px;
   background: var(--white);
   color: var(--black);
   font: inherit;
-  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .approve-banner__button:disabled {
@@ -634,6 +644,7 @@
 .event-feed {
   min-height: 0;
   border: 1px solid var(--line-bright);
+  border-radius: 6px;
   background: var(--panel);
   overflow: hidden;
 }
@@ -650,20 +661,19 @@
 .event-feed__header span {
   color: var(--text-muted);
   font-size: 0.78rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .event-feed__header h2 {
   margin: 4px 0 0;
   color: var(--text-primary);
   font-size: 1.08rem;
-  font-weight: 400;
+  font-weight: 650;
 }
 
 .event-feed__header strong {
   color: var(--amber);
-  font-weight: 400;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .event-feed__list {
@@ -682,9 +692,10 @@
   gap: 12px;
   align-items: start;
   border: 1px solid var(--line);
+  border-radius: 5px;
   padding: 12px;
   color: var(--text-primary);
-  background: #030303;
+  background: var(--panel-soft);
 }
 
 .event-feed__item span,
@@ -724,7 +735,7 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 650;
   line-height: 1.2;
 }
 
@@ -749,7 +760,7 @@
 .event-feed__body dt {
   color: var(--amber);
   font-size: 0.72rem;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .event-feed__body dd {

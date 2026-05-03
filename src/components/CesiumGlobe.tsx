@@ -21,6 +21,10 @@ import 'cesium/Build/Cesium/Widgets/widgets.css'
 import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
+const MAP_FONT = '12px Inter, system-ui, sans-serif'
+const MAP_RED = Color.fromCssColorString('#c75b55')
+const MAP_AMBER = Color.fromCssColorString('#c99a2e')
+const MAP_PANEL = Color.fromCssColorString('#171e26')
 
 type CesiumGlobeProps = {
   correlatedSignalIds?: string[]
@@ -41,14 +45,14 @@ const contacts = [
     lon: 63.4,
     lat: 31.2,
     height: 650000,
-    color: Color.RED,
+    color: MAP_RED,
   },
   {
     name: 'PNT DRIFT',
     lon: 70.5,
     lat: 38.1,
     height: 420000,
-    color: Color.fromCssColorString('#ffb300'),
+    color: MAP_AMBER,
   },
   {
     name: 'RF BURST',
@@ -84,7 +88,7 @@ const localContacts = [
     lon: -116.52,
     lat: 35.02,
     height: 1210,
-    color: Color.fromCssColorString('#ffb300'),
+    color: MAP_AMBER,
   },
   {
     name: 'BLOS RELAY WEST',
@@ -98,7 +102,7 @@ const localContacts = [
     lon: -116.485,
     lat: 35.012,
     height: 1230,
-    color: Color.RED,
+    color: MAP_RED,
   },
 ]
 
@@ -110,10 +114,10 @@ const formatMgrs = (lon: number, lat: number) =>
 
 const colorForSignal = (signal: Signal) => {
   if (signal.confidence >= 0.86) {
-    return Color.RED
+    return MAP_RED
   }
   if (signal.confidence >= 0.74) {
-    return Color.fromCssColorString('#ffb300')
+    return MAP_AMBER
   }
   return Color.WHITE
 }
@@ -220,16 +224,16 @@ const createSatelliteCzml = () => {
       },
       point: {
         pixelSize: 12,
-        color: { rgba: [255, 34, 34, 255] },
+        color: { rgba: [199, 91, 85, 255] },
         outlineColor: { rgba: [0, 0, 0, 255] },
         outlineWidth: 2,
       },
       label: {
         text: 'SAT-BRAVO',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [23, 30, 38, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
@@ -238,7 +242,7 @@ const createSatelliteCzml = () => {
         width: 3,
         material: {
           solidColor: {
-            color: { rgba: [255, 179, 0, 210] },
+            color: { rgba: [201, 154, 46, 210] },
           },
         },
       },
@@ -258,16 +262,16 @@ const createSatelliteCzml = () => {
       },
       point: {
         pixelSize: 10,
-        color: { rgba: [255, 179, 0, 255] },
+        color: { rgba: [201, 154, 46, 255] },
         outlineColor: { rgba: [0, 0, 0, 255] },
         outlineWidth: 2,
       },
       label: {
         text: 'PNT-CUSTODY',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [23, 30, 38, 220] },
         pixelOffset: { cartesian2: [0, -28] },
       },
       path: {
@@ -318,16 +322,16 @@ const createVehicleCzml = () => {
       },
       point: {
         pixelSize: 11,
-        color: { rgba: [255, 179, 0, 255] },
+        color: { rgba: [201, 154, 46, 255] },
         outlineColor: { rgba: [0, 0, 0, 255] },
         outlineWidth: 2,
       },
       label: {
         text: 'RELAY TEAM 2',
-        font: '13px Share Tech Mono',
+        font: MAP_FONT,
         fillColor: { rgba: [255, 255, 255, 255] },
         showBackground: true,
-        backgroundColor: { rgba: [0, 0, 0, 185] },
+        backgroundColor: { rgba: [23, 30, 38, 220] },
         pixelOffset: { cartesian2: [0, -26] },
       },
       path: {
@@ -336,7 +340,7 @@ const createVehicleCzml = () => {
         width: 4,
         material: {
           solidColor: {
-            color: { rgba: [255, 179, 0, 230] },
+            color: { rgba: [201, 154, 46, 230] },
           },
         },
       },
@@ -389,8 +393,8 @@ export function CesiumGlobe({
     viewerRef.current = viewer
 
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
-    viewer.scene.backgroundColor = Color.BLACK
-    viewer.scene.globe.baseColor = Color.fromCssColorString('#080808')
+    viewer.scene.backgroundColor = Color.fromCssColorString('#0d1117')
+    viewer.scene.globe.baseColor = Color.fromCssColorString('#111821')
     viewer.scene.globe.enableLighting = false
     viewer.scene.globe.maximumScreenSpaceError = 1
     viewer.scene.globe.showGroundAtmosphere = false
@@ -493,9 +497,9 @@ export function CesiumGlobe({
       rectangle: {
         coordinates: Rectangle.fromDegrees(47, 25, 77, 43),
         fill: true,
-        material: Color.RED.withAlpha(0.08),
+        material: MAP_RED.withAlpha(0.08),
         outline: true,
-        outlineColor: Color.RED.withAlpha(0.75),
+        outlineColor: MAP_RED.withAlpha(0.65),
       },
     })
 
@@ -510,9 +514,9 @@ export function CesiumGlobe({
           localAorBounds.north,
         ),
         fill: true,
-        material: Color.RED.withAlpha(0.06),
+        material: MAP_RED.withAlpha(0.06),
         outline: true,
-        outlineColor: Color.RED.withAlpha(0.75),
+        outlineColor: MAP_RED.withAlpha(0.65),
       },
     })
 
@@ -522,7 +526,7 @@ export function CesiumGlobe({
       polyline: {
         clampToGround: true,
         material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#ffb300').withAlpha(0.85),
+          color: Color.fromCssColorString('#c99a2e').withAlpha(0.85),
           glowPower: 0.14,
         }),
         positions: Cartesian3.fromDegreesArrayHeights(localRoute.flat()),
@@ -538,15 +542,15 @@ export function CesiumGlobe({
         point: {
           color: contact.color,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.BLACK,
+          outlineColor: Color.fromCssColorString('#0d1117'),
           outlineWidth: 2,
           pixelSize: 12,
         },
         label: {
-          backgroundColor: Color.BLACK.withAlpha(0.76),
+          backgroundColor: MAP_PANEL.withAlpha(0.82),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
           fillColor: Color.WHITE,
-          font: '13px Share Tech Mono',
+          font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -28),
           showBackground: true,
           style: LabelStyle.FILL,
@@ -562,16 +566,16 @@ export function CesiumGlobe({
         point: {
           color: contact.color,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          outlineColor: Color.BLACK,
+          outlineColor: Color.fromCssColorString('#0d1117'),
           outlineWidth: 2,
           pixelSize: 10,
           scaleByDistance: new NearFarScalar(1500000, 1.5, 25000000, 0.75),
         },
         label: {
-          backgroundColor: Color.BLACK.withAlpha(0.72),
+          backgroundColor: MAP_PANEL.withAlpha(0.82),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
           fillColor: Color.WHITE,
-          font: '13px Share Tech Mono',
+          font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -22),
           showBackground: true,
           style: LabelStyle.FILL,
@@ -585,7 +589,7 @@ export function CesiumGlobe({
       polyline: {
         clampToGround: false,
         material: new PolylineGlowMaterialProperty({
-          color: Color.fromCssColorString('#ffb300').withAlpha(0.8),
+          color: Color.fromCssColorString('#c99a2e').withAlpha(0.8),
           glowPower: 0.16,
         }),
         positions: arcPositions,
@@ -644,16 +648,16 @@ export function CesiumGlobe({
           point: {
             color,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            outlineColor: Color.BLACK,
+            outlineColor: Color.fromCssColorString('#0d1117'),
             outlineWidth: isFocus ? 4 : 2,
             pixelSize: isFocus ? 18 : isCorrelated ? 14 : 10,
             scaleByDistance: new NearFarScalar(1500000, 1.4, 25000000, 0.7),
           },
           label: {
-            backgroundColor: Color.BLACK.withAlpha(0.78),
+            backgroundColor: MAP_PANEL.withAlpha(0.84),
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             fillColor: Color.WHITE,
-            font: '13px Share Tech Mono',
+            font: MAP_FONT,
             pixelOffset: new Cartesian2(0, -28),
             showBackground: true,
             style: LabelStyle.FILL,
@@ -731,7 +735,7 @@ export function CesiumGlobe({
         polyline: {
           clampToGround: false,
           material: new PolylineGlowMaterialProperty({
-            color: Color.fromCssColorString('#ffb300').withAlpha(0.92),
+            color: Color.fromCssColorString('#c99a2e').withAlpha(0.92),
             glowPower: 0.22,
           }),
           positions: Cartesian3.fromDegreesArrayHeights(correlation),
