@@ -847,6 +847,143 @@ export function hideN2YOOrbit(viewer: Viewer, layer: N2YOLayerState) {
   viewer.entities.removeById(orbitEntityIdForSatellite(layer.satelliteId))
 }
 
+// --- Maneuver-demo helpers --------------------------------------------------
+// Used by the operator-action panel's "execute burn" visualization. The demo
+// needs three things the rest of the layer keeps private: the live orbital
+// basis (so we can rotate it for a plane change), a position lookup that
+// accepts an arbitrary tangent (so the demo can paint the post-burn track
+// without re-implementing the orbit math), and an orbit polyline sampler.
+// These are intentionally narrow exports — anything more general would
+// duplicate the existing select/show APIs.
+
+export type N2YOVector3 = { x: number; y: number; z: number }
+
+export type N2YOOrbitMotion = {
+  current: N2YOVector3
+  tangent: N2YOVector3
+  selectedTimestampSec: number
+  periodSeconds: number
+  displayAltitudeM: number
+  isGeo: boolean
+}
+
+export function getN2YOOrbitMotion(layer: N2YOLayerState): N2YOOrbitMotion {
+  const basis = latestPointOrbitBasis(layer.cache.track)
+  return {
+    current: basis.current,
+    tangent: basis.tangent,
+    selectedTimestampSec: basis.selectedPoint.timestamp,
+    periodSeconds: orbitalPeriodSeconds(basis.selectedPoint.alt_km),
+    displayAltitudeM: layer.displayAltitudeM,
+    isGeo: isN2YOGeostationaryFamily(layer.satelliteFamily),
+  }
+}
+
+/** Rotate the orbit's tangent vector around the radial axis (the line from
+ *  earth's center through the satellite's current position). This produces
+ *  a new orbit that intersects the original at the basis point but tilts at
+ *  the given angle — analogous to an impulsive plane-change burn applied at
+ *  that point. */
+export function rotateN2YOOrbitTangent(
+  motion: N2YOOrbitMotion,
+  angleRad: number,
+): N2YOVector3 {
+  const axis = motion.current
+  const tangent = motion.tangent
+  // axis × tangent gives the binormal (orbit-plane normal-ish unit vector
+  // since axis ⊥ tangent by construction in latestPointOrbitBasis).
+  const binormal = {
+    x: axis.y * tangent.z - axis.z * tangent.y,
+    y: axis.z * tangent.x - axis.x * tangent.z,
+    z: axis.x * tangent.y - axis.y * tangent.x,
+  }
+  const c = Math.cos(angleRad)
+  const s = Math.sin(angleRad)
+  return normalize({
+    x: tangent.x * c + binormal.x * s,
+    y: tangent.y * c + binormal.y * s,
+    z: tangent.z * c + binormal.z * s,
+  })
+}
+
+/** Live orbital phase (theta) for a motion descriptor at the given wall-clock
+ *  timestamp. Used by the maneuver demo to place a tailing adversary at a
+ *  fixed angular offset behind the friendly. */
+export function n2yoCurrentOrbitalTheta(
+  motion: N2YOOrbitMotion,
+  nowMs: number = Date.now(),
+): number {
+  if (motion.isGeo) {
+    return 0
+  }
+  const elapsedSec =
+    ((nowMs - motion.selectedTimestampSec * 1000) / 1000) *
+    ORBIT_MOTION_PLAYBACK_SPEED
+  return ((elapsedSec % motion.periodSeconds) / motion.periodSeconds) * Math.PI * 2
+}
+
+/** Compute the position on an orbit (with optional rotated tangent) at an
+ *  explicit theta. Lets the demo place the trailing hostile at any phase
+ *  offset from the friendly's live position. */
+export function n2yoOrbitalPositionAtTheta(
+  motion: N2YOOrbitMotion,
+  tangent: N2YOVector3,
+  theta: number,
+): Cartesian3 {
+  if (motion.isGeo) {
+    return Cartesian3.fromRadians(
+      Math.atan2(motion.current.y, motion.current.x),
+      Math.asin(Math.max(-1, Math.min(1, motion.current.z))),
+      motion.displayAltitudeM,
+    )
+  }
+  return cartesianFromOrbitBasis(
+    motion.current,
+    tangent,
+    theta,
+    motion.displayAltitudeM,
+  )
+}
+
+/** Compute the live position on an orbit, given a (possibly rotated) tangent.
+ *  Mirrors the math in currentN2YODisplayPoint but expressed in Cartesian for
+ *  the maneuver overlay's polylines and position properties. */
+export function n2yoOrbitalPositionAt(
+  motion: N2YOOrbitMotion,
+  tangent: N2YOVector3,
+  nowMs: number = Date.now(),
+): Cartesian3 {
+  return n2yoOrbitalPositionAtTheta(
+    motion,
+    tangent,
+    n2yoCurrentOrbitalTheta(motion, nowMs),
+  )
+}
+
+/** Sample one full orbit ring as Cartesian3 positions, using a (possibly
+ *  rotated) tangent. Used to draw the post-burn orbital track. */
+export function n2yoOrbitSamples(
+  motion: N2YOOrbitMotion,
+  tangent: N2YOVector3,
+): Cartesian3[] {
+  if (motion.isGeo) {
+    return []
+  }
+  const positions: Cartesian3[] = []
+  for (let index = 0; index <= ORBIT_SAMPLE_COUNT; index += 1) {
+    const theta = (index / ORBIT_SAMPLE_COUNT) * Math.PI * 2
+    positions.push(
+      cartesianFromOrbitBasis(
+        motion.current,
+        tangent,
+        theta,
+        motion.displayAltitudeM,
+      ),
+    )
+  }
+  return positions
+}
+
 export function setN2YOSatelliteLayerVisible(
   viewer: Viewer,
   layer: N2YOLayerState,

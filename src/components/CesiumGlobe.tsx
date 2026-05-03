@@ -2,16 +2,23 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ArcGisMapServerImageryProvider,
+  ArcType,
+  BoundingSphere,
+  CallbackPositionProperty,
+  CallbackProperty,
   Cartesian2,
   Cartesian3,
   Color,
+  ConstantProperty,
   createWorldImageryAsync,
   CzmlDataSource,
+  HeadingPitchRange,
   Ion,
   ImageryLayer,
   IonWorldImageryStyle,
   LabelStyle,
   NearFarScalar,
+  PolylineDashMaterialProperty,
   Rectangle,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
@@ -28,9 +35,14 @@ import {
   fetchN2YOPositionCache,
   FAMILY_COLOR_HEX,
   FAMILY_SHORT_LABEL,
+  getN2YOOrbitMotion,
   isN2YOGeostationaryFamily,
   latestN2YOAltitudeKm,
   N2YO_SATELLITES,
+  n2yoCurrentOrbitalTheta,
+  n2yoOrbitalPositionAtTheta,
+  n2yoOrbitSamples,
+  rotateN2YOOrbitTangent,
   selectN2YOSatellite,
   setN2YOSatelliteLayerVisible,
   setN2YOOrbitsVisible,
@@ -39,6 +51,7 @@ import {
   type N2YOSatelliteFamily,
 } from '../lib/n2yoSatelliteLayer'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
+import { useEventStore } from '../store/eventStore'
 import type { Signal } from '../types/canopy'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
@@ -369,6 +382,13 @@ export function CesiumGlobe({
   const [orbitCapableLayerCount, setOrbitCapableLayerCount] = useState(0)
   const showAllOrbitsRef = useRef(false)
   const satelliteFamilySelectionRef = useRef<SatelliteFamilySelection>('all')
+  const maneuverDemo = useEventStore((s) => s.maneuverDemo)
+  const endManeuverDemo = useEventStore((s) => s.endManeuverDemo)
+  const [maneuverProgress, setManeuverProgress] = useState(0)
+  const [maneuverPair, setManeuverPair] = useState<{
+    friendly: string
+    hostile: string
+  } | null>(null)
 
   useEffect(() => {
     showAllOrbitsRef.current = showAllOrbits
@@ -952,6 +972,360 @@ export function CesiumGlobe({
     loadVehicle()
   }, [displayMode])
 
+  // Maneuver demo: when the operator accepts a decide-stage decision, run an
+  // interactive Cesium animation showing the hostile and friendly orbital
+  // tracks, the predicted close-approach point, and the friendly executing
+  // an inclination-change burn that diverges its track from the threat.
+  // Both satellites continue along their real orbits the entire time —
+  // only the friendly's orbital plane changes, and only after the burn.
+  useEffect(() => {
+    if (!maneuverDemo) {
+      setManeuverProgress(0)
+      setManeuverPair(null)
+      return
+    }
+
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+
+    const layers = n2yoLayersRef.current
+    if (layers.length === 0) {
+      // Need real satellites loaded to drive the orbital math. Auto-load
+      // and let the next render (with populated layers) pick the demo up.
+      loadRealSatellites()
+      return
+    }
+
+    const isUsFamily = (family: N2YOSatelliteFamily) =>
+      family === 'GPS-3' ||
+      family === 'GSSAP' ||
+      family === 'AEHF' ||
+      family === 'MUOS' ||
+      family === 'WGS' ||
+      family === 'SBIRS'
+
+    // We need non-GEO satellites for both sides — only non-GEO sats have
+    // moving orbital tracks, which is the whole point of the demo. The
+    // engine's friendlyLabel/hostileLabel come from request_packet and may
+    // not match a loaded layer, so we fall back to family-based selection.
+    const friendly =
+      layers.find(
+        (l) =>
+          isUsFamily(l.satelliteFamily) &&
+          !isN2YOGeostationaryFamily(l.satelliteFamily),
+      ) ?? layers.find((l) => isUsFamily(l.satelliteFamily))
+    const hostile =
+      layers.find((l) => l.satelliteFamily === 'CHINA') ??
+      layers.find((l) => l.satelliteFamily === 'RUSSIA')
+
+    if (!friendly || !hostile || friendly === hostile) {
+      endManeuverDemo()
+      return
+    }
+
+    const friendlyMotion = getN2YOOrbitMotion(friendly)
+    const hostileMotion = getN2YOOrbitMotion(hostile)
+
+    if (friendlyMotion.isGeo || hostileMotion.isGeo) {
+      endManeuverDemo()
+      return
+    }
+
+    const friendlyEntity = viewer.entities.getById(friendly.entityIds[0])
+    const hostileEntity = viewer.entities.getById(hostile.entityIds[0])
+    const friendlyFootprint = viewer.entities.getById(friendly.entityIds[1])
+    const hostileFootprint = viewer.entities.getById(hostile.entityIds[1])
+    if (!friendlyEntity || !hostileEntity) {
+      endManeuverDemo()
+      return
+    }
+
+    // Surface real satellite names to the overlay.
+    setManeuverPair({
+      friendly: friendly.satelliteName,
+      hostile: hostile.satelliteName,
+    })
+
+    // Snapshot originals so we can restore natural orbital motion on
+    // cleanup. We override BOTH satellites' positions: the hostile is
+    // pulled onto a tailing co-orbital track behind the friendly so the
+    // engagement reads as "adversary shadowing", and the friendly will
+    // execute the plane change off that shared ring.
+    const originalFriendlyPos = friendlyEntity.position
+    const originalHostilePos = hostileEntity.position
+    const friendlyLabel = friendlyEntity.label
+    const hostileLabel = hostileEntity.label
+    const originalFriendlyLabelShow = friendlyLabel?.show
+    const originalHostileLabelShow = hostileLabel?.show
+    const originalFriendlyFootprintShow = friendlyFootprint?.show ?? true
+    const originalHostileFootprintShow = hostileFootprint?.show ?? true
+
+    // Subtle plane-change: ~10° of inclination delta, applied as a
+    // tangent rotation around the friendly's radial axis. The new orbit
+    // intersects the original at the basis point and tilts away from
+    // the shared ring elsewhere — visually communicates an evasive
+    // cross-track Δv without the over-the-top 22° we had before.
+    const inclinationDeltaRad = (Math.PI / 180) * 10
+    const burnedTangent = rotateN2YOOrbitTangent(
+      friendlyMotion,
+      inclinationDeltaRad,
+    )
+    const naturalTangent = friendlyMotion.tangent
+
+    // Hostile trails the friendly by a fixed angular offset on the same
+    // orbit ring. ~0.22 rad ≈ 12.6° in orbital phase — close enough to
+    // read as "tailing" but with enough gap to see both satellites
+    // distinctly. Negative offset places the hostile *behind* the
+    // friendly (earlier in the orbital phase).
+    const tailingThetaOffsetRad = -0.22
+
+    // Highlight both satellite labels for the engagement.
+    if (friendlyLabel) {
+      friendlyLabel.show = new ConstantProperty(true)
+    }
+    if (hostileLabel) {
+      hostileLabel.show = new ConstantProperty(true)
+    }
+    // Suppress sub-satellite footprints during the demo — they trace the
+    // original ground tracks even after the friendly has burned, which
+    // muddies the orbital-divergence read.
+    if (friendlyFootprint) {
+      friendlyFootprint.show = false
+    }
+    if (hostileFootprint) {
+      hostileFootprint.show = false
+    }
+
+    // burnFraction is the closure variable both satellite positions and
+    // the miss-distance line read from. 0 = pre-burn (co-orbital);
+    // 1 = full plane change applied.
+    let burnFraction = 0
+
+    const lerpedTangent = () => {
+      if (burnFraction <= 0) return naturalTangent
+      if (burnFraction >= 1) return burnedTangent
+      const tx =
+        naturalTangent.x * (1 - burnFraction) + burnedTangent.x * burnFraction
+      const ty =
+        naturalTangent.y * (1 - burnFraction) + burnedTangent.y * burnFraction
+      const tz =
+        naturalTangent.z * (1 - burnFraction) + burnedTangent.z * burnFraction
+      const m = Math.hypot(tx, ty, tz) || 1
+      return { x: tx / m, y: ty / m, z: tz / m }
+    }
+
+    // Friendly: live theta on its natural orbit, but the tangent rotates
+    // from natural to burned through the burn window. Result is a
+    // satellite that follows the shared ring pre-burn, then peels onto
+    // the tilted orbit.
+    const friendlyPosition = new CallbackPositionProperty(() => {
+      const theta = n2yoCurrentOrbitalTheta(friendlyMotion)
+      return n2yoOrbitalPositionAtTheta(friendlyMotion, lerpedTangent(), theta)
+    }, false)
+    friendlyEntity.position = friendlyPosition
+
+    // Hostile: tailing position on the friendly's *natural* orbit. Stays
+    // on the original ring even as the friendly burns away, which is the
+    // visual story — the threat keeps coming, the friendly evades.
+    const hostilePosition = new CallbackPositionProperty(() => {
+      const theta =
+        n2yoCurrentOrbitalTheta(friendlyMotion) + tailingThetaOffsetRad
+      return n2yoOrbitalPositionAtTheta(friendlyMotion, naturalTangent, theta)
+    }, false)
+    hostileEntity.position = hostilePosition
+
+    const sharedOrbitId = `maneuver-orbit-shared-${maneuverDemo.decisionId}`
+    const friendlyBurnedOrbitId = `maneuver-orbit-friendly-burned-${maneuverDemo.decisionId}`
+    const missLineId = `maneuver-miss-line-${maneuverDemo.decisionId}`
+
+    const sharedOrbitSamples = n2yoOrbitSamples(friendlyMotion, naturalTangent)
+    const friendlyBurnedSamples = n2yoOrbitSamples(
+      friendlyMotion,
+      burnedTangent,
+    )
+
+    // Shared orbit ring — pre-burn, both satellites are on it. Colored
+    // red because it's the threat path: as long as the friendly stays
+    // on this ring the hostile will close in.
+    viewer.entities.add({
+      id: sharedOrbitId,
+      polyline: {
+        arcType: ArcType.NONE,
+        clampToGround: false,
+        material: new PolylineDashMaterialProperty({
+          color: Color.fromCssColorString('#ef4444').withAlpha(0.85),
+          dashLength: 16,
+        }),
+        positions: sharedOrbitSamples,
+        width: 4,
+      },
+    })
+
+    // Post-burn orbit — appears as the friendly tilts onto it.
+    viewer.entities.add({
+      id: friendlyBurnedOrbitId,
+      polyline: {
+        arcType: ArcType.NONE,
+        clampToGround: false,
+        material: new PolylineDashMaterialProperty({
+          color: Color.fromCssColorString('#22c55e'),
+          dashLength: 18,
+        }),
+        positions: new CallbackProperty(
+          () => (burnFraction > 0.02 ? friendlyBurnedSamples : []),
+          false,
+        ),
+        width: 4,
+      },
+    })
+
+    // Live miss-distance line connecting the two satellites. Pre-burn
+    // it's a short red leash; post-burn it stretches as the friendly
+    // peels off onto the tilted orbit, communicating the growing miss.
+    viewer.entities.add({
+      id: missLineId,
+      polyline: {
+        arcType: ArcType.NONE,
+        clampToGround: false,
+        material: new PolylineDashMaterialProperty({
+          color: Color.fromCssColorString('#facc15').withAlpha(0.85),
+          dashLength: 8,
+        }),
+        positions: new CallbackProperty(() => {
+          const friendlyTheta = n2yoCurrentOrbitalTheta(friendlyMotion)
+          const friendlyPos = n2yoOrbitalPositionAtTheta(
+            friendlyMotion,
+            lerpedTangent(),
+            friendlyTheta,
+          )
+          const hostilePos = n2yoOrbitalPositionAtTheta(
+            friendlyMotion,
+            naturalTangent,
+            friendlyTheta + tailingThetaOffsetRad,
+          )
+          return [friendlyPos, hostilePos]
+        }, false),
+        width: 2,
+      },
+    })
+
+    // Camera framing: aim at a bounding sphere centered on the engagement
+    // midpoint at Earth's surface. flyToBoundingSphere points the camera
+    // AT the sphere center regardless of where the camera ends up, so the
+    // engagement (and Earth underneath it) is always centered. The
+    // HeadingPitchRange offset gives a 3/4 perspective — pitch −55° tilts
+    // enough to read the post-burn plane change without flattening it,
+    // and the range (~3.2× the orbital radius) keeps both orbit rings
+    // and Earth's disk well within the FOV.
+    const friendlyDisplay = currentN2YODisplayPoint(friendly)
+    const hostileDisplay = currentN2YODisplayPoint(hostile)
+    const midLat = (friendlyDisplay.lat + hostileDisplay.lat) / 2
+    const midLng = (friendlyDisplay.lng + hostileDisplay.lng) / 2
+    const orbitRadiusM = Math.max(
+      friendlyMotion.displayAltitudeM,
+      hostileMotion.displayAltitudeM,
+    )
+    viewer.camera.flyToBoundingSphere(
+      new BoundingSphere(
+        Cartesian3.fromDegrees(midLng, midLat, 0),
+        orbitRadiusM,
+      ),
+      {
+        duration: 1.4,
+        offset: new HeadingPitchRange(
+          0,
+          -(Math.PI / 180) * 48,
+          // Range pulled back to orbitRadius × 5 so a meaningful arc of
+          // each orbit ring stays in frame across the long hold phase
+          // — at 45× orbital playback the satellites traverse ~1/5 of
+          // an orbit during the 22 s demo, and a tighter range would
+          // let them sail off the edge of the camera view.
+          orbitRadiusM * 5,
+        ),
+      },
+    )
+
+    let raf = 0
+    let cancelled = false
+    const startTime = performance.now()
+    const totalDuration = maneuverDemo.durationMs
+
+    // Smootherstep (Ken Perlin's quintic) — has zero first AND second
+    // derivatives at both endpoints. Means the burn starts and ends
+    // with no acceleration discontinuity, so the orbit-plane drift
+    // reads as continuous low-thrust steering rather than a snap.
+    const smootherstep = (x: number) =>
+      x * x * x * (x * (x * 6 - 15) + 10)
+
+    const tick = () => {
+      if (cancelled) return
+      const elapsed = performance.now() - startTime
+      const t = Math.min(elapsed / totalDuration, 1)
+      // Phase windows (fractions of total — totalDuration ≈ 15s):
+      //   0.00 - 0.08 (~1.2s): camera fly-in
+      //   0.08 - 0.22 (~2.1s): pre-burn cruise; both satellites visible
+      //                       on the shared red ring, hostile tailing
+      //   0.22 - 0.78 (~8.4s): burn fires; tangent rotates SLOWLY onto
+      //                       the green post-burn orbit. Wide window
+      //                       so the inclination drift is gradual and
+      //                       readable, not a jump.
+      //   0.78 - 1.00 (~3.3s): post-burn hold; scene then persists
+      //                       indefinitely once t hits 1.
+      const burnT = Math.min(Math.max((t - 0.22) / 0.56, 0), 1)
+      burnFraction = smootherstep(burnT)
+      setManeuverProgress(t)
+      viewer.scene.requestRender()
+      if (t < 1) {
+        raf = requestAnimationFrame(tick)
+      }
+      // When t reaches 1 we deliberately do NOT call endManeuverDemo.
+      // Letting the effect tear down would snap the hostile back to
+      // its real orbit (somewhere on the other side of Earth) and
+      // wipe the post-burn orbit ring. Instead, the scene persists:
+      // burnFraction stays at 1, the friendly stays on the green
+      // burned orbit, the hostile stays tailing on the red ring,
+      // and Cesium keeps re-querying the CallbackPositionProperty
+      // each frame so both satellites continue along their orbits.
+      // Cleanup only runs when a new demo replaces this one or the
+      // viewer unmounts.
+    }
+    raf = requestAnimationFrame(tick)
+
+    return () => {
+      cancelled = true
+      if (raf) cancelAnimationFrame(raf)
+      if (!viewer.isDestroyed()) {
+        if (originalFriendlyPos) {
+          friendlyEntity.position = originalFriendlyPos
+        }
+        if (originalHostilePos) {
+          hostileEntity.position = originalHostilePos
+        }
+        if (friendlyLabel) {
+          friendlyLabel.show =
+            originalFriendlyLabelShow ?? new ConstantProperty(false)
+        }
+        if (hostileLabel) {
+          hostileLabel.show =
+            originalHostileLabelShow ?? new ConstantProperty(false)
+        }
+        if (friendlyFootprint) {
+          friendlyFootprint.show = originalFriendlyFootprintShow
+        }
+        if (hostileFootprint) {
+          hostileFootprint.show = originalHostileFootprintShow
+        }
+        viewer.entities.removeById(sharedOrbitId)
+        viewer.entities.removeById(friendlyBurnedOrbitId)
+        viewer.entities.removeById(missLineId)
+        viewer.scene.requestRender()
+      }
+      setManeuverPair(null)
+    }
+  }, [maneuverDemo, endManeuverDemo])
+
   return (
     <>
       <div className="cesium-globe" ref={containerRef} />
@@ -1068,6 +1442,47 @@ export function CesiumGlobe({
               </dd>
             </div>
           </dl>
+        </aside>
+      ) : null}
+      {maneuverDemo ? (
+        <aside className="maneuver-overlay" aria-label="Maneuver execution status">
+          <span className="maneuver-overlay__eyebrow">
+            Plane-change burn executing
+          </span>
+          <strong className="maneuver-overlay__title">
+            {maneuverPair?.friendly ?? maneuverDemo.friendlyLabel ?? 'Friendly'}{' '}
+            ↦ evade{' '}
+            {maneuverPair?.hostile ?? maneuverDemo.hostileLabel ?? 'hostile'}
+          </strong>
+          <dl className="maneuver-overlay__metrics">
+            <div>
+              <dt>Pre-burn miss</dt>
+              <dd className="maneuver-overlay__value maneuver-overlay__value--threat">
+                {maneuverDemo.preMissKm.toFixed(1)} km
+              </dd>
+            </div>
+            <div>
+              <dt>Post-burn miss</dt>
+              <dd className="maneuver-overlay__value maneuver-overlay__value--safe">
+                {maneuverDemo.postMissKm.toFixed(1)} km
+              </dd>
+            </div>
+            <div>
+              <dt>Δv applied</dt>
+              <dd className="maneuver-overlay__value">
+                {maneuverDemo.dvMs.toFixed(2)} m/s
+              </dd>
+            </div>
+          </dl>
+          <div
+            className="maneuver-overlay__progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(maneuverProgress * 100)}
+          >
+            <span style={{ width: `${Math.round(maneuverProgress * 100)}%` }} />
+          </div>
         </aside>
       ) : null}
       <div className="map-stage__mode">{imageryMode}</div>
