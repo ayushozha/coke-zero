@@ -8,12 +8,12 @@ type ScenarioRailProps = {
 
 const familyLabel = (family: ScenarioDefinition['family']) => {
   if (family === 'iran') {
-    return 'Iran'
+    return 'Iran sim'
   }
   if (family === 'army') {
-    return 'Army'
+    return 'Army sim'
   }
-  return 'Regional'
+  return 'Reg sim'
 }
 
 export function ScenarioRail({
@@ -26,29 +26,37 @@ export function ScenarioRail({
       <div className="scenario-rail__header">
         <span>Scenario Stack</span>
         <strong>{scenarios.length} simulations loaded</strong>
+        <div className="scenario-rail__legend" aria-hidden="true">
+          <i className="scenario-rail__key scenario-rail__key--iran">Iran sim</i>
+          <i className="scenario-rail__key scenario-rail__key--army">Army sim</i>
+          <i className="scenario-rail__key scenario-rail__key--regional">
+            Reg sim
+          </i>
+        </div>
       </div>
 
       <nav className="scenario-list" aria-label="Available scenarios">
-        {scenarios.map((scenario) => (
-          <button
-            className={
-              scenario.id === activeScenarioId
-                ? `scenario-list__item scenario-list__item--${scenario.family} scenario-list__item--active`
-                : `scenario-list__item scenario-list__item--${scenario.family}`
-            }
-            key={scenario.id}
-            onClick={() => onSelectScenario(scenario.id)}
-            type="button"
-          >
-            <span>{scenario.id}</span>
-            <strong>{scenario.shortName}</strong>
-            <em>
-              {scenario.id === activeScenarioId
-                ? `Active ${familyLabel(scenario.family)}`
-                : familyLabel(scenario.family)}
-            </em>
-          </button>
-        ))}
+        {scenarios.map((scenario) => {
+          const isActive = scenario.id === activeScenarioId
+
+          return (
+            <button
+              aria-current={isActive ? 'true' : undefined}
+              className={
+                isActive
+                  ? `scenario-list__item scenario-list__item--${scenario.family} scenario-list__item--active`
+                  : `scenario-list__item scenario-list__item--${scenario.family}`
+              }
+              key={scenario.id}
+              onClick={() => onSelectScenario(scenario.id)}
+              type="button"
+            >
+              <span>{scenario.id}</span>
+              <strong>{scenario.shortName}</strong>
+              <em>{familyLabel(scenario.family)}</em>
+            </button>
+          )
+        })}
       </nav>
 
       <div className="scenario-rail__footer">

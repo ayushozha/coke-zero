@@ -235,6 +235,48 @@
   font-weight: 760;
 }
 
+.scenario-rail__legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.scenario-rail__key {
+  min-width: 0;
+  border: 1px solid var(--scenario-key-line);
+  border-left-width: 3px;
+  background: var(--scenario-key-bg);
+  color: var(--scenario-key-color);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 760;
+  overflow: hidden;
+  padding: 3px 4px;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scenario-rail__key--iran {
+  --scenario-key-bg: rgba(224, 92, 79, 0.11);
+  --scenario-key-color: #ff9d92;
+  --scenario-key-line: rgba(224, 92, 79, 0.46);
+}
+
+.scenario-rail__key--army {
+  --scenario-key-bg: rgba(167, 185, 111, 0.11);
+  --scenario-key-color: #c3d582;
+  --scenario-key-line: rgba(167, 185, 111, 0.46);
+}
+
+.scenario-rail__key--regional {
+  --scenario-key-bg: rgba(51, 242, 240, 0.09);
+  --scenario-key-color: #8cf4ef;
+  --scenario-key-line: rgba(51, 242, 240, 0.42);
+}
+
 .scenario-rail__footer p {
   margin-top: 8px;
   color: var(--text-muted);
@@ -307,6 +349,18 @@
   opacity: 1;
 }
 
+.scenario-list__item--active::after {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  background: var(--scenario-accent);
+  box-shadow: 0 0 10px var(--scenario-accent);
+  content: '';
+  transform: translateY(-50%) rotate(45deg);
+}
+
 .scenario-list__item--iran {
   --scenario-accent: var(--red);
   --scenario-accent-soft: rgba(224, 92, 79, 0.13);
@@ -344,15 +398,17 @@
   border: 1px solid var(--scenario-accent-line);
   border-radius: 2px;
   color: var(--scenario-accent);
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-style: normal;
-  padding: 2px 5px;
+  font-weight: 760;
+  padding: 2px 4px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .scenario-list__item--active em {
-  border-color: rgba(216, 166, 58, 0.58);
-  color: var(--amber);
+  border-color: var(--scenario-accent-line);
+  color: var(--scenario-accent);
 }
 
 .map-workspace,
