@@ -7,6 +7,17 @@
   --cyan: #33f2f0;
   --olive: #a7b96f;
   --violet: #8b87c7;
+  --status-white: var(--white);
+  --status-amber: var(--amber);
+  --status-red: var(--red);
+  --status-live: var(--green);
+  --status-live-bright: #a7d5ad;
+  --domain-rf-ew: #b8841f;
+  --domain-cyber: var(--violet);
+  --domain-pnt: #7fa8d8;
+  --domain-space: #65b8b2;
+  --domain-drone: var(--green);
+  --domain-context: #9ba6ad;
   --panel: rgba(13, 23, 24, 0.9);
   --panel-strong: rgba(9, 17, 18, 0.96);
   --panel-soft: rgba(24, 38, 38, 0.76);
