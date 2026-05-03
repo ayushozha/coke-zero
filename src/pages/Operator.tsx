@@ -26,7 +26,7 @@ export function Operator() {
         <a href="/brigade">Brigade View</a>
       </header>
       <section className="operator-grid" aria-label="Operator fusion state">
-        <div className="panel">
+        <div className="panel operator-panel--anomaly">
           <div className="panel__header">
             <h2>Anomaly Queue</h2>
             <span>{String(anomalies.length).padStart(2, '0')} open</span>
@@ -46,7 +46,7 @@ export function Operator() {
             </ul>
           )}
         </div>
-        <div className="panel">
+        <div className="panel operator-panel--decision">
           <div className="panel__header">
             <h2>Decision Rail</h2>
             <span>{String(decisions.length).padStart(2, '0')} pending</span>

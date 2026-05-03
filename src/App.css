@@ -3536,15 +3536,43 @@
 
 .operator-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* Layout intent (not equal columns):
+     - left column narrow (220px) — Anomaly Queue + Decision Rail stacked
+     - middle column 1fr  — System Actions
+     - right column 1.5fr — Reasoning Trace (most important)
+     - bottom row spans all three for OSINT Embedding (wider than tall)
+     The minmax(0, …) on rows lets the grid children shrink below their
+     intrinsic content size so list/stream overflows scroll inside. */
+  grid-template-columns: 384px minmax(0, 1fr) minmax(0, 1.5fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.7fr);
+  grid-template-areas:
+    "anom actions trace"
+    "decis actions trace"
+    "embed embed embed";
   gap: 10px;
   margin-top: 18px;
-  /* Fill the operator-shell's remaining vertical space so each column
-     has a bounded height for its list/stream to scroll inside. Without
-     these, content past the viewport gets clipped by the shell's
-     overflow: hidden with no scroll affordance. */
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.operator-panel--anomaly {
+  grid-area: anom;
+}
+
+.operator-panel--decision {
+  grid-area: decis;
+}
+
+.operator-grid > .action-log {
+  grid-area: actions;
+}
+
+.operator-grid > .reasoning-panel {
+  grid-area: trace;
+}
+
+.operator-grid > .embedding-viz {
+  grid-area: embed;
 }
 
 /* Operator-shell becomes a flex column so the grid below the header
