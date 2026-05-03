@@ -35,6 +35,7 @@ from halo.services.decide import DecideService
 from halo.services.fusion import FusionService
 from halo.services.kb import KB
 from halo.services.llm.stub import StubLLMClient
+from halo.services.orbit import OrbitService
 from halo.services.scenario_replay import ScenarioReplayService
 from halo.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
 from halo.services.ui_events import UIEventService
@@ -84,15 +85,29 @@ EXPECTED_UI_EVENT_TYPE = "recommendation_created"
 EXPECTED_UI_EVENT_SEVERITY = "high"
 EXPECTED_UI_EVENT_TITLE = "Active defense escort recommended — China"
 
+# Maneuver enrichment from DecideService + OrbitService. Beat-4.7 demo names
+# (CANOPY-LEO-07, UNKNOWN-RSO-441) match a hand-pinned entry in
+# OrbitService._SCRIPTED_MANEUVERS so these numbers are deterministic.
+EXPECTED_MANEUVER_FRIENDLY = "CANOPY-LEO-07"
+EXPECTED_MANEUVER_INSPECTOR = "UNKNOWN-RSO-441"
+EXPECTED_PRE_MISS_KM = 8.6
+EXPECTED_POST_MISS_KM = 142.0
+EXPECTED_DV_M_S = 1.2
+EXPECTED_MANEUVER_CLAUSE = (
+    "Recommended maneuver: CANOPY-LEO-07 1.2 m/s burn, "
+    "miss 8.6 → 142.0 km (+133 km separation)."
+)
+
 
 async def _run_pipeline() -> dict[str, list]:
     bus = InProcessBus()
     kb = KB.load_from_json(KB_FILE)
     llm = StubLLMClient(kb)
+    orbit = OrbitService()
     services = [
         FusionService(bus),
         AttribService(bus, llm, kb, window_s=0.2),
-        DecideService(bus, llm),
+        DecideService(bus, llm, orbit=orbit),
         UIEventService(bus),
     ]
     collected: dict[str, list] = {
@@ -175,6 +190,23 @@ def test_decision(pipeline_output) -> None:
     assert decision.source_signal_ids == EXPECTED_ANOMALY_SOURCE_SIGNALS
 
 
+def test_decision_request_packet_carries_maneuver_math(pipeline_output) -> None:
+    """The orbital enrichment in DecideService should populate the pre/post
+    miss distance and recommended_burn block for the operator's APPROVE card."""
+    packet = pipeline_output["decision"][0].request_packet
+    assert packet["pre_miss_km"] == pytest.approx(EXPECTED_PRE_MISS_KM)
+    assert packet["post_miss_km"] == pytest.approx(EXPECTED_POST_MISS_KM)
+
+    burn = packet["recommended_burn"]
+    assert burn["sat"] == EXPECTED_MANEUVER_FRIENDLY
+    assert burn["against"] == EXPECTED_MANEUVER_INSPECTOR
+    assert burn["dv_m_s"] == pytest.approx(EXPECTED_DV_M_S)
+    # t_burn_utc is derived as TCA - 6 minutes from the source signal; just
+    # assert the format. Beat-4.7 RPO TCA in the source scenario is
+    # 2026-06-18T15:55:30Z, so the burn lands 6 minutes earlier.
+    assert burn["t_burn_utc"] == "2026-06-18T15:49:30Z"
+
+
 def test_ui_event(pipeline_output) -> None:
     ui_event = pipeline_output["ui_event"][0]
     assert isinstance(ui_event, UIEvent)
@@ -188,6 +220,9 @@ def test_ui_event(pipeline_output) -> None:
     # The whole signal-id chain must propagate so the UI can highlight which
     # raw signals drove the recommendation.
     assert ui_event.source_signal_ids == EXPECTED_ANOMALY_SOURCE_SIGNALS
+    # The maneuver clause is the visible upgrade from "do something" words
+    # to specific numbers on the operator's card.
+    assert EXPECTED_MANEUVER_CLAUSE in ui_event.message
 
 
 if __name__ == "__main__":
