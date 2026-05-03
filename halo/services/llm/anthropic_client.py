@@ -12,7 +12,12 @@ from halo.services.llm.validation import (
     validate_and_repair_attribution,
     validate_and_repair_decision,
 )
-from halo.services.schemas.events import Anomaly, Attribution, Decision
+from halo.services.schemas.events import (
+    Anomaly,
+    Attribution,
+    AttributionChallenge,
+    Decision,
+)
 
 log = logging.getLogger(__name__)
 
@@ -39,27 +44,18 @@ class AnthropicLLMClient:
     async def attribute(
         self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry] = ()
     ) -> Attribution:
+        return await self.attribute_primary(anomalies, kb_context)
+
+    async def attribute_primary(
+        self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry] = ()
+    ) -> Attribution:
         from halo.services.attrib.prompts import (
             ATTRIBUTION_TOOL,
             attribution_system_prompt,
             attribution_user_prompt,
         )
 
-        # Prefer KB entries that match the anomaly's source signal ids; fall
-        # back to all entries if there are no matches yet.
-        source_ids = [
-            sid for a in anomalies for sid in a.source_signal_ids
-        ]
-        relevant: list[KBEntry] = list(kb_context)
-        if not relevant:
-            seen: set[str] = set()
-            for sid in source_ids:
-                for entry in self._kb.by_scenario_signal_id(sid):
-                    if entry.id not in seen:
-                        relevant.append(entry)
-                        seen.add(entry.id)
-            if not relevant:
-                relevant = self._kb.all_entries()
+        relevant = self._resolve_kb_context(anomalies, kb_context)
 
         response = await self._client.messages.create(
             model=self._model,
@@ -89,6 +85,105 @@ class AnthropicLLMClient:
                 dict.fromkeys(sid for a in anomalies for sid in a.source_signal_ids)
             ),
         )
+
+    async def attribute_redteam(
+        self,
+        primary: Attribution,
+        anomalies: list[Anomaly],
+        kb_context: Iterable[KBEntry] = (),
+    ) -> AttributionChallenge:
+        from halo.services.attrib.prompts import (
+            REDTEAM_TOOL,
+            redteam_system_prompt,
+            redteam_user_prompt,
+        )
+
+        relevant = self._resolve_kb_context(anomalies, kb_context)
+
+        response = await self._client.messages.create(
+            model=self._model,
+            max_tokens=1024,
+            system=redteam_system_prompt(),
+            tools=[REDTEAM_TOOL],
+            tool_choice={"type": "tool", "name": REDTEAM_TOOL["name"]},
+            messages=[
+                {
+                    "role": "user",
+                    "content": redteam_user_prompt(primary, anomalies, relevant),
+                }
+            ],
+        )
+        payload = _extract_tool_input(response, REDTEAM_TOOL["name"])
+        return AttributionChallenge(
+            primary_attribution_id=primary.id,
+            alternative_actor=payload.get("alternative_actor"),
+            objections=list(payload.get("objections", [])),
+            confidence_delta=float(payload.get("confidence_delta", 0.0)),
+            rationale=payload.get("rationale", ""),
+        )
+
+    async def reconcile(
+        self,
+        primary: Attribution,
+        challenge: AttributionChallenge,
+        anomalies: list[Anomaly],
+        kb_context: Iterable[KBEntry] = (),
+    ) -> Attribution:
+        from halo.services.attrib.prompts import (
+            ATTRIBUTION_TOOL,
+            reconcile_system_prompt,
+            reconcile_user_prompt,
+        )
+
+        relevant = self._resolve_kb_context(anomalies, kb_context)
+
+        response = await self._client.messages.create(
+            model=self._model,
+            max_tokens=1024,
+            system=reconcile_system_prompt(),
+            tools=[ATTRIBUTION_TOOL],
+            tool_choice={"type": "tool", "name": ATTRIBUTION_TOOL["name"]},
+            messages=[
+                {
+                    "role": "user",
+                    "content": reconcile_user_prompt(
+                        primary, challenge, anomalies, relevant
+                    ),
+                }
+            ],
+        )
+        payload = _extract_tool_input(response, ATTRIBUTION_TOOL["name"])
+        validation = validate_and_repair_attribution(payload)
+        payload = validation.repaired
+        return Attribution(
+            anomaly_ids=list(primary.anomaly_ids),
+            actor=payload["actor"],
+            confidence=float(payload["confidence"]),
+            doctrine_match=payload.get("doctrine_match"),
+            evidence=list(payload.get("evidence", [])),
+            predicted_next=payload.get("predicted_next"),
+            kb_citations=list(payload.get("kb_citations", [])),
+            source_signal_ids=list(primary.source_signal_ids),
+        )
+
+    def _resolve_kb_context(
+        self,
+        anomalies: list[Anomaly],
+        kb_context: Iterable[KBEntry],
+    ) -> list[KBEntry]:
+        relevant: list[KBEntry] = list(kb_context)
+        if relevant:
+            return relevant
+        seen: set[str] = set()
+        for a in anomalies:
+            for sid in a.source_signal_ids:
+                for entry in self._kb.by_scenario_signal_id(sid):
+                    if entry.id not in seen:
+                        relevant.append(entry)
+                        seen.add(entry.id)
+        if not relevant:
+            relevant = self._kb.all_entries()
+        return relevant
 
     async def decide(self, attribution: Attribution) -> Decision:
         from halo.services.decide.prompts import (

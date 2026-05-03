@@ -38,10 +38,14 @@ export function MissionSummary({
     : attribution?.predicted_next ?? scenario.objective
   const action = uiEvent
     ? commanderBrief.action
-    : decision?.action ?? `Run ${scenario.file}`
+    : decision?.action ?? commanderBrief.action
+  const stateClass = state.toLowerCase()
 
   return (
-    <section className="mission-summary" aria-label="Mission summary">
+    <section
+      className={`mission-summary mission-summary--${stateClass}`}
+      aria-label="Mission summary"
+    >
       <div className="mission-summary__topline">
         <span>Posture</span>
         <strong>{state}</strong>

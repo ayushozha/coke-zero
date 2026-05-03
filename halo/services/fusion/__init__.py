@@ -4,8 +4,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from collections.abc import Callable
+
 from halo.services.bus import Bus
-from halo.services.schemas.events import Anomaly, Signal
+from halo.services.schemas.events import Anomaly, Domain, Signal
+from halo.services.traces import Tracer
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ DOMAIN_PATTERN_MAP: dict[tuple[str, str], str] = {
     # RF / EW
     ("rf_ew", "rf_interference"): "rf_anomaly",
     ("rf_ew", "satcom_rf_spike"): "rf_anomaly",
+    ("rf_ew", "emission_cluster_detected"): "rf_anomaly",
     ("rf_ew", "gnss_jamming_signature"): "rf_gnss_jamming",
     ("rf_ew", "uas_control_link_detected"): "rf_uas_control_link",
     ("rf_ew", "emission_posture_risk"): "rf_emission_posture_risk",
@@ -39,18 +43,26 @@ DOMAIN_PATTERN_MAP: dict[tuple[str, str], str] = {
     ("pnt", "pnt_spoofing"): "gnss_spoof",
     ("pnt", "pnt_rf_alignment"): "gnss_spoof",
     ("pnt", "gps_spoof"): "gnss_spoof",
+    ("pnt", "receiver_holdover_active"): "gnss_spoof",
     # Cyber
     ("cyber", "credential_spray"): "cyber_probe_burst",
     ("cyber", "credential_probe"): "cyber_probe_burst",
     ("cyber", "process_anomaly"): "cyber_probe_burst",
     ("cyber", "intrusion"): "cyber_probe_burst",
+    ("cyber", "gateway_config_probe"): "cyber_probe_burst",
     ("cyber", "response_action"): "cyber_response_action",
     # SATCOM
     ("satcom", "satcom_degradation"): "satcom_degradation",
     ("satcom", "satcom_link_margin_drop"): "satcom_degradation",
     ("satcom", "telemetry_degradation"): "satcom_degradation",
+    ("satcom", "gateway_latency_rise"): "satcom_degradation",
+    ("satcom", "low_rate_mode_active"): "satcom_degradation",
+    ("satcom", "satcom_queue_pressure"): "satcom_degradation",
+    ("satcom", "satcom_route_shed"): "satcom_degradation",
     # SDA
     ("sda", "sda_catalog_match"): "sda_catalog_match",
+    ("sda", "custody_quality_change"): "sda_catalog_match",
+    ("sda", "overhead_warning_quality_drop"): "sda_catalog_match",
     ("sda", "maritime_space_picture_shift"): "sda_maritime_picture_shift",
     ("sda", "overhead_ir_cue"): "sda_overhead_ir_cue",
     ("sda", "counterspace_capability_context"): "sda_counterspace_context",
@@ -58,6 +70,8 @@ DOMAIN_PATTERN_MAP: dict[tuple[str, str], str] = {
     ("drone", "drone_spoofing"): "drone_spoofing",
     ("drone", "lost_link"): "drone_lost_link",
     ("drone", "degraded_telemetry"): "drone_degraded",
+    ("drone", "drone_track_custody_split"): "drone_degraded",
+    ("drone", "observer_feed_quality_drop"): "drone_degraded",
     ("drone", "autonomous_relay_handoff"): "drone_relay_handoff",
     ("drone", "relay_candidate_ready"): "drone_relay_candidate_ready",
     ("drone", "relay_mesh_status"): "drone_relay_mesh_status",
@@ -91,9 +105,42 @@ DOMAIN_PATTERN_MAP: dict[tuple[str, str], str] = {
 # remains quiet rather than producing low-value threat warnings.
 IGNORED_EVENT_TYPES: set[tuple[str, str]] = {
     ("cyber", "ground_segment_baseline"),
+    ("cyber", "maintenance_api_rate_limit"),
     ("drone", "telemetry_update"),
+    ("drone", "backup_asset_ready"),
+    ("drone", "cross_sensor_position_check"),
+    ("drone", "isr_product_quality_gate"),
+    ("drone", "track_handoff_success"),
+    ("humint", "imagery_request_update"),
+    ("orbit", "space_support_option"),
     ("osint", "osint_context"),
     ("osint", "public_report"),
+    ("osint", "aor_commander_update"),
+    ("osint", "attack_chain_commander_update"),
+    ("osint", "attack_chain_correlation"),
+    ("osint", "base_defense_recovery_update"),
+    ("osint", "c5isr_commander_update"),
+    ("osint", "commander_orbit_cue"),
+    ("osint", "convoy_release_update"),
+    ("osint", "fdir_mission_update"),
+    ("osint", "gateway_pressure_assessment"),
+    ("osint", "gateway_recovery_assessment"),
+    ("osint", "local_route_report"),
+    ("osint", "post_pass_collection_update"),
+    ("osint", "relay_commander_update"),
+    ("pnt", "alternate_pnt_check"),
+    ("pnt", "alternate_pnt_restored"),
+    ("rf_ew", "ew_bearing_refined"),
+    ("rf_ew", "rf_bearing_crosscheck"),
+    ("satcom", "backup_link_check"),
+    ("satcom", "local_cache_confirmed"),
+    ("satcom", "priority_path_confirmed"),
+    ("satcom", "satcom_priority_queue"),
+    ("sda", "custody_update"),
+    ("terrain", "approach_masking_check"),
+    ("terrain", "concealment_route_check"),
+    ("terrain", "line_of_sight_forecast"),
+    ("terrain", "route_chokepoint_check"),
 }
 
 # Orbit-domain event types handled by the orbital correlator below. Anything
@@ -193,8 +240,16 @@ class FusionService:
     produces an `rf_anomaly` directly and also feeds the orbital correlator).
     """
 
-    def __init__(self, bus: Bus) -> None:
+    def __init__(
+        self,
+        bus: Bus,
+        *,
+        tracer: Tracer | None = None,
+        blocked_domains: Callable[[], set[Domain]] | None = None,
+    ) -> None:
         self._bus = bus
+        self._tracer = tracer
+        self._blocked_domains = blocked_domains
         self._state = _State()
 
     async def run(self) -> None:
@@ -215,6 +270,23 @@ class FusionService:
 
         event_type = signal.payload.event_type
         domain = signal.domain
+
+        # Stress mode: drop signals from blocked domains entirely. The trace
+        # makes the loss visible to the operator so the engine doesn't go
+        # silent without explanation.
+        if self._blocked_domains is not None:
+            blocked = self._blocked_domains()
+            if domain in blocked:
+                if self._tracer is not None:
+                    await self._tracer.emit(
+                        "stress",
+                        "warn",
+                        f"input dropped: {domain} blocked",
+                        ref_id=signal.id,
+                        domain=domain,
+                        event_type=event_type,
+                    )
+                return
 
         if (domain, event_type) in IGNORED_EVENT_TYPES:
             log.debug("fusion: ignoring baseline %s/%s", domain, event_type)
@@ -289,6 +361,16 @@ class FusionService:
             anomaly.kind,
             anomaly.severity,
         )
+        if self._tracer is not None:
+            await self._tracer.emit(
+                "fusion",
+                "info",
+                f"new anomaly: {anomaly.kind} @ severity {anomaly.severity:.2f}",
+                ref_id=anomaly.id,
+                kind=anomaly.kind,
+                severity=anomaly.severity,
+                source_signal=anomaly.source_signal,
+            )
 
     def _build_anomaly(
         self,

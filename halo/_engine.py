@@ -1,0 +1,139 @@
+"""Shared engine builder used by both the CLI and the FastAPI gateway.
+
+Bundling the ``InProcessBus`` + KB + LLM + four async services into one
+function keeps :mod:`halo.cli` and :mod:`halo.api` in lock-step. If a new
+service joins the engine, it ships here once.
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from halo.services.attrib import AttribService
+from halo.services.bus import InProcessBus
+from halo.services.decide import DecideService
+from halo.services.decide.tools import build_tool_registry
+from halo.services.fusion import FusionService
+from halo.services.kb import KB
+from halo.services.llm import LLMClient
+from halo.services.orbit import OrbitService
+from halo.services.traces import Tracer
+from halo.services.ui_events import UIEventService
+
+DEFAULT_KB_PATH = Path("data/kb_seed_entries.json")
+LLM_PROVIDERS = ("stub", "anthropic", "ollama")
+
+log = logging.getLogger(__name__)
+
+
+@dataclass
+class Engine:
+    bus: InProcessBus
+    kb: KB
+    orbit: OrbitService
+    llm: LLMClient
+    tracer: Tracer
+    fusion: FusionService
+    attrib: AttribService
+    decide: DecideService
+    ui_events: UIEventService
+
+
+def build_llm(*, provider: str, kb: KB) -> LLMClient:
+    if provider == "anthropic":
+        from halo.services.llm.anthropic_client import (
+            DEFAULT_MODEL,
+            AnthropicLLMClient,
+        )
+
+        model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
+        return AnthropicLLMClient(kb, model=model)
+    if provider == "ollama":
+        from halo.services.llm.ollama_client import OllamaLLMClient
+
+        return OllamaLLMClient(kb)
+    from halo.services.llm.stub import StubLLMClient
+
+    return StubLLMClient(kb)
+
+
+def resolve_provider(*, llm_flag: str | None, live_flag: bool = False) -> str:
+    """Pick provider from --llm > CANOPY_LLM env > --live/CANOPY_LIVE > stub."""
+    if llm_flag:
+        return llm_flag
+    env_value = os.environ.get("CANOPY_LLM")
+    if env_value:
+        return env_value.lower()
+    if live_flag or os.environ.get("CANOPY_LIVE"):
+        return "anthropic"
+    return "stub"
+
+
+def build_engine(
+    *,
+    provider: str = "stub",
+    kb_path: str | Path = DEFAULT_KB_PATH,
+    attrib_window_s: float = 2.0,
+    blocked_domains_provider=None,
+    multi_agent: bool = True,
+) -> Engine:
+    """Wire up the in-process bus, KB, LLM, and the four async services."""
+    bus = InProcessBus()
+    kb = KB.load_from_json(kb_path)
+    log.info("KB loaded: %d entries from %s", len(kb), kb_path)
+    llm = build_llm(provider=provider, kb=kb)
+
+    orbit = OrbitService()
+    log.info(
+        "Orbit service loaded with %d cached satellites",
+        len(orbit.known_satellites()),
+    )
+
+    tracer = Tracer(bus)
+    tool_ctx, tools = build_tool_registry(kb=kb, orbit=orbit, tracer=tracer)
+    fusion = FusionService(
+        bus, tracer=tracer, blocked_domains=blocked_domains_provider
+    )
+    attrib = AttribService(
+        bus,
+        llm,
+        kb,
+        window_s=attrib_window_s,
+        tracer=tracer,
+        blocked_domains=blocked_domains_provider,
+        multi_agent=multi_agent,
+    )
+    decide = DecideService(
+        bus,
+        llm,
+        orbit=orbit,
+        tracer=tracer,
+        tools=tools,
+        tool_ctx=tool_ctx,
+    )
+    ui_events = UIEventService(bus)
+
+    return Engine(
+        bus=bus,
+        kb=kb,
+        orbit=orbit,
+        llm=llm,
+        tracer=tracer,
+        fusion=fusion,
+        attrib=attrib,
+        decide=decide,
+        ui_events=ui_events,
+    )
+
+
+def start_engine_tasks(engine: Engine) -> list[asyncio.Task]:
+    """Launch the four service runners. Returns the tasks for cancellation."""
+    return [
+        asyncio.create_task(engine.fusion.run(), name="fusion"),
+        asyncio.create_task(engine.attrib.run(), name="attrib"),
+        asyncio.create_task(engine.decide.run(), name="decide"),
+        asyncio.create_task(engine.ui_events.run(), name="ui_events"),
+    ]
