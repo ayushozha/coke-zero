@@ -725,16 +725,10 @@ export function AorMap({
         </span>
       </div>
       <div className="aor-map__ops-strip" aria-hidden="true">
-        <span>LIVE CONTACTS {visibleSignals.length}</span>
-        <span>{scenarioPhase}</span>
-        <span>FIELD PACE</span>
-        <span>{nextInjectLabel}</span>
-        <span>SIM {scenarioProgress}%</span>
-        <span>MET {scenarioClock}</span>
+        <span>CONTACTS {visibleSignals.length}</span>
         <span>THREAT {highSignalCount}</span>
         <span>FUSED {correlatedSignalIds.length}</span>
         <span>{scenario.domains.length} DOMAINS</span>
-        <span>{basemap.toUpperCase()}</span>
       </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
         <button
