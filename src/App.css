@@ -2317,8 +2317,8 @@
 
   .command-workbench {
     position: relative;
-    --left-rail: 330px;
-    --right-rail: 392px;
+    --left-rail: 300px;
+    --right-rail: 352px;
     grid-template-columns: var(--left-rail) minmax(0, 1fr) var(--right-rail);
     grid-template-rows: minmax(0, 1fr);
     gap: 0;
@@ -2594,11 +2594,24 @@
 
   .event-feed {
     position: absolute;
-    right: calc(var(--right-rail) + 16px);
-    bottom: 8px;
-    left: calc(var(--left-rail) + 16px);
+    right: var(--right-rail);
+    bottom: 0;
+    left: var(--left-rail);
     z-index: 10;
-    height: 198px;
+    height: 208px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+    clip-path: none;
+    box-shadow:
+      inset 0 1px 0 rgba(245, 247, 240, 0.045),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 -12px 34px rgba(0, 0, 0, 0.3);
+  }
+
+  .event-feed::after {
+    display: none;
   }
 
   .event-feed__header {
