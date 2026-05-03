@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { Signal } from '../types/canopy'
 
 type Basemap = 'imagery' | 'streets'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  scenario: ScenarioDefinition
   signals: Signal[]
 }
 
@@ -28,26 +30,7 @@ const aorBounds = {
   north: 35.08,
 }
 
-const aorContacts = [
-  {
-    id: 'relay-team-2',
-    label: 'RELAY TEAM 2',
-    type: 'friendly',
-    coordinate: [-116.52, 35.02] as [number, number],
-  },
-  {
-    id: 'blos-relay-west',
-    label: 'BLOS RELAY WEST',
-    type: 'asset',
-    coordinate: [-116.547, 35.039] as [number, number],
-  },
-  {
-    id: 'rf-hit-11',
-    label: 'RF HIT 11',
-    type: 'threat',
-    coordinate: [-116.485, 35.012] as [number, number],
-  },
-]
+type AorBounds = typeof aorBounds
 
 const formatMgrs = ([lon, lat]: [number, number]) =>
   toMgrs([lon, lat], 4).replace(
@@ -64,7 +47,31 @@ const signalPoint = (signal: Signal): [number, number] | null => {
   }
 
   if (!signal.location.mgrs) {
-    return null
+    const match = signal.location.area_wkt?.match(/POLYGON\s*\(\((.+)\)\)/i)
+    if (!match) {
+      return null
+    }
+
+    const points = match[1]
+      .split(',')
+      .map((pair) => pair.trim().split(/\s+/).map(Number))
+      .filter(
+        (point): point is [number, number] =>
+          point.length === 2 &&
+          Number.isFinite(point[0]) &&
+          Number.isFinite(point[1]),
+      )
+
+    if (!points.length) {
+      return null
+    }
+
+    const [lonTotal, latTotal] = points.reduce(
+      ([lonSum, latSum], [lon, lat]) => [lonSum + lon, latSum + lat],
+      [0, 0],
+    )
+
+    return [lonTotal / points.length, latTotal / points.length]
   }
 
   try {
@@ -74,12 +81,6 @@ const signalPoint = (signal: Signal): [number, number] | null => {
     return null
   }
 }
-
-const isInsideAor = ([lon, lat]: [number, number]) =>
-  lon >= aorBounds.west &&
-  lon <= aorBounds.east &&
-  lat >= aorBounds.south &&
-  lat <= aorBounds.north
 
 const labelForSignal = (signal: Signal) =>
   signal.location.label ??
@@ -106,7 +107,34 @@ const priorityLabel = (priority: ReturnType<typeof priorityForSignal>) => {
   return 'TRACK'
 }
 
-const createAorPolygon = () =>
+const boundsFromPoints = (points: [number, number][]): AorBounds => {
+  if (!points.length) {
+    return aorBounds
+  }
+
+  const lons = points.map(([lon]) => lon)
+  const lats = points.map(([, lat]) => lat)
+  const west = Math.min(...lons)
+  const east = Math.max(...lons)
+  const south = Math.min(...lats)
+  const north = Math.max(...lats)
+  const lonPad = Math.max((east - west) * 0.28, 0.08)
+  const latPad = Math.max((north - south) * 0.28, 0.08)
+
+  return {
+    west: west - lonPad,
+    south: south - latPad,
+    east: east + lonPad,
+    north: north + latPad,
+  }
+}
+
+const centerFromBounds = (bounds: AorBounds): [number, number] => [
+  (bounds.west + bounds.east) / 2,
+  (bounds.south + bounds.north) / 2,
+]
+
+const createAorPolygon = (bounds: AorBounds) =>
   ({
     type: 'FeatureCollection',
     features: [
@@ -117,11 +145,11 @@ const createAorPolygon = () =>
           type: 'Polygon',
           coordinates: [
             [
-              [aorBounds.west, aorBounds.south],
-              [aorBounds.east, aorBounds.south],
-              [aorBounds.east, aorBounds.north],
-              [aorBounds.west, aorBounds.north],
-              [aorBounds.west, aorBounds.south],
+              [bounds.west, bounds.south],
+              [bounds.east, bounds.south],
+              [bounds.east, bounds.north],
+              [bounds.west, bounds.north],
+              [bounds.west, bounds.south],
             ],
           ],
         },
@@ -129,7 +157,7 @@ const createAorPolygon = () =>
     ],
   }) as GeoJSON.FeatureCollection
 
-const createRoute = () =>
+const createRoute = (points: [number, number][]) =>
   ({
     type: 'FeatureCollection',
     features: [
@@ -138,19 +166,19 @@ const createRoute = () =>
         properties: {},
         geometry: {
           type: 'LineString',
-          coordinates: relayRoute,
+          coordinates: points.length > 1 ? points : relayRoute,
         },
       },
     ],
   }) as GeoJSON.FeatureCollection
 
-const createGrid = () => {
+const createGrid = (bounds: AorBounds) => {
   const features: GeoJSON.Feature[] = []
   const step = 0.01
 
   for (
-    let lon = Math.ceil(aorBounds.west / step) * step;
-    lon <= aorBounds.east;
+    let lon = Math.ceil(bounds.west / step) * step;
+    lon <= bounds.east;
     lon += step
   ) {
     features.push({
@@ -159,16 +187,16 @@ const createGrid = () => {
       geometry: {
         type: 'LineString',
         coordinates: [
-          [Number(lon.toFixed(5)), aorBounds.south],
-          [Number(lon.toFixed(5)), aorBounds.north],
+          [Number(lon.toFixed(5)), bounds.south],
+          [Number(lon.toFixed(5)), bounds.north],
         ],
       },
     })
   }
 
   for (
-    let lat = Math.ceil(aorBounds.south / step) * step;
-    lat <= aorBounds.north;
+    let lat = Math.ceil(bounds.south / step) * step;
+    lat <= bounds.north;
     lat += step
   ) {
     features.push({
@@ -177,8 +205,8 @@ const createGrid = () => {
       geometry: {
         type: 'LineString',
         coordinates: [
-          [aorBounds.west, Number(lat.toFixed(5))],
-          [aorBounds.east, Number(lat.toFixed(5))],
+          [bounds.west, Number(lat.toFixed(5))],
+          [bounds.east, Number(lat.toFixed(5))],
         ],
       },
     })
@@ -193,6 +221,7 @@ const createGrid = () => {
 export function AorMap({
   correlatedSignalIds,
   focusSignalId,
+  scenario,
   signals,
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -203,14 +232,28 @@ export function AorMap({
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoom, setZoom] = useState('15.2')
 
-  const visibleSignals = useMemo(
+  const coordinateSignals = useMemo(
     () =>
       signals
         .map((signal) => ({ point: signalPoint(signal), signal }))
         .filter(
           (entry): entry is { point: [number, number]; signal: Signal } =>
-            entry.point !== null && isInsideAor(entry.point),
-        )
+            entry.point !== null,
+        ),
+    [signals],
+  )
+  const routePoints = useMemo(
+    () => coordinateSignals.map(({ point }) => point).slice().reverse(),
+    [coordinateSignals],
+  )
+  const operationalBounds = useMemo(
+    () => boundsFromPoints(coordinateSignals.map(({ point }) => point)),
+    [coordinateSignals],
+  )
+
+  const visibleSignals = useMemo(
+    () =>
+      [...coordinateSignals]
         .sort((a, b) => {
           const focusScore = (signal: Signal) =>
             signal.id === focusSignalId ? 1 : 0
@@ -223,8 +266,8 @@ export function AorMap({
             b.signal.confidence - a.signal.confidence
           )
         })
-        .slice(0, 5),
-    [correlatedSignalIds, focusSignalId, signals],
+        .slice(0, 8),
+    [coordinateSignals, correlatedSignalIds, focusSignalId],
   )
   const leadSignal = visibleSignals[0]?.signal
   const leadPriority = leadSignal ? priorityForSignal(leadSignal) : 'low'
@@ -239,7 +282,7 @@ export function AorMap({
 
     const map = new maplibregl.Map({
       attributionControl: false,
-      center: aorCenter,
+      center: centerFromBounds(aorBounds),
       container: containerRef.current,
       maxZoom: 19,
       minZoom: 12,
@@ -305,13 +348,11 @@ export function AorMap({
       'bottom-left',
     )
 
-    const contactMarkers: maplibregl.Marker[] = []
-
     map.on('load', () => {
       setIsMapReady(true)
       map.addSource('aor-zone', {
         type: 'geojson',
-        data: createAorPolygon(),
+        data: createAorPolygon(aorBounds),
       })
       map.addLayer({
         id: 'aor-zone-fill',
@@ -335,7 +376,7 @@ export function AorMap({
 
       map.addSource('mgrs-grid', {
         type: 'geojson',
-        data: createGrid(),
+        data: createGrid(aorBounds),
       })
       map.addLayer({
         id: 'mgrs-grid-line',
@@ -350,7 +391,7 @@ export function AorMap({
 
       map.addSource('relay-route', {
         type: 'geojson',
-        data: createRoute(),
+        data: createRoute([]),
       })
       map.addLayer({
         id: 'relay-route-line',
@@ -364,34 +405,6 @@ export function AorMap({
         },
       })
 
-      aorContacts.forEach((contact) => {
-        const marker = document.createElement('div')
-        marker.className = `aor-marker aor-marker--${contact.type}`
-        marker.title = `${contact.label} / ${formatMgrs(contact.coordinate)}`
-
-        const dot = document.createElement('span')
-        dot.className = 'aor-marker__dot'
-        marker.appendChild(dot)
-
-        const label = document.createElement('span')
-        label.className = 'aor-marker__label'
-        label.textContent = contact.label
-        marker.appendChild(label)
-
-        const grid = document.createElement('span')
-        grid.className = 'aor-marker__grid'
-        grid.textContent = formatMgrs(contact.coordinate)
-        marker.appendChild(grid)
-
-        contactMarkers.push(
-          new maplibregl.Marker({
-            anchor: 'bottom',
-            element: marker,
-          })
-            .setLngLat(contact.coordinate)
-            .addTo(map),
-        )
-      })
     })
 
     map.on('mousemove', (event) => {
@@ -403,7 +416,6 @@ export function AorMap({
     })
 
     return () => {
-      contactMarkers.forEach((marker) => marker.remove())
       signalMarkersRef.current.forEach((marker) => marker.remove())
       signalMarkersRef.current = []
       map.remove()
@@ -411,6 +423,31 @@ export function AorMap({
       setIsMapReady(false)
     }
   }, [])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !isMapReady) {
+      return
+    }
+
+    setCursorGrid(formatMgrs(centerFromBounds(operationalBounds)))
+    ;(map.getSource('aor-zone') as maplibregl.GeoJSONSource | undefined)?.setData(
+      createAorPolygon(operationalBounds),
+    )
+    ;(map.getSource('mgrs-grid') as maplibregl.GeoJSONSource | undefined)?.setData(
+      createGrid(operationalBounds),
+    )
+    ;(map.getSource('relay-route') as maplibregl.GeoJSONSource | undefined)?.setData(
+      createRoute(routePoints),
+    )
+    map.fitBounds(
+      [
+        [operationalBounds.west, operationalBounds.south],
+        [operationalBounds.east, operationalBounds.north],
+      ],
+      { duration: 420, maxZoom: 15.2, padding: 92 },
+    )
+  }, [isMapReady, operationalBounds, routePoints])
 
   useEffect(() => {
     const map = mapRef.current
@@ -481,8 +518,8 @@ export function AorMap({
       <div className="aor-map__canvas" ref={containerRef} />
       <div className="aor-map__hud">
         <div>
-          <span>AOR Mode</span>
-          <strong>Relay Team 2</strong>
+          <span>{scenario.id} / {scenario.theater}</span>
+          <strong>{scenario.shortName}</strong>
         </div>
         <p>{cursorGrid}</p>
         <em className={`aor-map__posture aor-map__posture--${leadPriority}`}>
@@ -509,6 +546,7 @@ export function AorMap({
         <span>LIVE CONTACTS {visibleSignals.length}</span>
         <span>THREAT {highSignalCount}</span>
         <span>FUSED {correlatedSignalIds.length}</span>
+        <span>{scenario.domains.length} DOMAINS</span>
         <span>{basemap.toUpperCase()}</span>
       </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
