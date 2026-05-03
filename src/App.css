@@ -3536,9 +3536,60 @@
 
 .operator-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 18px;
+  /* Fill the operator-shell's remaining vertical space so each column
+     has a bounded height for its list/stream to scroll inside. Without
+     these, content past the viewport gets clipped by the shell's
+     overflow: hidden with no scroll affordance. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Operator-shell becomes a flex column so the grid below the header
+   can claim the remaining vertical space. */
+.operator-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Each panel in the operator grid is a vertical flex container — header
+   stays pinned at the top, the list/stream below it scrolls. */
+.operator-grid > .panel,
+.operator-grid > .reasoning-panel,
+.operator-grid > .action-log {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.operator-grid .operator-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 190, 180, 0.45) transparent;
+}
+
+.operator-grid .operator-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.operator-grid .operator-list::-webkit-scrollbar-thumb {
+  background: rgba(154, 190, 180, 0.45);
+  border-radius: 4px;
+}
+
+.operator-grid .operator-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(154, 190, 180, 0.7);
+}
+
+.operator-grid .operator-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @media (min-width: 1081px) {
@@ -4388,6 +4439,148 @@
 
 .reasoning-line--warn .reasoning-line__msg {
   color: var(--red);
+}
+
+/* ---- Action log (system tool dispatches) ------------------------------ */
+.action-log {
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 16, 15, 0.94);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--amber);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.action-log--compact {
+  max-height: 280px;
+}
+
+.action-log .panel__header {
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.action-log .panel__header h2 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+}
+
+.action-log__stream {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 190, 180, 0.45) transparent;
+}
+
+.action-log__empty {
+  padding: 14px 14px 16px;
+  color: var(--text-subtle);
+  font-style: italic;
+  font-size: 0.78rem;
+}
+
+.action-log__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.action-log__row {
+  display: grid;
+  grid-template-columns: 64px 18px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(220, 227, 213, 0.06);
+  font-size: 0.82rem;
+}
+
+.action-log__row:last-child {
+  border-bottom: 0;
+}
+
+.action-log__time {
+  color: var(--text-subtle);
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
+  padding-top: 1px;
+}
+
+.action-log__glyph {
+  color: var(--amber);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.action-log__body {
+  min-width: 0;
+}
+
+.action-log__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.action-log__name {
+  color: var(--text-primary);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.action-log__result {
+  color: var(--amber);
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-size: 0.78rem;
+  text-align: right;
+  word-break: break-word;
+}
+
+.action-log__args {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  word-break: break-word;
+}
+
+.action-log__stream::-webkit-scrollbar {
+  width: 8px;
+}
+
+.action-log__stream::-webkit-scrollbar-thumb {
+  background: rgba(201, 164, 87, 0.5);
+  border-radius: 4px;
+}
+
+.action-log__stream::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 164, 87, 0.8);
+}
+
+.action-log__stream::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ---- Operator list rows ----------------------------------------------- */

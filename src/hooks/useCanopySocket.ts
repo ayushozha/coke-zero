@@ -70,18 +70,26 @@ function reduceMessage(
   state: CanopySocketState,
   message: CanopyMessage,
 ): CanopySocketState {
+  // Mirror every event into the global Zustand store so the Operator
+  // page (and any other consumer reading from useEventStore) sees the
+  // same data Brigade sees. The local CanopySocketState mirror is kept
+  // because Brigade reads it directly for its decision-stack summary.
+  const store = useEventStore.getState()
   switch (message.type) {
     case 'signal':
+      store.ingestSignal(message.data as Signal)
       return {
         ...state,
         signals: prependLimited<Signal>(state.signals, message.data, 50),
       }
     case 'anomaly':
+      store.ingestAnomaly(message.data as Anomaly)
       return {
         ...state,
         anomalies: prependLimited<Anomaly>(state.anomalies, message.data, 20),
       }
     case 'attribution':
+      store.ingestAttribution(message.data as Attribution)
       return {
         ...state,
         attributions: prependLimited<Attribution>(
@@ -91,20 +99,19 @@ function reduceMessage(
         ),
       }
     case 'decision':
+      store.ingestDecision(message.data as Decision)
       return {
         ...state,
         decisions: prependLimited<Decision>(state.decisions, message.data, 20),
       }
     case 'ui_event':
+      store.ingestUIEvent(message.data as UIEvent)
       return {
         ...state,
         uiEvents: prependLimited<UIEvent>(state.uiEvents, message.data, 20),
       }
     case 'trace':
-      // Mirror the trace into the global Zustand store so ReasoningPanel
-      // (which reads from useEventStore) renders in real time. Local
-      // state mirror stays for callers that read state.traces directly.
-      useEventStore.getState().ingestTrace(message.data as ReasoningTrace)
+      store.ingestTrace(message.data as ReasoningTrace)
       return {
         ...state,
         traces: [...state.traces, message.data as ReasoningTrace].slice(-500),
