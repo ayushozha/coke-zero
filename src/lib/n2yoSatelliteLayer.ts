@@ -261,16 +261,25 @@ export const N2YO_SATELLITES: N2YOSatelliteConfig[] = [
 const MAP_FONT =
   '12px "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui, sans-serif'
 const MAP_PANEL = Color.fromCssColorString('#091112')
-// Per-family palette. Each satellite family gets a distinct hue so the
-// operator can read the orbit cluster at a glance — billboard glyph,
-// footprint ring, and orbit polyline all share the family's color.
-const FAMILY_COLOR_HEX: Record<N2YOSatelliteFamily, string> = {
-  AEHF: '#e05c4f',   // red — protected military comms
-  MUOS: '#8b87c7',   // violet — mobile UHF
-  WGS: '#33f2f0',    // cyan — wideband backbone
-  SBIRS: '#c9a457',  // amber — missile warning
-  GSSAP: '#a7b96f',  // olive — space surveillance
-  'GPS-3': '#77b884', // green — PNT / blue-force timing
+// Dedicated orbital palette. These colors deliberately avoid the Brigade COP
+// scenario/alert palette so a WGS marker never reads as "regional" or "blue
+// team"; it reads as a WGS-family satellite.
+export const FAMILY_COLOR_HEX: Record<N2YOSatelliteFamily, string> = {
+  AEHF: '#ff8bd1',
+  MUOS: '#b99cff',
+  WGS: '#f2edd7',
+  SBIRS: '#ffb26b',
+  GSSAP: '#b7a7a0',
+  'GPS-3': '#e6d66f',
+}
+
+export const FAMILY_SHORT_LABEL: Record<N2YOSatelliteFamily, string> = {
+  AEHF: 'Protected comms',
+  MUOS: 'Mobile UHF',
+  WGS: 'Wideband comms',
+  SBIRS: 'Missile warning',
+  GSSAP: 'Space surveillance',
+  'GPS-3': 'PNT timing',
 }
 
 const familyColor = (family: N2YOSatelliteFamily) =>
@@ -320,9 +329,9 @@ export type N2YOLayerState = {
 export const orbitEntityIdForSatellite = (satelliteId: number) =>
   `n2yo-${satelliteId}-orbit`
 
-const realSatelliteMarker = (colorHex: string) =>
+const realSatelliteMarker = (colorHex: string, family: N2YOSatelliteFamily) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52">
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="58" viewBox="0 0 64 58">
       <filter id="g" x="-70%" y="-70%" width="240%" height="240%">
         <feDropShadow dx="0" dy="1" stdDeviation="2.0" flood-color="#000000" flood-opacity="0.82"/>
         <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="${colorHex}" flood-opacity="0.55"/>
@@ -331,7 +340,7 @@ const realSatelliteMarker = (colorHex: string) =>
            by two solar-panel arrays, with a high-gain antenna rising
            from the top. Cell dividers on the panels read as a satellite
            rather than a generic chevron. -->
-      <g stroke="${colorHex}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)" fill="none">
+      <g transform="translate(6 0)" stroke="${colorHex}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#g)" fill="none">
         <!-- left solar array -->
         <rect x="3" y="22" width="14" height="8" />
         <line x1="10" y1="22" x2="10" y2="30" />
@@ -345,6 +354,8 @@ const realSatelliteMarker = (colorHex: string) =>
         <line x1="26" y1="19" x2="26" y2="11" />
         <circle cx="26" cy="9" r="2.2" fill="rgba(2,4,4,0.86)" />
       </g>
+      <rect x="11" y="39" width="42" height="13" rx="1.5" fill="rgba(2,4,4,0.9)" stroke="${colorHex}" stroke-width="1.2"/>
+      <text x="32" y="49" fill="${colorHex}" text-anchor="middle" font-family="Aptos, IBM Plex Sans, Arial, sans-serif" font-size="8.5" font-weight="800" letter-spacing="0.6">${family}</text>
     </svg>`,
   )}`
 
@@ -510,10 +521,10 @@ export function addN2YOSatellite(
     billboard: {
       color: Color.WHITE,
       disableDepthTestDistance: 0,
-      height: 68,
-      image: realSatelliteMarker(familyHex),
+      height: 74,
+      image: realSatelliteMarker(familyHex, config.family),
       scaleByDistance: new NearFarScalar(1500000, 1, 25000000, 0.62),
-      width: 68,
+      width: 82,
     },
     label: {
       backgroundColor: MAP_PANEL.withAlpha(0.9),
@@ -525,9 +536,9 @@ export function addN2YOSatellite(
       show: false,
       showBackground: true,
       style: LabelStyle.FILL,
-      text: `REAL N2YO\n${satelliteName}\nNORAD ${cache.satellite.id}\nTRUE ALT ${Math.round(point.alt_km).toLocaleString()} km\n${formatUtcTime(point.timestamp_utc)}`,
+      text: `${config.family} · ${FAMILY_SHORT_LABEL[config.family]}\n${satelliteName}\nNORAD ${cache.satellite.id}\nTRUE ALT ${Math.round(point.alt_km).toLocaleString()} km\n${formatUtcTime(point.timestamp_utc)}`,
     },
-    description: `N2YO live position for NORAD ${cache.satellite.id}. True altitude ${point.alt_km.toFixed(2)} km; displayed at ${(displayAltitudeM / 1000).toFixed(0)} km for scene readability.`,
+    description: `${config.family} ${FAMILY_SHORT_LABEL[config.family]} satellite from N2YO cache. NORAD ${cache.satellite.id}. True altitude ${point.alt_km.toFixed(2)} km; displayed at ${(displayAltitudeM / 1000).toFixed(0)} km for scene readability.`,
   })
 
   viewer.entities.add({

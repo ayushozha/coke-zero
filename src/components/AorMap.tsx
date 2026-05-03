@@ -26,6 +26,195 @@ const aorBounds = {
 }
 
 type AorBounds = typeof aorBounds
+type SignalVisualCategory =
+  | 'space'
+  | 'ew'
+  | 'gps'
+  | 'cyber'
+  | 'satcom'
+  | 'drone'
+  | 'terrain'
+  | 'intel'
+
+type CoordinateSignal = { point: [number, number]; signal: Signal }
+
+const categoryColors: Record<SignalVisualCategory, string> = {
+  space: '#78c4ff',
+  ew: '#e8b45a',
+  gps: '#9fc6ff',
+  cyber: '#b79cff',
+  satcom: '#33f2f0',
+  drone: '#a9c76a',
+  terrain: '#b7a58a',
+  intel: '#f5f7f0',
+}
+
+const categorySymbols: Record<SignalVisualCategory, string> = {
+  space: '✦',
+  ew: '⌁',
+  gps: '⌖',
+  cyber: '⌬',
+  satcom: '⌐',
+  drone: '△',
+  terrain: '▰',
+  intel: '◇',
+}
+
+const iconNameForCategory = (category: SignalVisualCategory) =>
+  `mission-${category}`
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const normalized = hex.replace('#', '')
+  const red = Number.parseInt(normalized.slice(0, 2), 16)
+  const green = Number.parseInt(normalized.slice(2, 4), 16)
+  const blue = Number.parseInt(normalized.slice(4, 6), 16)
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+const createMissionIcon = (category: SignalVisualCategory, color: string) => {
+  const canvas = document.createElement('canvas')
+  const scale = window.devicePixelRatio || 1
+  canvas.width = 36 * scale
+  canvas.height = 36 * scale
+  const context = canvas.getContext('2d')
+  if (!context) {
+    return {
+      data: new Uint8Array(canvas.width * canvas.height * 4),
+      height: canvas.height,
+      width: canvas.width,
+    }
+  }
+
+  context.scale(scale, scale)
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.lineWidth = 2
+  context.strokeStyle = color
+  context.fillStyle = hexToRgba(color, 0.36)
+  context.shadowColor = 'rgba(0, 0, 0, 0.74)'
+  context.shadowBlur = 4
+  context.shadowOffsetY = 1
+
+  const strokePath = (draw: () => void) => {
+    context.beginPath()
+    draw()
+    context.stroke()
+  }
+
+  const drawPinFrame = () => {
+    context.beginPath()
+    context.moveTo(18, 4)
+    context.bezierCurveTo(10, 4, 6, 10, 6, 16)
+    context.bezierCurveTo(6, 24, 14, 27, 18, 32)
+    context.bezierCurveTo(22, 27, 30, 24, 30, 16)
+    context.bezierCurveTo(30, 10, 26, 4, 18, 4)
+    context.closePath()
+    context.fill()
+    context.stroke()
+  }
+
+  context.save()
+  drawPinFrame()
+  context.shadowColor = 'transparent'
+  context.strokeStyle = '#f5f7f0'
+  context.fillStyle = 'rgba(245, 247, 240, 0.08)'
+  context.lineWidth = 1.8
+
+  if (category === 'space') {
+    strokePath(() => {
+      context.rect(15, 14, 6, 6)
+      context.rect(8, 15, 5, 4)
+      context.rect(23, 15, 5, 4)
+      context.moveTo(18, 14)
+      context.lineTo(18, 10)
+      context.moveTo(18, 20)
+      context.lineTo(18, 24)
+    })
+  } else if (category === 'drone') {
+    strokePath(() => {
+      context.moveTo(18, 5)
+      context.lineTo(26, 24)
+      context.lineTo(18, 20)
+      context.lineTo(10, 24)
+      context.closePath()
+      context.moveTo(18, 10)
+      context.lineTo(18, 20)
+      context.moveTo(14, 19)
+      context.lineTo(22, 19)
+    })
+  } else if (category === 'gps') {
+    strokePath(() => {
+      context.arc(18, 16, 6, 0, Math.PI * 2)
+      context.moveTo(18, 7)
+      context.lineTo(18, 11)
+      context.moveTo(18, 21)
+      context.lineTo(18, 25)
+      context.moveTo(9, 16)
+      context.lineTo(13, 16)
+      context.moveTo(23, 16)
+      context.lineTo(27, 16)
+    })
+  } else if (category === 'ew') {
+    strokePath(() => {
+      context.moveTo(10, 23)
+      context.lineTo(25, 9)
+      context.moveTo(12, 22)
+      context.quadraticCurveTo(17, 15, 25, 14)
+      context.moveTo(16, 24)
+      context.quadraticCurveTo(20, 20, 26, 19)
+    })
+  } else if (category === 'cyber') {
+    strokePath(() => {
+      context.rect(13, 11, 10, 10)
+      context.moveTo(18, 11)
+      context.lineTo(18, 7)
+      context.moveTo(18, 21)
+      context.lineTo(18, 25)
+      context.moveTo(13, 16)
+      context.lineTo(9, 16)
+      context.moveTo(23, 16)
+      context.lineTo(27, 16)
+      context.moveTo(15, 13)
+      context.lineTo(21, 19)
+    })
+  } else if (category === 'satcom') {
+    strokePath(() => {
+      context.moveTo(10, 23)
+      context.quadraticCurveTo(19, 21, 24, 9)
+      context.moveTo(13, 25)
+      context.quadraticCurveTo(20, 26, 26, 20)
+      context.moveTo(24, 9)
+      context.lineTo(28, 7)
+      context.moveTo(24, 9)
+      context.lineTo(23, 5)
+    })
+  } else if (category === 'terrain') {
+    strokePath(() => {
+      context.moveTo(8, 23)
+      context.lineTo(14, 11)
+      context.lineTo(18, 18)
+      context.lineTo(22, 13)
+      context.lineTo(28, 23)
+      context.closePath()
+    })
+  } else {
+    context.strokeStyle = '#f5f7f0'
+    strokePath(() => {
+      context.moveTo(18, 8)
+      context.lineTo(26, 16)
+      context.lineTo(18, 24)
+      context.lineTo(10, 16)
+      context.closePath()
+      context.moveTo(14, 16)
+      context.lineTo(22, 16)
+      context.moveTo(18, 12)
+      context.lineTo(18, 20)
+    })
+  }
+  context.restore()
+
+  return context.getImageData(0, 0, canvas.width, canvas.height)
+}
 
 const formatMgrs = ([lon, lat]: [number, number]) => {
   if (
@@ -52,24 +241,28 @@ const formatMgrs = ([lon, lat]: [number, number]) => {
 const aorContacts: Array<{
   id: string
   label: string
+  symbol: string
   type: 'friendly' | 'asset' | 'threat'
   coordinate: [number, number]
 }> = [
   {
     id: 'relay-team-2',
     label: 'RELAY TEAM 2',
+    symbol: 'RLY',
     type: 'friendly',
     coordinate: [-116.52, 35.02],
   },
   {
     id: 'blos-relay-west',
     label: 'BLOS RELAY WEST',
+    symbol: 'BLOS',
     type: 'asset',
     coordinate: [-116.547, 35.039],
   },
   {
     id: 'rf-hit-11',
     label: 'RF HIT 11',
+    symbol: 'EW',
     type: 'threat',
     coordinate: [-116.485, 35.012],
   },
@@ -139,6 +332,227 @@ const createRoute = (points: [number, number][]) =>
         : [],
   }) as GeoJSON.FeatureCollection
 
+const numberObservable = (signal: Signal, key: string) => {
+  const value = signal.payload.observables?.[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+const stringObservable = (signal: Signal, key: string) => {
+  const value = signal.payload.observables?.[key]
+  return typeof value === 'string' ? value : null
+}
+
+const visualCategoryForSignal = (signal: Signal): SignalVisualCategory => {
+  const configured = stringObservable(signal, 'visual_category')
+  if (
+    configured === 'space' ||
+    configured === 'ew' ||
+    configured === 'gps' ||
+    configured === 'cyber' ||
+    configured === 'satcom' ||
+    configured === 'drone' ||
+    configured === 'terrain' ||
+    configured === 'intel'
+  ) {
+    return configured
+  }
+
+  if (signal.domain === 'orbit' || signal.domain === 'sda') {
+    return 'space'
+  }
+  if (signal.domain === 'rf_ew') {
+    return 'ew'
+  }
+  if (signal.domain === 'pnt') {
+    return 'gps'
+  }
+  if (signal.domain === 'satcom') {
+    return 'satcom'
+  }
+  if (signal.domain === 'cyber') {
+    return 'cyber'
+  }
+  if (signal.domain === 'drone') {
+    return 'drone'
+  }
+  if (signal.domain === 'terrain') {
+    return 'terrain'
+  }
+  return 'intel'
+}
+
+const visualColorForSignal = (signal: Signal) =>
+  categoryColors[visualCategoryForSignal(signal)]
+
+const visualSymbolForSignal = (signal: Signal) =>
+  categorySymbols[visualCategoryForSignal(signal)]
+
+const destinationPoint = (
+  [lon, lat]: [number, number],
+  bearingDegrees: number,
+  meters: number,
+): [number, number] => {
+  const radius = 6378137
+  const bearing = (bearingDegrees * Math.PI) / 180
+  const distance = meters / radius
+  const lat1 = (lat * Math.PI) / 180
+  const lon1 = (lon * Math.PI) / 180
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(distance) +
+      Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
+  )
+  const lon2 =
+    lon1 +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
+      Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2),
+    )
+
+  return [
+    Number(((lon2 * 180) / Math.PI).toFixed(5)),
+    Number(((lat2 * 180) / Math.PI).toFixed(5)),
+  ]
+}
+
+const createCirclePolygon = (
+  center: [number, number],
+  radiusMeters: number,
+  steps = 40,
+) => {
+  const coordinates: [number, number][] = []
+  for (let index = 0; index <= steps; index += 1) {
+    coordinates.push(destinationPoint(center, (360 / steps) * index, radiusMeters))
+  }
+  return coordinates
+}
+
+const createBearingCone = (
+  center: [number, number],
+  bearingDegrees: number,
+  radiusMeters: number,
+) => {
+  const spread = 22
+  return [
+    center,
+    destinationPoint(center, bearingDegrees - spread, radiusMeters),
+    destinationPoint(center, bearingDegrees, radiusMeters * 1.16),
+    destinationPoint(center, bearingDegrees + spread, radiusMeters),
+    center,
+  ]
+}
+
+const createSignalZones = (entries: CoordinateSignal[]) =>
+  ({
+    type: 'FeatureCollection',
+    features: entries.flatMap(({ point, signal }) => {
+      const category = visualCategoryForSignal(signal)
+      const radius = numberObservable(signal, 'radius_m')
+      const bearing = numberObservable(signal, 'bearing_deg')
+      const zoneShape = stringObservable(signal, 'zone_shape')
+      const shouldDrawZone =
+        Boolean(radius) &&
+        (category === 'space' ||
+          category === 'ew' ||
+          category === 'gps' ||
+          category === 'satcom' ||
+          category === 'terrain' ||
+          Boolean(zoneShape))
+
+      if (!shouldDrawZone || !radius) {
+        return []
+      }
+
+      const coordinates =
+        category === 'ew' && bearing !== null
+          ? createBearingCone(point, bearing, radius)
+          : createCirclePolygon(point, radius)
+
+      return [
+        {
+          type: 'Feature',
+          properties: {
+            color: visualColorForSignal(signal),
+            category,
+            priority: priorityForSignal(signal),
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [coordinates],
+          },
+        } as GeoJSON.Feature,
+      ]
+    }),
+  }) as GeoJSON.FeatureCollection
+
+const trackIdForSignal = (signal: Signal) =>
+  stringObservable(signal, 'track_id') ??
+  stringObservable(signal, 'route_id') ??
+  (signal.domain === 'drone' ? signal.payload.asset : null)
+
+const createSignalTracks = (entries: CoordinateSignal[]) => {
+  const tracks = new Map<string, CoordinateSignal[]>()
+
+  entries.forEach((entry) => {
+    const trackId = trackIdForSignal(entry.signal)
+    if (!trackId) {
+      return
+    }
+
+    tracks.set(trackId, [...(tracks.get(trackId) ?? []), entry])
+  })
+
+  const lineFeatures: GeoJSON.Feature[] = []
+  const arrowFeatures: GeoJSON.Feature[] = []
+
+  tracks.forEach((trackEntries, trackId) => {
+    const ordered = [...trackEntries].sort(
+      (a, b) => (signalTimeMs(a.signal) ?? 0) - (signalTimeMs(b.signal) ?? 0),
+    )
+    if (ordered.length < 2) {
+      return
+    }
+
+    const points = ordered.map((entry) => entry.point)
+    const last = points[points.length - 1]
+    const previous = points[points.length - 2]
+    const bearing =
+      (Math.atan2(last[0] - previous[0], last[1] - previous[1]) * 180) / Math.PI
+    const color = visualColorForSignal(ordered[ordered.length - 1].signal)
+
+    lineFeatures.push({
+      type: 'Feature',
+      properties: { trackId, color },
+      geometry: {
+        type: 'LineString',
+        coordinates: points,
+      },
+    })
+    arrowFeatures.push({
+      type: 'Feature',
+      properties: {
+        trackId,
+        color,
+        bearing,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: last,
+      },
+    })
+  })
+
+  return {
+    lines: {
+      type: 'FeatureCollection',
+      features: lineFeatures,
+    } as GeoJSON.FeatureCollection,
+    arrows: {
+      type: 'FeatureCollection',
+      features: arrowFeatures,
+    } as GeoJSON.FeatureCollection,
+  }
+}
+
 const createGrid = (bounds: AorBounds) => {
   const features: GeoJSON.Feature[] = []
   const step = 0.01
@@ -204,8 +618,7 @@ export function AorMap({
       signals
         .map((signal) => ({ point: signalCoordinate(signal), signal }))
         .filter(
-          (entry): entry is { point: [number, number]; signal: Signal } =>
-            entry.point !== null,
+          (entry): entry is CoordinateSignal => entry.point !== null,
         ),
     [signals],
   )
@@ -255,6 +668,10 @@ export function AorMap({
             meta: `${domainLabel(signal.domain)} ${Math.round(
               signal.confidence * 100,
             )}%`,
+            color: visualColorForSignal(signal),
+            symbol: visualSymbolForSignal(signal),
+            category: visualCategoryForSignal(signal),
+            icon: iconNameForCategory(visualCategoryForSignal(signal)),
             priority: priorityForSignal(signal),
             focus: signal.id === focusSignalId,
             correlated: correlatedSignalIds.includes(signal.id),
@@ -266,6 +683,14 @@ export function AorMap({
         })),
       }) as GeoJSON.FeatureCollection,
     [correlatedSignalIds, focusSignalId, visibleSignals],
+  )
+  const signalZones = useMemo(
+    () => createSignalZones(visibleSignals),
+    [visibleSignals],
+  )
+  const signalTracks = useMemo(
+    () => createSignalTracks(coordinateSignals),
+    [coordinateSignals],
   )
 
   useEffect(() => {
@@ -336,6 +761,16 @@ export function AorMap({
 
     map.on('load', () => {
       setIsMapReady(true)
+      Object.entries(categoryColors).forEach(([category, color]) => {
+        const iconName = iconNameForCategory(category as SignalVisualCategory)
+        if (!map.hasImage(iconName)) {
+          map.addImage(
+            iconName,
+            createMissionIcon(category as SignalVisualCategory, color),
+            { pixelRatio: window.devicePixelRatio || 1 },
+          )
+        }
+      })
       map.addSource('aor-zone', {
         type: 'geojson',
         data: createAorPolygon(scenarioBounds),
@@ -410,6 +845,7 @@ export function AorMap({
             properties: {
               label: contact.label,
               grid: formatMgrs(contact.coordinate),
+              symbol: contact.symbol,
               type: contact.type,
             },
             geometry: {
@@ -420,25 +856,62 @@ export function AorMap({
         } as GeoJSON.FeatureCollection,
       })
       map.addLayer({
-        id: 'aor-contact-dot',
+        id: 'aor-contact-frame',
         type: 'circle',
         source: 'aor-contacts',
         paint: {
-          'circle-color': [
+          'circle-color': '#020404',
+          'circle-opacity': 0.78,
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 6, 13, 9],
+          'circle-stroke-color': [
             'match',
             ['get', 'type'],
             'friendly',
-            '#c9a457',
+            '#9fc6ff',
             'asset',
             '#f5f7f0',
             'threat',
-            '#e05c4f',
-            '#33f2f0',
+            '#ff8d7e',
+            '#b8fbf7',
           ],
-          'circle-opacity': 0.88,
-          'circle-radius': 6,
-          'circle-stroke-color': '#020404',
-          'circle-stroke-width': 2,
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 5, 1.2, 13, 1.8],
+        },
+      })
+      map.addLayer({
+        id: 'aor-contact-symbol',
+        type: 'symbol',
+        source: 'aor-contacts',
+        layout: {
+          'text-field': [
+            'match',
+            ['get', 'type'],
+            'friendly',
+            '▴',
+            'asset',
+            '□',
+            'threat',
+            '⌁',
+            '◇',
+          ],
+          'text-font': ['Open Sans Semibold'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 5, 9, 13, 12],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
+        paint: {
+          'text-color': [
+            'match',
+            ['get', 'type'],
+            'friendly',
+            '#9fc6ff',
+            'asset',
+            '#f5f7f0',
+            'threat',
+            '#ff8d7e',
+            '#b8fbf7',
+          ],
+          'text-halo-color': '#020404',
+          'text-halo-width': 1.1,
         },
       })
       map.addLayer({
@@ -462,24 +935,95 @@ export function AorMap({
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       })
+      map.addSource('aor-signal-zones', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
       map.addLayer({
-        id: 'aor-signal-dot',
-        type: 'circle',
-        source: 'aor-signals',
+        id: 'aor-signal-zone-fill',
+        type: 'fill',
+        source: 'aor-signal-zones',
         paint: {
-          'circle-color': [
+          'fill-color': ['get', 'color'],
+          'fill-opacity': [
             'match',
             ['get', 'priority'],
             'high',
-            '#e05c4f',
+            0.13,
             'watch',
-            '#c9a457',
-            '#33f2f0',
+            0.09,
+            0.055,
           ],
-          'circle-opacity': 0.9,
-          'circle-radius': ['case', ['get', 'focus'], 8, ['get', 'correlated'], 7, 5],
-          'circle-stroke-color': '#020404',
-          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aor-signal-zone-line',
+        type: 'line',
+        source: 'aor-signal-zones',
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-opacity': 0.55,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.8, 13, 1.6],
+          'line-dasharray': [2.6, 1.8],
+        },
+      })
+      map.addSource('aor-signal-tracks', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      map.addLayer({
+        id: 'aor-signal-track-line',
+        type: 'line',
+        source: 'aor-signal-tracks',
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-opacity': 0.72,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 13, 2.4],
+          'line-dasharray': [1.2, 0.8],
+        },
+      })
+      map.addSource('aor-signal-arrows', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      map.addLayer({
+        id: 'aor-signal-track-arrow',
+        type: 'symbol',
+        source: 'aor-signal-arrows',
+        layout: {
+          'text-field': '›',
+          'text-font': ['Open Sans Semibold'],
+          'text-rotate': ['get', 'bearing'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 5, 8, 13, 11],
+        },
+        paint: {
+          'text-color': ['get', 'color'],
+          'text-halo-color': '#020404',
+          'text-halo-width': 0.8,
+        },
+      })
+      map.addLayer({
+        id: 'aor-signal-pulse',
+        type: 'circle',
+        source: 'aor-signals',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-opacity': ['case', ['get', 'focus'], 0.045, ['get', 'correlated'], 0, 0],
+          'circle-radius': ['case', ['get', 'focus'], 13, ['get', 'correlated'], 0, 0],
+          'circle-stroke-color': ['get', 'color'],
+          'circle-stroke-opacity': ['case', ['get', 'focus'], 0.32, ['get', 'correlated'], 0, 0],
+          'circle-stroke-width': 1,
+        },
+      })
+      map.addLayer({
+        id: 'aor-signal-icon',
+        type: 'symbol',
+        source: 'aor-signals',
+        layout: {
+          'icon-image': ['get', 'icon'],
+          'icon-size': ['case', ['get', 'focus'], 0.62, ['get', 'correlated'], 0.56, 0.5],
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
         },
       })
       map.addLayer({
@@ -487,16 +1031,23 @@ export function AorMap({
         type: 'symbol',
         source: 'aor-signals',
         layout: {
-          'text-field': ['concat', ['get', 'label'], '\n', ['get', 'meta']],
+          'text-field': [
+            'case',
+            ['get', 'focus'],
+            ['concat', ['get', 'label'], '\n', ['get', 'meta']],
+            ['get', 'correlated'],
+            ['get', 'label'],
+            ['get', 'label'],
+          ],
           'text-font': ['Open Sans Semibold'],
-          'text-offset': [1.4, 0],
-          'text-size': 11,
+          'text-offset': [1.05, 0],
+          'text-size': ['case', ['get', 'focus'], 10.5, 9.5],
           'text-anchor': 'left',
         },
         paint: {
           'text-color': '#f5f7f0',
           'text-halo-color': '#091112',
-          'text-halo-width': 1.5,
+          'text-halo-width': 1.1,
         },
       })
     })
@@ -521,10 +1072,22 @@ export function AorMap({
     const source = map.getSource('aor-signals') as
       | maplibregl.GeoJSONSource
       | undefined
+    const zoneSource = map.getSource('aor-signal-zones') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    const trackSource = map.getSource('aor-signal-tracks') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    const arrowSource = map.getSource('aor-signal-arrows') as
+      | maplibregl.GeoJSONSource
+      | undefined
     if (source) {
       source.setData(signalFeatures)
     }
-  }, [isMapReady, signalFeatures])
+    zoneSource?.setData(signalZones)
+    trackSource?.setData(signalTracks.lines)
+    arrowSource?.setData(signalTracks.arrows)
+  }, [isMapReady, signalFeatures, signalTracks, signalZones])
 
   useEffect(() => {
     const map = mapRef.current
