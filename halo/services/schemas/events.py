@@ -42,6 +42,26 @@ UIEventType = Literal["threat_updated", "recommendation_created", "status_update
 
 UISeverity = Literal["low", "medium", "high", "critical"]
 
+# ---- Reasoning trace ------------------------------------------------------
+
+# What stage of the pipeline produced this trace line. Used by the UI to
+# colour-code lines in the terminal panel and by the bus for fanout topic
+# (`traces.{stage}`).
+TraceStage = Literal[
+    "fusion",
+    "attrib_primary",
+    "attrib_redteam",
+    "attrib_reconcile",
+    "decide",
+    "tools",
+    "stress",
+]
+
+# Severity / category of an individual trace line. Drives weight + colour in
+# the panel: "info" = ambient, "decision" = bold accent, "tool" = amber tag,
+# "warn" = red tag.
+TraceLevel = Literal["info", "decision", "tool", "warn"]
+
 
 def _new_id() -> str:
     return uuid4().hex
@@ -191,3 +211,38 @@ class UIEvent(_Event):
     confidence: float = Field(ge=0.0, le=1.0)
     demoBeat: str | None = Field(default=None, alias="demoBeat")
     recommendation: Recommendation | None = None
+
+
+class ReasoningTrace(_Event):
+    """A single line of agent / tool reasoning.
+
+    Streams in real time on the bus topic ``traces.{stage}`` and is rendered
+    by the frontend's terminal-styled reasoning panel. Every visible step
+    that contributes to an attribution or decision should produce one trace
+    so the resulting log is the auditable explanation of why the engine
+    arrived at its assessment.
+    """
+
+    stage: TraceStage
+    level: TraceLevel = "info"
+    message: str = Field(min_length=1)
+    ref_id: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class AttributionChallenge(_Event):
+    """Red-team agent's critique of a primary attribution.
+
+    Emitted as part of the multi-agent attribution loop: primary →
+    red-team → reconciler. Lives on the bus only as a trace payload
+    (i.e., as the structured input to the reconciler); it is *not*
+    published as a top-level bus event so downstream services that
+    listen on ``attributions.*`` see only the final reconciled
+    attribution.
+    """
+
+    primary_attribution_id: str
+    alternative_actor: str | None = None
+    objections: list[str] = Field(default_factory=list)
+    confidence_delta: float = 0.0
+    rationale: str
