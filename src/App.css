@@ -1282,6 +1282,8 @@
 .event-feed {
   min-height: 0;
   overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .event-feed__header {
@@ -1313,41 +1315,40 @@
   font-weight: 760;
 }
 
-.event-feed__table {
-  display: grid;
-  min-width: 760px;
-  max-height: 100%;
+.event-feed__stream {
+  min-height: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  scrollbar-color: rgba(51, 242, 240, 0.42) rgba(255, 255, 255, 0.04);
 }
 
-.event-feed__row {
-  display: grid;
-  grid-template-columns: 72px 120px minmax(220px, 1.5fr) minmax(130px, 0.8fr) minmax(170px, 1fr) 96px;
-  gap: 12px;
-  align-items: center;
-  border-bottom: 1px solid rgba(245, 247, 240, 0.08);
-  padding: 8px 12px;
+.event-feed__entry {
+  border: 1px solid rgba(220, 227, 213, 0.12);
+  border-left: 3px solid rgba(51, 242, 240, 0.44);
+  background:
+    linear-gradient(90deg, rgba(51, 242, 240, 0.07), transparent 34%),
+    rgba(7, 11, 11, 0.7);
+  padding: 8px 10px;
   color: var(--text-primary);
   transition:
     background 160ms ease,
     transform 160ms ease;
 }
 
-.event-feed__row:not(.event-feed__row--head):hover {
-  background: rgba(51, 242, 240, 0.055);
+.event-feed__entry[data-newest='true'] {
+  border-left-color: var(--amber);
+  background:
+    linear-gradient(90deg, rgba(201, 164, 87, 0.12), transparent 30%),
+    rgba(7, 11, 11, 0.76);
 }
 
-.event-feed__row--head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.event-feed__entry:hover {
   background:
-    linear-gradient(180deg, rgba(224, 92, 79, 0.08), transparent),
-    rgba(9, 17, 18, 0.98);
-  color: rgba(51, 242, 240, 0.68);
-  font-size: 0.66rem;
-  font-weight: 760;
-  letter-spacing: 0;
+    linear-gradient(90deg, rgba(51, 242, 240, 0.1), transparent 34%),
+    rgba(10, 18, 18, 0.82);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1381,15 +1382,54 @@
   }
 }
 
-.event-feed__row span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: 0.76rem;
-}
-
 .event-feed__meaning {
   display: grid;
   gap: 3px;
+}
+
+.event-feed__meaning strong,
+.event-feed__meaning p,
+.event-feed__entry-meta span,
+.event-feed__entry-top span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.event-feed__meaning strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  line-height: 1.22;
+}
+
+.event-feed__meaning p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+
+.event-feed__entry-top,
+.event-feed__entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.event-feed__entry-top {
+  margin-bottom: 4px;
+}
+
+.event-feed__entry-meta {
+  margin-top: 6px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.event-feed__entry-meta span:first-child {
+  color: rgba(220, 227, 213, 0.84);
 }
 
 .event-feed__time,
@@ -1406,12 +1446,6 @@
 .event-feed__confidence {
   color: var(--text-muted);
   font-size: 0.72rem;
-}
-
-.event-feed__meaning small {
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  line-height: 1.25;
 }
 
 .operator-shell__empty {
@@ -1634,6 +1668,40 @@
     font-size: 0.68rem;
   }
 
+  .aor-map__hud {
+    top: 104px;
+    left: 264px;
+    min-width: 184px;
+    padding: 8px 10px;
+  }
+
+  .aor-map__hud strong {
+    font-size: 0.94rem;
+  }
+
+  .aor-map__hud p {
+    margin-top: 5px;
+    font-size: 0.74rem;
+  }
+
+  .aor-map__basemaps {
+    top: 104px;
+    right: 310px;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .aor-map__basemaps button {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 0.68rem;
+  }
+
+  .aor-map__scale {
+    right: 310px;
+    bottom: 230px;
+  }
+
   .space-hud {
     top: 104px;
     left: 264px;
@@ -1660,7 +1728,7 @@
     bottom: 8px;
     left: 264px;
     z-index: 10;
-    height: 150px;
+    height: 214px;
   }
 
   .event-feed__header {
@@ -1671,10 +1739,12 @@
     font-size: 0.84rem;
   }
 
-  .event-feed__row {
-    grid-template-columns: 52px 82px minmax(170px, 1.5fr) minmax(92px, 0.8fr) minmax(122px, 1fr) 64px;
-    gap: 8px;
-    padding: 7px 10px;
+  .event-feed__stream {
+    padding: 7px;
+  }
+
+  .event-feed__entry {
+    padding: 7px 9px;
   }
 
   .mission-summary {
@@ -1834,7 +1904,7 @@
 
   .aor-map__hud,
   .aor-map__basemaps {
-    top: 64px;
+    top: 108px;
   }
 
   .aor-map__hud {
@@ -1844,7 +1914,7 @@
   }
 
   .aor-map__basemaps {
-    top: 154px;
+    top: 198px;
     right: 10px;
     left: 10px;
   }
@@ -1860,8 +1930,8 @@
     justify-content: space-between;
   }
 
-  .event-feed__table {
-    min-width: 680px;
+  .event-feed__stream {
+    max-height: 280px;
   }
 
   .tak-map-chrome {

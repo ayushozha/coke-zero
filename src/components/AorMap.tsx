@@ -136,7 +136,7 @@ const createGrid = () => {
 export function AorMap() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const [basemap, setBasemap] = useState<Basemap>('imagery')
+  const [basemap, setBasemap] = useState<Basemap>('streets')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoom, setZoom] = useState('15.2')
 
@@ -178,6 +178,9 @@ export function AorMap() {
             id: 'imagery',
             type: 'raster',
             source: 'esriWorldImagery',
+            layout: {
+              visibility: 'none',
+            },
             paint: {
               'raster-brightness-max': 0.78,
               'raster-brightness-min': 0.03,
@@ -190,15 +193,12 @@ export function AorMap() {
             id: 'streets',
             type: 'raster',
             source: 'osmStreets',
-            layout: {
-              visibility: 'none',
-            },
             paint: {
-              'raster-brightness-max': 0.64,
+              'raster-brightness-max': 0.7,
               'raster-brightness-min': 0.02,
-              'raster-contrast': 0.22,
+              'raster-contrast': 0.14,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.78,
+              'raster-saturation': -0.95,
             },
           },
         ],
