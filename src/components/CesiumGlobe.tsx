@@ -25,6 +25,7 @@ import {
   clearN2YOSatelliteLayers,
   deselectN2YOSatellite,
   fetchN2YOPositionCache,
+  isN2YOGeostationaryFamily,
   latestN2YOAltitudeKm,
   N2YO_SATELLITES,
   selectN2YOSatellite,
@@ -42,6 +43,7 @@ const MAP_RED = Color.fromCssColorString('#e05c4f')
 const MAP_AMBER = Color.fromCssColorString('#c9a457')
 const MAP_CYAN = Color.fromCssColorString('#33f2f0')
 const MAP_PANEL = Color.fromCssColorString('#091112')
+const RESET_CAMERA_DESTINATION = Cartesian3.fromDegrees(0, 0, 22_000_000)
 
 const markerSvg = (
   kind: 'satellite' | 'drone' | 'signal',
@@ -353,7 +355,7 @@ export function CesiumGlobe({
 
     const flyToCenteredEarth = (duration = 0.45) => {
       viewer.camera.flyTo({
-        destination: Cartesian3.fromDegrees(0, 0, 22000000),
+        destination: RESET_CAMERA_DESTINATION,
         duration,
       })
     }
@@ -559,7 +561,7 @@ export function CesiumGlobe({
     })
 
     viewer.camera.setView({
-      destination: Cartesian3.fromDegrees(0, 0, 22000000),
+      destination: RESET_CAMERA_DESTINATION,
     })
 
     return () => {
@@ -727,7 +729,7 @@ export function CesiumGlobe({
     viewer.clock.shouldAnimate = true
     setActiveLayer('baseline')
     viewer.camera.flyTo({
-      destination: Cartesian3.fromDegrees(0, 0, 22000000),
+      destination: RESET_CAMERA_DESTINATION,
       duration: 0.6,
     })
   }
@@ -776,16 +778,12 @@ export function CesiumGlobe({
       (layer) => familyFilter === 'all' || layer.satelliteFamily === familyFilter,
     )
 
-  // Originally this filtered out GEO families on the theory that a
-  // truly stationary satellite has no meaningful orbit to draw. With
-  // the half-scale altitude visualisation we want the operator to see
-  // every satellite's altitude band as a ring, including GEO — the
-  // ring becomes an equatorial circle which is exactly the right
-  // mental model for "this satellite lives at this altitude on the
-  // equator." Pass everything through.
   const visibleOrbitCapableLayers = (
     familyFilter = satelliteFamilyFilterRef.current,
-  ) => visibleN2yoLayers(familyFilter)
+  ) =>
+    visibleN2yoLayers(familyFilter).filter(
+      (layer) => !isN2YOGeostationaryFamily(layer.satelliteFamily),
+    )
 
   const applySatelliteFamilyFilter = (familyFilter: SatelliteFamilyFilter) => {
     const viewer = viewerRef.current
@@ -867,11 +865,8 @@ export function CesiumGlobe({
             latestN2YOAltitudeKm(cache) * 1000 * ALTITUDE_SCALE,
           ),
         )
-        // Camera distance scales with the altitude scale so the GEO
-        // ring still frames comfortably. At 1.0 → ~85 Mm; at 0.5 →
-        // ~45 Mm; at 0.2 → ~18 Mm; at 0.1 → ~9 Mm.
         viewer.camera.flyTo({
-          destination: Cartesian3.fromDegrees(0, 0, 9_000_000),
+          destination: RESET_CAMERA_DESTINATION,
           duration: 0.8,
         })
         selectedN2yoLayerRef.current = null
