@@ -6,6 +6,7 @@ import type {
   ConnectionStatus,
   Decision,
   KBEntry,
+  OsintEmbeddingSnapshot,
   ReasoningTrace,
   Signal,
   UIEvent,
@@ -38,6 +39,10 @@ interface EventState {
   // Reasoning trace buffer, oldest first (terminal-style: latest at bottom).
   traces: ReasoningTrace[];
 
+  // Latest OSINT semantic-clustering snapshot (replaces wholesale on each
+  // arrival — the backend sends the full sliding window every time).
+  embeddingSnapshot: OsintEmbeddingSnapshot | null;
+
   // Lookup tables for cross-event linking.
   signalsById: Record<string, Signal>;
   attributionsById: Record<string, Attribution>;
@@ -61,6 +66,7 @@ interface EventState {
   ingestDecision: (decision: Decision) => void;
   ingestUIEvent: (event: UIEvent) => void;
   ingestTrace: (trace: ReasoningTrace) => void;
+  ingestEmbeddingSnapshot: (snapshot: OsintEmbeddingSnapshot) => void;
 
   setConnection: (status: ConnectionStatus) => void;
   setView: (view: ViewMode) => void;
@@ -81,6 +87,7 @@ const initialState = (): Omit<
   | "ingestDecision"
   | "ingestUIEvent"
   | "ingestTrace"
+  | "ingestEmbeddingSnapshot"
   | "setConnection"
   | "setView"
   | "selectEvent"
@@ -97,6 +104,7 @@ const initialState = (): Omit<
   decisions: [],
   uiEvents: [],
   traces: [],
+  embeddingSnapshot: null,
   signalsById: {},
   attributionsById: {},
   decisionsById: {},
@@ -144,6 +152,9 @@ export const useEventStore = create<EventState>()(
     set((state) => ({
       traces: appendBounded(state.traces, trace, TRACE_BUFFER),
     })),
+
+  ingestEmbeddingSnapshot: (snapshot) =>
+    set({ embeddingSnapshot: snapshot }),
 
   ingestUIEvent: (event) =>
     set((state) => {
@@ -202,6 +213,7 @@ export const useEventStore = create<EventState>()(
         decisions: state.decisions,
         uiEvents: state.uiEvents,
         traces: state.traces,
+        embeddingSnapshot: state.embeddingSnapshot,
         signalsById: state.signalsById,
         attributionsById: state.attributionsById,
         decisionsById: state.decisionsById,

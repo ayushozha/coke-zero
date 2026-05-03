@@ -3536,8 +3536,8 @@
 
 .operator-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
   margin-top: 18px;
   /* Fill the operator-shell's remaining vertical space so each column
      has a bounded height for its list/stream to scroll inside. Without
@@ -3558,7 +3558,8 @@
    stays pinned at the top, the list/stream below it scrolls. */
 .operator-grid > .panel,
 .operator-grid > .reasoning-panel,
-.operator-grid > .action-log {
+.operator-grid > .action-log,
+.operator-grid > .embedding-viz {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -4406,6 +4407,37 @@
   padding: 4px 0;
 }
 
+.reasoning-panel__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reasoning-panel__clear {
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  background: rgba(154, 190, 180, 0.06);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.reasoning-panel__clear:hover {
+  background: rgba(224, 92, 79, 0.12);
+  border-color: rgba(224, 92, 79, 0.4);
+  color: var(--red);
+}
+
+.reasoning-panel__clear:disabled {
+  cursor: default;
+  opacity: 0.4;
+  background: transparent;
+}
+
 .reasoning-line {
   display: grid;
   grid-template-columns: 70px 130px 1fr;
@@ -4581,6 +4613,105 @@
 
 .action-log__stream::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ---- Embedding viz ---------------------------------------------------- */
+.embedding-viz {
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 16, 15, 0.94);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--cyan);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.embedding-viz--compact {
+  max-height: 320px;
+}
+
+.embedding-viz .panel__header {
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.embedding-viz .panel__header h2 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+}
+
+.embedding-viz__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  background: rgba(2, 6, 8, 0.65);
+}
+
+.embedding-viz__svg {
+  width: 100%;
+  height: 100%;
+  max-height: 240px;
+}
+
+.embedding-viz__empty {
+  color: var(--text-subtle);
+  font-style: italic;
+  font-size: 0.8rem;
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.embedding-viz__hover {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(7, 16, 15, 0.92);
+  border: 1px solid var(--line-bright);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  pointer-events: none;
+}
+
+.embedding-viz__hover-cluster {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-size: 0.72rem;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.embedding-viz__hover-summary {
+  margin-top: 2px;
+  color: var(--text-primary);
+}
+
+.embedding-viz__footer {
+  border-top: 1px solid var(--line);
+  padding: 6px 12px;
+  display: flex;
+  gap: 6px;
+  color: var(--text-subtle);
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
 }
 
 /* ---- Operator list rows ----------------------------------------------- */

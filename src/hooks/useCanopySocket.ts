@@ -6,6 +6,7 @@ import type {
   CanopyMessage,
   CanopySocketState,
   Decision,
+  OsintEmbeddingSnapshot,
   ReasoningTrace,
   Signal,
   UIEvent,
@@ -56,9 +57,15 @@ function normalizeMessage(value: unknown): CanopyMessage | null {
         : null
   if (!discriminator) return null
   if (
-    !['signal', 'anomaly', 'attribution', 'decision', 'ui_event', 'trace'].includes(
-      discriminator,
-    )
+    ![
+      'signal',
+      'anomaly',
+      'attribution',
+      'decision',
+      'ui_event',
+      'trace',
+      'embedding',
+    ].includes(discriminator)
   ) {
     return null
   }
@@ -116,6 +123,11 @@ function reduceMessage(
         ...state,
         traces: [...state.traces, message.data as ReasoningTrace].slice(-500),
       }
+    case 'embedding':
+      store.ingestEmbeddingSnapshot(message.data as OsintEmbeddingSnapshot)
+      // Embedding snapshots replace wholesale; we don't keep a history
+      // because each one carries the full sliding window.
+      return state
   }
 }
 

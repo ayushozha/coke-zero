@@ -59,7 +59,12 @@ def test_websocket_receives_ui_event_after_replay(client: TestClient) -> None:
         # beat47 has 6 signals; with speed=1000 the replay completes in ms.
         # Stub LLM is sub-millisecond, so a ui_event should arrive promptly.
         saw_ui_event = False
-        deadline = time.time() + 10.0
+        # OSINT clustering loads sentence-transformer weights on the
+        # first OSINT signal (multi-second cold start) and
+        # orbit.compute_close_approach iterates Skyfield SGP4 over 360
+        # samples per call. Give the pipeline a generous budget so this
+        # test isn't flaky on cold caches.
+        deadline = time.time() + 60.0
         kinds_seen: list[str] = []
         while time.time() < deadline:
             envelope = ws.receive_json()
@@ -67,7 +72,7 @@ def test_websocket_receives_ui_event_after_replay(client: TestClient) -> None:
             if envelope.get("kind") == "ui_event":
                 saw_ui_event = True
                 break
-        assert saw_ui_event, f"no ui_event seen within 10s; kinds={kinds_seen}"
+        assert saw_ui_event, f"no ui_event seen within deadline; kinds={kinds_seen}"
 
 
 def test_post_signal_publishes_to_bus(client: TestClient) -> None:

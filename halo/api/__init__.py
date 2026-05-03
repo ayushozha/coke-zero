@@ -42,6 +42,7 @@ _FANOUT_PATTERNS: tuple[tuple[str, str], ...] = (
     ("decisions.*", "decision"),
     ("ui_events.*", "ui_event"),
     ("traces.*", "trace"),
+    ("embeddings.*", "embedding"),
 )
 
 
@@ -117,11 +118,30 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, Any]:
         engine = getattr(app.state, "engine", None)
+        osint = {
+            "service_attached": False,
+            "model_loaded": False,
+            "model_name": None,
+            "embedding_dim": 0,
+            "window_size": 0,
+            "clusters_seen": 0,
+            "similarity_threshold": None,
+        }
+        if engine is not None:
+            cluster = engine.osint_cluster
+            osint["service_attached"] = True
+            osint["model_loaded"] = cluster._encoder is not None
+            osint["model_name"] = cluster._model_name
+            osint["embedding_dim"] = cluster._encoder_dim
+            osint["window_size"] = len(cluster._window)
+            osint["clusters_seen"] = cluster._next_cluster_id
+            osint["similarity_threshold"] = cluster._similarity_threshold
         return {
             "status": "ok",
             "llm": engine.llm.__class__.__name__ if engine else None,
             "kb_entries": len(engine.kb) if engine else 0,
             "clients": len(getattr(app.state, "clients", ())),
+            "osint_cluster": osint,
         }
 
     @app.get("/scenarios")

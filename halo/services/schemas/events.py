@@ -246,3 +246,34 @@ class AttributionChallenge(_Event):
     objections: list[str] = Field(default_factory=list)
     confidence_delta: float = 0.0
     rationale: str
+
+
+# ---- OSINT semantic clustering -------------------------------------------
+
+
+class EmbeddingPoint(BaseModel):
+    """A single OSINT signal projected to 2D via PCA for visualization."""
+
+    signal_id: str
+    summary: str
+    cluster_id: int
+    x: float
+    y: float
+    ts: datetime
+
+
+class OsintEmbeddingSnapshot(_Event):
+    """A snapshot of the OSINT semantic clustering window.
+
+    Emitted every time a new OSINT signal is ingested and clustered.
+    Carries the entire current sliding window — points, cluster
+    assignments, and PCA-projected (x, y) coordinates — so the frontend
+    can render a complete scatter plot from a single event without
+    needing to maintain its own incremental projection.
+    """
+
+    points: list[EmbeddingPoint] = Field(default_factory=list)
+    cluster_count: int = 0
+    similarity_threshold: float = 0.70
+    model_name: str = ""
+    embedding_dim: int = 0
