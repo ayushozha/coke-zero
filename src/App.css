@@ -2345,11 +2345,16 @@
     z-index: 12;
     grid-column: 1;
     grid-row: 1;
-    margin: 8px 0 8px 8px;
+    margin: 0;
     border-color: rgba(220, 227, 213, 0.22);
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
     background:
       linear-gradient(180deg, rgba(14, 16, 17, 0.94), rgba(2, 4, 4, 0.88)),
       rgba(0, 0, 0, 0.9);
+    clip-path: none;
     box-shadow:
       12px 0 34px rgba(0, 0, 0, 0.34),
       inset -1px 0 0 rgba(99, 199, 192, 0.12);
@@ -2362,8 +2367,12 @@
     grid-template-rows: auto auto minmax(0, 1fr);
     gap: 8px;
     align-content: stretch;
-    margin: 8px 8px 8px 0;
+    margin: 0;
     border: 1px solid rgba(51, 242, 240, 0.22);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 0;
     background:
       linear-gradient(180deg, rgba(224, 92, 79, 0.07), transparent 22%),
       linear-gradient(90deg, rgba(51, 242, 240, 0.055), transparent 44%),
@@ -2422,6 +2431,10 @@
       linear-gradient(90deg, rgba(224, 92, 79, 0.2), transparent 15%),
       linear-gradient(180deg, rgba(51, 242, 240, 0.065), transparent 24%);
     opacity: 0.56;
+  }
+
+  .scenario-rail::after {
+    display: none;
   }
 
   .status-row {
