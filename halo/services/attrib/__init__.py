@@ -76,6 +76,7 @@ class AttribService:
         window_s: float = DEFAULT_WINDOW_S,
         tracer: Tracer | None = None,
         blocked_domains: Callable[[], set[Domain]] | None = None,
+        multi_agent: bool = True,
     ) -> None:
         self._bus = bus
         self._llm = llm
@@ -83,6 +84,7 @@ class AttribService:
         self._window_s = window_s
         self._tracer = tracer
         self._blocked_domains = blocked_domains
+        self._multi_agent = multi_agent
 
     async def run(self) -> None:
         buffer: list[Anomaly] = []
@@ -130,7 +132,10 @@ class AttribService:
         # Multi-agent attribution loop: primary → red-team → reconcile.
         # The intermediate primary + challenge live entirely in the trace
         # stream; downstream services see only the final reconciled
-        # attribution on ``attributions.{actor}``.
+        # attribution on ``attributions.{actor}``. When ``multi_agent`` is
+        # disabled (benchmark mode), we publish the primary attribution
+        # directly so the comparison isolates whether the red-team loop
+        # is pulling its weight against single-pass attribution.
         try:
             primary = await self._llm.attribute_primary(anomalies, context)
         except Exception:
@@ -148,34 +153,39 @@ class AttribService:
                 confidence=primary.confidence,
             )
 
-        try:
-            challenge = await self._llm.attribute_redteam(primary, anomalies, context)
-        except Exception:
-            log.exception(
-                "attrib: attribute_redteam failed for primary=%s", primary.id
-            )
+        if not self._multi_agent:
             attribution = primary
         else:
-            if self._tracer is not None:
-                alt = challenge.alternative_actor or "uncertainty floor"
-                await self._tracer.emit(
-                    "attrib_redteam",
-                    "warn" if challenge.confidence_delta < 0 else "info",
-                    f"challenge: {challenge.rationale}",
-                    ref_id=primary.id,
-                    alternative_actor=alt,
-                    confidence_delta=challenge.confidence_delta,
-                    objections=challenge.objections,
-                )
             try:
-                attribution = await self._llm.reconcile(
-                    primary, challenge, anomalies, context
+                challenge = await self._llm.attribute_redteam(
+                    primary, anomalies, context
                 )
             except Exception:
                 log.exception(
-                    "attrib: reconcile failed for primary=%s", primary.id
+                    "attrib: attribute_redteam failed for primary=%s", primary.id
                 )
                 attribution = primary
+            else:
+                if self._tracer is not None:
+                    alt = challenge.alternative_actor or "uncertainty floor"
+                    await self._tracer.emit(
+                        "attrib_redteam",
+                        "warn" if challenge.confidence_delta < 0 else "info",
+                        f"challenge: {challenge.rationale}",
+                        ref_id=primary.id,
+                        alternative_actor=alt,
+                        confidence_delta=challenge.confidence_delta,
+                        objections=challenge.objections,
+                    )
+                try:
+                    attribution = await self._llm.reconcile(
+                        primary, challenge, anomalies, context
+                    )
+                except Exception:
+                    log.exception(
+                        "attrib: reconcile failed for primary=%s", primary.id
+                    )
+                    attribution = primary
 
         # Stress-mode confidence haircut: if any critical input domain for
         # this anomaly cluster is blocked, lower confidence and surface the
