@@ -118,38 +118,6 @@ const signalTimeMs = (signal: Signal | undefined) => {
   return Number.isFinite(time) ? time : null
 }
 
-const formatDuration = (milliseconds: number) => {
-  if (milliseconds > 0 && milliseconds < 60 * 1000) {
-    return '<1M'
-  }
-
-  const totalMinutes = Math.max(0, Math.round(milliseconds / 60000))
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  if (hours > 0) {
-    return `${hours}H ${minutes.toString().padStart(2, '0')}M`
-  }
-
-  return `${minutes}M`
-}
-
-const phaseForProgress = (progress: number) => {
-  if (progress >= 100) {
-    return 'ENDEX HOLD'
-  }
-  if (progress >= 72) {
-    return 'DECISION WINDOW'
-  }
-  if (progress >= 42) {
-    return 'CONTACT DEVELOPING'
-  }
-  if (progress >= 18) {
-    return 'INDICATIONS BUILDING'
-  }
-  return 'CONTEXT SET'
-}
-
 const boundsFromPoints = (points: [number, number][]): AorBounds => {
   if (!points.length) {
     return aorBounds
@@ -314,7 +282,7 @@ export function AorMap({
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
-  const [zoom, setZoom] = useState('15.2')
+  const [zoomLevel, setZoomLevel] = useState(15.2)
 
   const scenarioCoordinateSignals = useMemo(
     () =>
@@ -352,6 +320,7 @@ export function AorMap({
     [scenarioCoordinateSignals],
   )
 
+  const contactDisplayLimit = zoomLevel >= 12.2 ? 8 : zoomLevel >= 10.4 ? 4 : 2
   const visibleSignals = useMemo(
     () =>
       [...coordinateSignals]
@@ -364,40 +333,18 @@ export function AorMap({
           return (
             focusScore(b.signal) - focusScore(a.signal) ||
             correlatedScore(b.signal) - correlatedScore(a.signal) ||
+            (signalTimeMs(b.signal) ?? 0) - (signalTimeMs(a.signal) ?? 0) ||
             b.signal.confidence - a.signal.confidence
           )
         })
-        .slice(0, 8),
-    [coordinateSignals, correlatedSignalIds, focusSignalId],
+        .slice(0, contactDisplayLimit),
+    [contactDisplayLimit, coordinateSignals, correlatedSignalIds, focusSignalId],
   )
+  const mapDensity =
+    zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
   const leadSignal = visibleSignals[0]?.signal
   const leadPriority = leadSignal ? priorityForSignal(leadSignal) : 'low'
   const newestSignalId = signals[0]?.id ?? null
-  const highSignalCount = visibleSignals.filter(
-    ({ signal }) => priorityForSignal(signal) === 'high',
-  ).length
-  const scenarioProgress =
-    playback?.progress ??
-    Math.round((signals.length / Math.max(scenario.signals.length, 1)) * 100)
-  const scenarioStartTime = signalTimeMs(scenario.signals[0])
-  const scenarioEndTime = signalTimeMs(scenario.signals.at(-1))
-  const latestSignalTime = signalTimeMs(signals[0])
-  const elapsedMs =
-    playback?.elapsedMs ??
-    (scenarioStartTime !== null && latestSignalTime !== null
-      ? latestSignalTime - scenarioStartTime
-      : 0)
-  const durationMs =
-    playback?.durationMs ??
-    (scenarioStartTime !== null && scenarioEndTime !== null
-      ? scenarioEndTime - scenarioStartTime
-      : 0)
-  const scenarioClock = `${formatDuration(elapsedMs)} / ${formatDuration(durationMs)}`
-  const scenarioPhase = phaseForProgress(scenarioProgress)
-  const nextInjectLabel =
-    playback?.nextInjectMs === null || playback?.nextInjectMs === undefined
-      ? 'NEXT ENDEX'
-      : `NEXT ${formatDuration(playback.nextInjectMs)}`
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -510,29 +457,24 @@ export function AorMap({
         type: 'geojson',
         data: createRoute([]),
       })
-      map.addSource('scenario-route', {
-        type: 'geojson',
-        data: createRoute([]),
-      })
-      map.addLayer({
-        id: 'scenario-route-line',
-        type: 'line',
-        source: 'scenario-route',
-        paint: {
-          'line-color': '#f5f7f0',
-          'line-opacity': 0.16,
-          'line-width': 1.2,
-          'line-dasharray': [1, 2.2],
-        },
-      })
       map.addLayer({
         id: 'relay-route-line',
         type: 'line',
         source: 'relay-route',
         paint: {
           'line-color': '#c9a457',
-          'line-opacity': 0.78,
-          'line-width': 2.2,
+          'line-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            5,
+            0.18,
+            10,
+            0.42,
+            13,
+            0.78,
+          ],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.1, 13, 2.2],
           'line-dasharray': [1.8, 1.2],
         },
       })
@@ -544,7 +486,7 @@ export function AorMap({
     })
 
     map.on('zoom', () => {
-      setZoom(map.getZoom().toFixed(1))
+      setZoomLevel(map.getZoom())
     })
 
     return () => {
@@ -571,9 +513,6 @@ export function AorMap({
     ;(map.getSource('mgrs-grid') as maplibregl.GeoJSONSource | undefined)?.setData(
       createGrid(operationalBounds),
     )
-    ;(map.getSource('scenario-route') as maplibregl.GeoJSONSource | undefined)?.setData(
-      createRoute(routePoints),
-    )
     map.fitBounds(
       [
         [operationalBounds.west, operationalBounds.south],
@@ -581,7 +520,7 @@ export function AorMap({
       ],
       { duration: 420, maxZoom: 15.2, padding: 92 },
     )
-  }, [isMapReady, operationalBounds, routePoints, scenario.id])
+  }, [isMapReady, operationalBounds, scenario.id])
 
   useEffect(() => {
     const map = mapRef.current
@@ -694,7 +633,7 @@ export function AorMap({
   }
 
   return (
-    <div className="aor-map" aria-label="AOR tactical map">
+    <div className={`aor-map aor-map--${mapDensity}`} aria-label="AOR tactical map">
       <div className="aor-map__canvas" ref={containerRef} />
       <div className="aor-map__hud">
         <div>
@@ -709,26 +648,6 @@ export function AorMap({
               ? 'TRACK / MISSION CLOCK'
               : 'MONITOR / AWAITING LOCAL SIGNALS'}
         </em>
-      </div>
-      <div className="aor-map__legend" aria-hidden="true">
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--friendly" />
-          Friendly
-        </span>
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--watch" />
-          Watch
-        </span>
-        <span>
-          <i className="aor-map__legend-key aor-map__legend-key--threat" />
-          Threat
-        </span>
-      </div>
-      <div className="aor-map__ops-strip" aria-hidden="true">
-        <span>CONTACTS {visibleSignals.length}</span>
-        <span>THREAT {highSignalCount}</span>
-        <span>FUSED {correlatedSignalIds.length}</span>
-        <span>{scenario.domains.length} DOMAINS</span>
       </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
         <button
@@ -745,15 +664,6 @@ export function AorMap({
         >
           Muted
         </button>
-      </div>
-      <div className="aor-map__scale">
-        <span>Zoom {zoom}</span>
-        <span>{scenarioPhase}</span>
-        <span>{playback?.scaleLabel ?? 'FIELD PACE'}</span>
-        <span>{nextInjectLabel}</span>
-        <span>SIM {scenarioProgress}%</span>
-        <span>MET {scenarioClock}</span>
-        <span>Real-world basemap</span>
       </div>
     </div>
   )
