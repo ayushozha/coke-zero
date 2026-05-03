@@ -1,4 +1,4 @@
-import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
+import { commanderSignalSummary, signalKindLabel } from '../lib/commanderLanguage'
 import { signalEffectLabel, signalEffectState } from '../lib/signalEffects'
 import type { Signal } from '../types/canopy'
 import type { PlaybackStatus } from '../types/playback'
@@ -47,7 +47,7 @@ export function MissionAlert({
       <p>{location}</p>
       <footer className="mission-alert__telemetry">
         <b>{playback ? `MET ${formatDuration(playback.elapsedMs)}` : 'LIVE'}</b>
-        <i>{domainLabel(signal.domain)}</i>
+        <i>{signalKindLabel(signal)}</i>
         <i>{Math.round(signal.confidence * 100)}% CONF</i>
       </footer>
       {onFocusLocation ? (

@@ -2389,13 +2389,32 @@
   width: 8px;
   height: 8px;
   border: 1px solid rgba(220, 227, 213, 0.42);
+  border-radius: 0;
   background: rgba(2, 4, 4, 0.9);
+  color: transparent;
+  cursor: pointer;
+  padding: 0;
   transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.scenario-timeline__marker:hover,
+.scenario-timeline__marker:focus-visible {
+  border-color: rgba(245, 247, 240, 0.8);
+  box-shadow: 0 0 0 4px rgba(51, 242, 240, 0.1);
+  outline: none;
 }
 
 .scenario-timeline__marker--complete {
   border-color: rgba(51, 242, 240, 0.78);
   background: rgba(51, 242, 240, 0.38);
+}
+
+.scenario-timeline__marker--selected {
+  border-color: rgba(245, 247, 240, 0.92);
+  background: var(--cyan);
+  box-shadow:
+    0 0 0 4px rgba(51, 242, 240, 0.16),
+    0 0 14px rgba(51, 242, 240, 0.42);
 }
 
 .scenario-timeline__marker--next {
@@ -2441,7 +2460,9 @@
 .scenario-timeline__list {
   display: grid;
   gap: 5px;
+  max-height: 260px;
   margin: 0;
+  overflow: auto;
   padding: 0;
   list-style: none;
 }
@@ -2491,6 +2512,18 @@
 .scenario-timeline__row--next .scenario-timeline__row-time,
 .scenario-timeline__row--next .scenario-timeline__row-domain {
   color: #e1c879;
+}
+
+.scenario-timeline__row--selected {
+  border-top-color: rgba(51, 242, 240, 0.36);
+  background:
+    linear-gradient(90deg, rgba(51, 242, 240, 0.08), transparent 90%),
+    rgba(51, 242, 240, 0.025);
+}
+
+.scenario-timeline__row--selected .scenario-timeline__row-time,
+.scenario-timeline__row--selected .scenario-timeline__row-domain {
+  color: #8cf4ef;
 }
 
 .scenario-timeline__row--pending {
