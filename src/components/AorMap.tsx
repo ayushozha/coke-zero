@@ -96,6 +96,16 @@ const priorityForSignal = (signal: Signal) => {
   return 'low'
 }
 
+const priorityLabel = (priority: ReturnType<typeof priorityForSignal>) => {
+  if (priority === 'high') {
+    return 'THREAT'
+  }
+  if (priority === 'watch') {
+    return 'WATCH'
+  }
+  return 'TRACK'
+}
+
 const createAorPolygon = () =>
   ({
     type: 'FeatureCollection',
@@ -216,6 +226,11 @@ export function AorMap({
         .slice(0, 5),
     [correlatedSignalIds, focusSignalId, signals],
   )
+  const leadSignal = visibleSignals[0]?.signal
+  const leadPriority = leadSignal ? priorityForSignal(leadSignal) : 'low'
+  const highSignalCount = visibleSignals.filter(
+    ({ signal }) => priorityForSignal(signal) === 'high',
+  ).length
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -259,11 +274,11 @@ export function AorMap({
               visibility: 'none',
             },
             paint: {
-              'raster-brightness-max': 0.78,
+              'raster-brightness-max': 0.58,
               'raster-brightness-min': 0.03,
-              'raster-contrast': 0.16,
+              'raster-contrast': 0.2,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.18,
+              'raster-saturation': -0.28,
             },
           },
           {
@@ -271,9 +286,9 @@ export function AorMap({
             type: 'raster',
             source: 'osmStreets',
             paint: {
-              'raster-brightness-max': 0.7,
-              'raster-brightness-min': 0.02,
-              'raster-contrast': 0.14,
+              'raster-brightness-max': 0.52,
+              'raster-brightness-min': 0,
+              'raster-contrast': 0.26,
               'raster-fade-duration': 0,
               'raster-saturation': -0.95,
             },
@@ -465,9 +480,16 @@ export function AorMap({
     <div className="aor-map" aria-label="AOR tactical map">
       <div className="aor-map__canvas" ref={containerRef} />
       <div className="aor-map__hud">
-        <span>AOR Mode</span>
-        <strong>Relay Team 2</strong>
+        <div>
+          <span>AOR Mode</span>
+          <strong>Relay Team 2</strong>
+        </div>
         <p>{cursorGrid}</p>
+        <em className={`aor-map__posture aor-map__posture--${leadPriority}`}>
+          {leadSignal
+            ? `${priorityLabel(leadPriority)} / ${labelForSignal(leadSignal)}`
+            : 'MONITOR / NO LOCAL SIGNALS'}
+        </em>
       </div>
       <div className="aor-map__legend" aria-hidden="true">
         <span>
@@ -485,6 +507,7 @@ export function AorMap({
       </div>
       <div className="aor-map__ops-strip" aria-hidden="true">
         <span>LIVE CONTACTS {visibleSignals.length}</span>
+        <span>THREAT {highSignalCount}</span>
         <span>FUSED {correlatedSignalIds.length}</span>
         <span>{basemap.toUpperCase()}</span>
       </div>
