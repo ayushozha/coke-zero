@@ -1447,6 +1447,25 @@
   color: var(--red);
 }
 
+.aor-map--wide .aor-signal {
+  width: 22px;
+  height: 22px;
+}
+
+.aor-map--wide .aor-signal__glyph {
+  inset: 6px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 0 10px rgba(51, 242, 240, 0.18);
+}
+
+.aor-map--wide .aor-signal__label,
+.aor-map--wide .aor-signal__meta,
+.aor-map--wide .aor-sim-cursor__label,
+.aor-map--contact .aor-signal__meta {
+  display: none;
+}
+
 .aor-signal--newest .aor-signal__glyph {
   animation: contact-step 1500ms ease-out both;
 }
