@@ -6,6 +6,7 @@ import { MissionSummary } from '../components/MissionSummary'
 import { ReasoningPanel } from '../components/ReasoningPanel'
 import { ScenarioRail } from '../components/ScenarioRail'
 import { ScenarioTimeline } from '../components/ScenarioTimeline'
+import { StressMode } from '../components/StressMode'
 import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
@@ -580,6 +581,7 @@ export function Brigade() {
             signals={signals}
           />
           <ReasoningPanel compact />
+          <StressMode />
         </aside>
       </section>
     </main>

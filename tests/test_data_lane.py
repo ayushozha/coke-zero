@@ -63,7 +63,12 @@ class DataLaneBehaviorTest(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(expected_records, parsed_records)
         self.assertEqual(len(expected_records), len(lines))
-        self.assertTrue(all(", " not in line and ": " not in line for line in lines))
+        # The dry-run must emit compact JSON (no whitespace between tokens).
+        # Compare each line against the canonical compact serialization rather
+        # than scanning for ", " / ": " — the latter false-positives on any
+        # prose summary that contains natural English punctuation.
+        for line, record in zip(lines, parsed_records, strict=True):
+            self.assertEqual(json.dumps(record, separators=(",", ":")), line)
 
     def test_ingest_adapters_filter_to_their_own_domain(self) -> None:
         adapters = {
