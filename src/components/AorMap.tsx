@@ -3,7 +3,6 @@ import maplibregl from 'maplibre-gl'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
-import { signalEffectState } from '../lib/signalEffects'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
@@ -42,6 +41,36 @@ const formatMgrs = ([lon, lat]: [number, number]) => {
     '$1 $2 $3 $4',
   )
 }
+
+// Friendly / asset / threat contacts pinned in the AOR overlay. Used to
+// build the `aor-contacts` MapLibre source layer below — the satellite
+// view merge dropped this constant; restored here so the source layer
+// has data to render.
+const aorContacts: Array<{
+  id: string
+  label: string
+  type: 'friendly' | 'asset' | 'threat'
+  coordinate: [number, number]
+}> = [
+  {
+    id: 'relay-team-2',
+    label: 'RELAY TEAM 2',
+    type: 'friendly',
+    coordinate: [-116.52, 35.02],
+  },
+  {
+    id: 'blos-relay-west',
+    label: 'BLOS RELAY WEST',
+    type: 'asset',
+    coordinate: [-116.547, 35.039],
+  },
+  {
+    id: 'rf-hit-11',
+    label: 'RF HIT 11',
+    type: 'threat',
+    coordinate: [-116.485, 35.012],
+  },
+]
 
 const signalPoint = (signal: Signal): [number, number] | null => {
   if (
@@ -107,28 +136,6 @@ const signalTimeMs = (signal: Signal | undefined) => {
   return Number.isFinite(time) ? time : null
 }
 
-const boundsFromPoints = (points: [number, number][]): AorBounds => {
-  if (!points.length) {
-    return aorBounds
-  }
-
-  const lons = points.map(([lon]) => lon)
-  const lats = points.map(([, lat]) => lat)
-  const west = Math.min(...lons)
-  const east = Math.max(...lons)
-  const south = Math.min(...lats)
-  const north = Math.max(...lats)
-  const lonPad = Math.max((east - west) * 0.28, 0.08)
-  const latPad = Math.max((north - south) * 0.28, 0.08)
-
-  return {
-    west: west - lonPad,
-    south: south - latPad,
-    east: east + lonPad,
-    north: north + latPad,
-  }
-}
-
 const centerFromBounds = (bounds: AorBounds): [number, number] => [
   (bounds.west + bounds.east) / 2,
   (bounds.south + bounds.north) / 2,
@@ -174,42 +181,6 @@ const createRoute = (points: [number, number][]) =>
           ]
         : [],
   }) as GeoJSON.FeatureCollection
-
-const interpolatePoint = (
-  start: [number, number],
-  end: [number, number],
-  progress: number,
-): [number, number] => [
-  start[0] + (end[0] - start[0]) * progress,
-  start[1] + (end[1] - start[1]) * progress,
-]
-
-const routeProgressPoints = (
-  points: [number, number][],
-  progress: number,
-) => {
-  if (points.length < 2) {
-    return points
-  }
-
-  const clampedProgress = Math.min(100, Math.max(0, progress))
-  const routePosition = (clampedProgress / 100) * (points.length - 1)
-  const completedSegment = Math.floor(routePosition)
-  const segmentProgress = routePosition - completedSegment
-  const result = points.slice(0, completedSegment + 1)
-
-  if (completedSegment < points.length - 1) {
-    result.push(
-      interpolatePoint(
-        points[completedSegment],
-        points[completedSegment + 1],
-        segmentProgress,
-      ),
-    )
-  }
-
-  return result
-}
 
 const createGrid = (bounds: AorBounds) => {
   const features: GeoJSON.Feature[] = []
@@ -260,8 +231,6 @@ const createGrid = (bounds: AorBounds) => {
 export function AorMap({
   correlatedSignalIds,
   focusSignalId,
-  playback,
-  scenario,
   signals,
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -270,16 +239,6 @@ export function AorMap({
   const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [zoomLevel, setZoomLevel] = useState(15.2)
 
-  const scenarioCoordinateSignals = useMemo(
-    () =>
-      scenario.signals
-        .map((signal) => ({ point: signalPoint(signal), signal }))
-        .filter(
-          (entry): entry is { point: [number, number]; signal: Signal } =>
-            entry.point !== null,
-        ),
-    [scenario.signals],
-  )
   const coordinateSignals = useMemo(
     () =>
       signals
@@ -290,22 +249,6 @@ export function AorMap({
         ),
     [signals],
   )
-  const routePoints = useMemo(
-    () => scenarioCoordinateSignals.map(({ point }) => point),
-    [scenarioCoordinateSignals],
-  )
-  const activeRoutePoints = useMemo(
-    () =>
-      playback
-        ? routeProgressPoints(routePoints, playback.progress)
-        : coordinateSignals.map(({ point }) => point).reverse(),
-    [coordinateSignals, playback, routePoints],
-  )
-  const operationalBounds = useMemo(
-    () => boundsFromPoints(scenarioCoordinateSignals.map(({ point }) => point)),
-    [scenarioCoordinateSignals],
-  )
-
   const contactDisplayLimit = zoomLevel >= 12.2 ? 8 : zoomLevel >= 10.4 ? 4 : 2
   const visibleSignals = useMemo(
     () =>
@@ -328,7 +271,6 @@ export function AorMap({
   )
   const mapDensity =
     zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
-  const newestSignalId = signals[0]?.id ?? null
 
   const signalFeatures = useMemo(
     () =>
@@ -586,10 +528,6 @@ export function AorMap({
           'text-halo-width': 1.5,
         },
       })
-    })
-
-    map.on('mousemove', (event) => {
-      setCursorGrid(formatMgrs([event.lngLat.lng, event.lngLat.lat]))
     })
 
     map.on('zoom', () => {
