@@ -96,6 +96,7 @@ type MapPoint = {
 }
 
 type SatelliteFamilyFilter = 'all' | N2YOSatelliteFamily
+type SatelliteFamilySelection = 'all' | N2YOSatelliteFamily[]
 
 const SATELLITE_FAMILY_FILTERS: SatelliteFamilyFilter[] = [
   'all',
@@ -106,6 +107,19 @@ const SATELLITE_FAMILY_FILTERS: SatelliteFamilyFilter[] = [
   'GSSAP',
   'GPS-3',
 ]
+
+const isFamilyVisible = (
+  selection: SatelliteFamilySelection,
+  family: N2YOSatelliteFamily,
+) => selection === 'all' || selection.includes(family)
+
+const isFamilyControlActive = (
+  selection: SatelliteFamilySelection,
+  familyFilter: SatelliteFamilyFilter,
+) =>
+  familyFilter === 'all'
+    ? selection === 'all'
+    : selection !== 'all' && selection.includes(familyFilter)
 
 const localAorBounds = {
   west: -116.61,
@@ -299,20 +313,20 @@ export function CesiumGlobe({
   const [activeLayer, setActiveLayer] = useState('baseline')
   const [imageryMode, setImageryMode] = useState('Loading imagery')
   const [realSatelliteStatus, setRealSatelliteStatus] = useState('Satellites')
-  const [satelliteFamilyFilter, setSatelliteFamilyFilter] =
-    useState<SatelliteFamilyFilter>('all')
+  const [satelliteFamilySelection, setSatelliteFamilySelection] =
+    useState<SatelliteFamilySelection>('all')
   const [selectedSatellite, setSelectedSatellite] = useState<N2YOLayerState | null>(null)
   const [showAllOrbits, setShowAllOrbits] = useState(false)
   const showAllOrbitsRef = useRef(false)
-  const satelliteFamilyFilterRef = useRef<SatelliteFamilyFilter>('all')
+  const satelliteFamilySelectionRef = useRef<SatelliteFamilySelection>('all')
 
   useEffect(() => {
     showAllOrbitsRef.current = showAllOrbits
   }, [showAllOrbits])
 
   useEffect(() => {
-    satelliteFamilyFilterRef.current = satelliteFamilyFilter
-  }, [satelliteFamilyFilter])
+    satelliteFamilySelectionRef.current = satelliteFamilySelection
+  }, [satelliteFamilySelection])
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -722,8 +736,8 @@ export function CesiumGlobe({
     n2yoLayersRef.current = []
     selectedN2yoLayerRef.current = null
     setSelectedSatellite(null)
-    satelliteFamilyFilterRef.current = 'all'
-    setSatelliteFamilyFilter('all')
+    satelliteFamilySelectionRef.current = 'all'
+    setSatelliteFamilySelection('all')
     showAllOrbitsRef.current = false
     setShowAllOrbits(false)
     viewer.clock.shouldAnimate = true
@@ -748,8 +762,8 @@ export function CesiumGlobe({
     n2yoLayersRef.current = []
     selectedN2yoLayerRef.current = null
     setSelectedSatellite(null)
-    satelliteFamilyFilterRef.current = 'all'
-    setSatelliteFamilyFilter('all')
+    satelliteFamilySelectionRef.current = 'all'
+    setSatelliteFamilySelection('all')
     showAllOrbitsRef.current = false
     setShowAllOrbits(false)
     void viewer.dataSources.add(CzmlDataSource.load(createVehicleCzml())).then(() => {
@@ -772,16 +786,16 @@ export function CesiumGlobe({
   }
 
   const visibleN2yoLayers = (
-    familyFilter = satelliteFamilyFilterRef.current,
+    familySelection = satelliteFamilySelectionRef.current,
   ) =>
     n2yoLayersRef.current.filter(
-      (layer) => familyFilter === 'all' || layer.satelliteFamily === familyFilter,
+      (layer) => isFamilyVisible(familySelection, layer.satelliteFamily),
     )
 
   const visibleOrbitCapableLayers = (
-    familyFilter = satelliteFamilyFilterRef.current,
+    familySelection = satelliteFamilySelectionRef.current,
   ) =>
-    visibleN2yoLayers(familyFilter).filter(
+    visibleN2yoLayers(familySelection).filter(
       (layer) => !isN2YOGeostationaryFamily(layer.satelliteFamily),
     )
 
@@ -791,13 +805,29 @@ export function CesiumGlobe({
       return
     }
 
-    satelliteFamilyFilterRef.current = familyFilter
-    setSatelliteFamilyFilter(familyFilter)
+    const nextSelection: SatelliteFamilySelection =
+      familyFilter === 'all'
+        ? 'all'
+        : satelliteFamilySelectionRef.current === 'all'
+          ? [familyFilter]
+          : satelliteFamilySelectionRef.current.includes(familyFilter)
+            ? satelliteFamilySelectionRef.current.filter(
+                (family) => family !== familyFilter,
+              )
+            : [...satelliteFamilySelectionRef.current, familyFilter]
+
+    const normalizedSelection =
+      nextSelection !== 'all' && nextSelection.length === 0 ? 'all' : nextSelection
+
+    satelliteFamilySelectionRef.current = normalizedSelection
+    setSatelliteFamilySelection(normalizedSelection)
 
     if (
       selectedN2yoLayerRef.current &&
-      familyFilter !== 'all' &&
-      selectedN2yoLayerRef.current.satelliteFamily !== familyFilter
+      !isFamilyVisible(
+        normalizedSelection,
+        selectedN2yoLayerRef.current.satelliteFamily,
+      )
     ) {
       deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
       selectedN2yoLayerRef.current = null
@@ -809,11 +839,11 @@ export function CesiumGlobe({
       setN2YOSatelliteLayerVisible(
         viewer,
         layer,
-        familyFilter === 'all' || layer.satelliteFamily === familyFilter,
+        isFamilyVisible(normalizedSelection, layer.satelliteFamily),
       )
     })
 
-    const orbitCapableLayers = visibleOrbitCapableLayers(familyFilter)
+    const orbitCapableLayers = visibleOrbitCapableLayers(normalizedSelection)
 
     if (selectedN2yoLayerRef.current) {
       selectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
@@ -871,8 +901,8 @@ export function CesiumGlobe({
         })
         selectedN2yoLayerRef.current = null
         setSelectedSatellite(null)
-        satelliteFamilyFilterRef.current = 'all'
-        setSatelliteFamilyFilter('all')
+        satelliteFamilySelectionRef.current = 'all'
+        setSatelliteFamilySelection('all')
         showAllOrbitsRef.current = false
         setShowAllOrbits(false)
         viewer.clock.shouldAnimate = true
@@ -947,7 +977,9 @@ export function CesiumGlobe({
             {SATELLITE_FAMILY_FILTERS.map((familyFilter) => (
               <button
                 className={
-                  satelliteFamilyFilter === familyFilter ? 'is-active' : ''
+                  isFamilyControlActive(satelliteFamilySelection, familyFilter)
+                    ? 'is-active'
+                    : ''
                 }
                 disabled={n2yoLayersRef.current.length === 0}
                 key={familyFilter}
