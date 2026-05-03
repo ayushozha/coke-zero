@@ -1,4 +1,3 @@
-
 # Python
 __pycache__/
 *.py[cod]
@@ -12,18 +11,42 @@ __pycache__/
 
 # uv / venv
 .venv/
+
+# Local env files
 .env
-.env.local
+.env.*
+!.env.example
 
 # Generated data
 data/kb.sqlite
 data/kb.sqlite-journal
 
+# Node / Vite
+node_modules
+dist
+dist-ssr
+*.local
+.vite/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
 # OS
 .DS_Store
 Thumbs.db
 
-# IDE
+# Editor directories and files
 .idea/
-.vscode/
-
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

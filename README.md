@@ -1,4 +1,4 @@
-# HALO: High Altitude Loop Orchestrator
+# React + TypeScript + Vite
 
 HALO is our national security hackathon project for CANOPY: a tactical space and multi-domain awareness system for brigade-level decision support.
 
