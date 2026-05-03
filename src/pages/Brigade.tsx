@@ -430,6 +430,11 @@ export function Brigade() {
   const [isApproved, setIsApproved] = useState(false)
   const [activeScenarioId, setActiveScenarioId] = useState(defaultScenario.id)
   const [simElapsedMs, setSimElapsedMs] = useState(0)
+  // Collapse state for the three foldable side panels. Each tab handle
+  // sits on the panel's outer edge and toggles the open/closed state.
+  const [scenarioRailCollapsed, setScenarioRailCollapsed] = useState(false)
+  const [decisionStackCollapsed, setDecisionStackCollapsed] = useState(false)
+  const [eventFeedCollapsed, setEventFeedCollapsed] = useState(false)
   const activeScenario =
     scenarios.find((scenario) => scenario.id === activeScenarioId) ??
     defaultScenario
@@ -555,7 +560,26 @@ export function Brigade() {
           activeScenarioId={activeScenario.id}
           onSelectScenario={selectScenario}
           scenarios={scenarios}
+          collapsed={scenarioRailCollapsed}
         />
+        <button
+          type="button"
+          className={`panel-tab panel-tab--left-edge${
+            scenarioRailCollapsed ? ' panel-tab--at-edge' : ''
+          }`}
+          onClick={() => setScenarioRailCollapsed((c) => !c)}
+          aria-label={
+            scenarioRailCollapsed
+              ? 'Open scenarios panel'
+              : 'Collapse scenarios panel'
+          }
+          aria-expanded={!scenarioRailCollapsed}
+        >
+          <span className="panel-tab__arrow" aria-hidden="true">
+            {scenarioRailCollapsed ? '▶' : '◀'}
+          </span>
+          <span className="panel-tab__label">SCENARIOS</span>
+        </button>
 
         <section className="map-workspace" aria-label="Map and incoming reports">
           <MapStage
@@ -573,10 +597,35 @@ export function Brigade() {
               setIsMapAutoFocusEnabled((isEnabled) => !isEnabled)
             }
             signals={signals}
+            collapsed={eventFeedCollapsed}
           />
+          <button
+            type="button"
+            className={`panel-tab panel-tab--bottom-edge${
+              eventFeedCollapsed ? ' panel-tab--at-edge' : ''
+            }`}
+            onClick={() => setEventFeedCollapsed((c) => !c)}
+            aria-label={
+              eventFeedCollapsed
+                ? 'Open signal stream'
+                : 'Collapse signal stream'
+            }
+            aria-expanded={!eventFeedCollapsed}
+          >
+            <span className="panel-tab__arrow" aria-hidden="true">
+              {eventFeedCollapsed ? '▲' : '▼'}
+            </span>
+            <span className="panel-tab__label">SIGNAL STREAM</span>
+          </button>
         </section>
 
-        <aside className="decision-stack" aria-label="Commander decision stack">
+        <aside
+          className={`decision-stack${
+            decisionStackCollapsed ? ' decision-stack--collapsed' : ''
+          }`}
+          aria-label="Commander decision stack"
+          aria-hidden={decisionStackCollapsed}
+        >
           <MissionSummary
             attribution={latestAttribution}
             decision={latestDecision}
@@ -601,6 +650,24 @@ export function Brigade() {
           <ReasoningPanel compact />
           <StressMode />
         </aside>
+        <button
+          type="button"
+          className={`panel-tab panel-tab--right-edge${
+            decisionStackCollapsed ? ' panel-tab--at-edge' : ''
+          }`}
+          onClick={() => setDecisionStackCollapsed((c) => !c)}
+          aria-label={
+            decisionStackCollapsed
+              ? 'Open commander panel'
+              : 'Collapse commander panel'
+          }
+          aria-expanded={!decisionStackCollapsed}
+        >
+          <span className="panel-tab__arrow" aria-hidden="true">
+            {decisionStackCollapsed ? '◀' : '▶'}
+          </span>
+          <span className="panel-tab__label">COMMANDER</span>
+        </button>
       </section>
     </main>
   )

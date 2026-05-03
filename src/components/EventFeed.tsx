@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { Signal } from '../types/canopy'
-import { commanderSignalSummary } from '../lib/commanderLanguage'
 
 type EventFeedProps = {
   isMapAutoFocusEnabled?: boolean
   isLive?: boolean
   onToggleMapAutoFocus?: () => void
   signals: Signal[]
+  collapsed?: boolean
 }
 
-type FeedView = 'updates' | 'raw' | 'flow'
+type FeedView = 'raw' | 'flow'
 type FlowNodeId =
   | 'signal'
   | 'schema'
@@ -263,8 +263,9 @@ export function EventFeed({
   isLive = false,
   onToggleMapAutoFocus,
   signals,
+  collapsed = false,
 }: EventFeedProps) {
-  const [activeView, setActiveView] = useState<FeedView>('updates')
+  const [activeView, setActiveView] = useState<FeedView>('raw')
   const [flowProgress, setFlowProgress] = useState<{
     signalId: string | undefined
     stepIndex: number
@@ -418,7 +419,11 @@ export function EventFeed({
       .join(' ')
 
   return (
-    <section className="event-feed" aria-label="Incoming signals">
+    <section
+      className={`event-feed${collapsed ? ' event-feed--collapsed' : ''}`}
+      aria-label="Incoming signals"
+      aria-hidden={collapsed}
+    >
       <div className="event-feed__header">
         <div>
           <span>ISR / EW / CSM</span>
@@ -430,19 +435,6 @@ export function EventFeed({
             role="tablist"
             aria-label="Signal stream view"
           >
-            <button
-              className={
-                activeView === 'updates'
-                  ? 'event-feed__tab is-active'
-                  : 'event-feed__tab'
-              }
-              onClick={() => setActiveView('updates')}
-              role="tab"
-              type="button"
-              aria-selected={activeView === 'updates'}
-            >
-              Updates
-            </button>
             <button
               className={
                 activeView === 'raw'
@@ -492,44 +484,7 @@ export function EventFeed({
         </div>
       </div>
 
-      {activeView === 'updates' ? (
-        <div
-          className="event-feed__stream"
-          role="log"
-          aria-label="Live signal stream"
-          aria-live="polite"
-        >
-          {signals.slice(0, 10).map((signal, index) => {
-            const summary = commanderSignalSummary(signal)
-            const priority = priorityForSignal(signal)
-            return (
-              <article
-                className={`event-feed__entry event-feed__entry--${priority}`}
-                data-newest={index === 0 ? 'true' : undefined}
-                key={signal.id}
-              >
-                <div className="event-feed__entry-top">
-                  <span className="event-feed__time">
-                    {formatTime(signal.ts)}
-                  </span>
-                  <span className="event-feed__domain">{summary.label}</span>
-                  <span className="event-feed__confidence">
-                    {summary.confidenceLabel}
-                  </span>
-                </div>
-                <div className="event-feed__meaning">
-                  <strong>{summary.headline}</strong>
-                  <p>{summary.whyItMatters}</p>
-                </div>
-                <div className="event-feed__entry-meta">
-                  <span>{summary.location}</span>
-                  <span>{summary.action}</span>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-      ) : activeView === 'flow' ? (
+      {activeView === 'flow' ? (
         <div
           className={`event-feed__flow-view event-feed__flow-view--${flowPriority}`}
           aria-label="CANOPY decision flow"
