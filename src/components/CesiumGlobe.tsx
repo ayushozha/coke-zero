@@ -160,6 +160,8 @@ const SATELLITE_FAMILY_FILTERS: SatelliteFamilyFilter[] = [
   'SBIRS',
   'GSSAP',
   'GPS-3',
+  'CHINA',
+  'RUSSIA',
 ]
 
 const isFamilyVisible = (
