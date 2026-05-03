@@ -69,15 +69,6 @@ export function MapStage({
           GLOBE
         </button>
       </div>
-      <div className="tak-map-chrome" aria-hidden="true">
-        <span>{isGlobe ? 'SPACE' : 'AOR'}</span>
-        <strong>{isGlobe ? 'CSM CUSTODY' : 'CANOPY COP'}</strong>
-        <em>
-          {isGlobe
-            ? `${correlatedSignalIds.length.toString().padStart(2, '0')} fused`
-            : `${scenario.id} / ${signals.length.toString().padStart(2, '0')} feeds`}
-        </em>
-      </div>
     </section>
   )
 }

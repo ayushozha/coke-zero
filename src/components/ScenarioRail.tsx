@@ -21,6 +21,10 @@ export function ScenarioRail({
   onSelectScenario,
   scenarios,
 }: ScenarioRailProps) {
+  const activeScenario =
+    scenarios.find((scenario) => scenario.id === activeScenarioId) ??
+    scenarios[0]
+
   return (
     <aside className="scenario-rail" aria-label="Scenario library">
       <div className="scenario-rail__header">
@@ -34,6 +38,18 @@ export function ScenarioRail({
           </i>
         </div>
       </div>
+
+      {activeScenario ? (
+        <div className={`scenario-rail__current scenario-rail__current--${activeScenario.family}`}>
+          <span>Current scenario</span>
+          <strong>{activeScenario.shortName}</strong>
+          <p>{activeScenario.theater}</p>
+          <em>
+            {activeScenario.signals.length.toString().padStart(2, '0')} reports /{' '}
+            {activeScenario.domains.length} domains
+          </em>
+        </div>
+      ) : null}
 
       <nav className="scenario-list" aria-label="Available scenarios">
         {scenarios.map((scenario) => {

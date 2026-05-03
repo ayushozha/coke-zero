@@ -15,8 +15,6 @@ type AorMapProps = {
   signals: Signal[]
 }
 
-const aorCenter: [number, number] = [-116.52, 35.02]
-
 const aorBounds = {
   west: -116.61,
   south: 34.98,
@@ -101,16 +99,6 @@ const priorityForSignal = (signal: Signal) => {
     return 'watch'
   }
   return 'low'
-}
-
-const priorityLabel = (priority: ReturnType<typeof priorityForSignal>) => {
-  if (priority === 'high') {
-    return 'THREAT'
-  }
-  if (priority === 'watch') {
-    return 'WATCH'
-  }
-  return 'TRACK'
 }
 
 const signalTimeMs = (signal: Signal | undefined) => {
@@ -281,7 +269,6 @@ export function AorMap({
   const simCursorRef = useRef<maplibregl.Marker | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('imagery')
-  const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoomLevel, setZoomLevel] = useState(15.2)
 
   const scenarioCoordinateSignals = useMemo(
@@ -342,8 +329,6 @@ export function AorMap({
   )
   const mapDensity =
     zoomLevel >= 12.2 ? 'detail' : zoomLevel >= 10.4 ? 'contact' : 'wide'
-  const leadSignal = visibleSignals[0]?.signal
-  const leadPriority = leadSignal ? priorityForSignal(leadSignal) : 'low'
   const newestSignalId = signals[0]?.id ?? null
 
   useEffect(() => {
@@ -481,10 +466,6 @@ export function AorMap({
 
     })
 
-    map.on('mousemove', (event) => {
-      setCursorGrid(formatMgrs([event.lngLat.lng, event.lngLat.lat]))
-    })
-
     map.on('zoom', () => {
       setZoomLevel(map.getZoom())
     })
@@ -506,7 +487,6 @@ export function AorMap({
       return
     }
 
-    setCursorGrid(formatMgrs(centerFromBounds(operationalBounds)))
     ;(map.getSource('aor-zone') as maplibregl.GeoJSONSource | undefined)?.setData(
       createAorPolygon(operationalBounds),
     )
@@ -635,20 +615,6 @@ export function AorMap({
   return (
     <div className={`aor-map aor-map--${mapDensity}`} aria-label="AOR tactical map">
       <div className="aor-map__canvas" ref={containerRef} />
-      <div className="aor-map__hud">
-        <div>
-          <span>{scenario.id} / {scenario.theater}</span>
-          <strong>{scenario.shortName}</strong>
-        </div>
-        <p>{cursorGrid}</p>
-        <em className={`aor-map__posture aor-map__posture--${leadPriority}`}>
-          {leadSignal
-            ? `${priorityLabel(leadPriority)} / ${labelForSignal(leadSignal)}`
-            : activeRoutePoints.length
-              ? 'TRACK / MISSION CLOCK'
-              : 'MONITOR / AWAITING LOCAL SIGNALS'}
-        </em>
-      </div>
       <div className="aor-map__basemaps" aria-label="AOR basemap">
         <button
           className={basemap === 'imagery' ? 'is-active' : ''}
