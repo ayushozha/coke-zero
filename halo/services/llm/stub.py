@@ -11,6 +11,7 @@ from halo.services.schemas.events import (
     Action,
     Anomaly,
     Attribution,
+    AttributionChallenge,
     Authority,
     Decision,
 )
@@ -539,6 +540,126 @@ def _select_decision(citations: list[str], actor: str) -> _DecisionTemplate:
     return _DECISIONS["default_warning"]
 
 
+# ---- Red-team challenge templates -----------------------------------------
+
+
+@dataclass(frozen=True)
+class _RedTeamTemplate:
+    alternative_actor: str | None
+    objections: list[str]
+    confidence_delta: float  # negative means primary looks overconfident
+    rationale: str
+
+
+_KIND_TO_REDTEAM: dict[str, _RedTeamTemplate] = {
+    "rf_anomaly": _RedTeamTemplate(
+        alternative_actor="China",
+        objections=[
+            "Russian EW signature overlaps with Chinese SIGINT-reported emitters in this band.",
+            "Single-domain RF cue is insufficient to lock attribution at >0.7.",
+        ],
+        confidence_delta=-0.05,
+        rationale=(
+            "Primary jumped to Russia on a single RF burst. Chinese tactical "
+            "EW gear shares the same waveform family; without a cyber or "
+            "PNT corroborator we cannot rule out a deception cue."
+        ),
+    ),
+    "gnss_spoof": _RedTeamTemplate(
+        alternative_actor="Iran proxy",
+        objections=[
+            "Captured Russian GNSS spoof gear has been observed in Iranian inventories.",
+            "Spoof timing pattern is shorter than typical Russian doctrine.",
+        ],
+        confidence_delta=-0.06,
+        rationale=(
+            "Could be Iran proxy operating captured Russian gear — the burst "
+            "duration is closer to documented Iranian IRGC-EW windows than "
+            "the longer-baseline Russian profile."
+        ),
+    ),
+    "cyber_probe_burst": _RedTeamTemplate(
+        alternative_actor=None,
+        objections=[
+            "Cyber probe alone is too generic to reattribute, but uncertainty floor must hold.",
+        ],
+        confidence_delta=-0.10,
+        rationale=(
+            "Generic credential-access tradecraft. Without an RF or PNT "
+            "corroborator the confidence should remain in the uncertainty band."
+        ),
+    ),
+    "satcom_degradation": _RedTeamTemplate(
+        alternative_actor="China",
+        objections=[
+            "PRC SJ-21-class capabilities produce a similar SATCOM signature.",
+            "Footprint timing aligns more closely with PRC overhead pass than Russian theater EW.",
+        ],
+        confidence_delta=-0.04,
+        rationale=(
+            "PRC satcom-jamming via SJ-21-family or co-orbital effects is a "
+            "viable alternative; the footprint timing isn't unique to Russia."
+        ),
+    ),
+    "orbital_rpo_risk": _RedTeamTemplate(
+        alternative_actor="China",
+        objections=[
+            "RPO inspector-class behaviour matches PRC Shijian-series tradecraft.",
+            "Russian co-orbital activity in this regime is rarer than PRC.",
+        ],
+        confidence_delta=-0.03,
+        rationale=(
+            "RPO inspector profile is more consistent with PRC Shijian-series "
+            "than recent Russian co-orbital behaviour. Lock orbit-derived "
+            "attribution to the dominant operator before declaring."
+        ),
+    ),
+    "orbital_collection_risk": _RedTeamTemplate(
+        alternative_actor=None,
+        objections=[
+            "Single collection window is informational; do not raise actor confidence on it alone.",
+        ],
+        confidence_delta=-0.02,
+        rationale=(
+            "Open collection window is a context cue, not a hostile act. "
+            "Hold attribution confidence until cross-domain corroboration."
+        ),
+    ),
+    "orbital_collection_overlap": _RedTeamTemplate(
+        alternative_actor=None,
+        objections=[
+            "Multi-actor windows can overlap by chance during a busy theater.",
+        ],
+        confidence_delta=-0.02,
+        rationale=(
+            "Overlapping collection windows happen by chance in a contested "
+            "theater; require an EW or cyber corroborator before locking."
+        ),
+    ),
+    "drone_spoofing": _RedTeamTemplate(
+        alternative_actor=None,
+        objections=[
+            "Identity mismatch can be benign — civil traffic re-IDs frequently.",
+        ],
+        confidence_delta=-0.04,
+        rationale=(
+            "Spoofed identity is a probe indicator at best; without RF or "
+            "cyber paired evidence the uncertainty floor should hold."
+        ),
+    ),
+}
+
+_DEFAULT_REDTEAM = _RedTeamTemplate(
+    alternative_actor=None,
+    objections=["Insufficient cross-domain corroboration to lock attribution."],
+    confidence_delta=-0.03,
+    rationale=(
+        "Primary attribution rests on a single cue; without a corroborating "
+        "domain the confidence should be lowered."
+    ),
+)
+
+
 # ---- Stub LLM client -------------------------------------------------------
 
 
@@ -555,6 +676,11 @@ class StubLLMClient:
         self._kb = kb
 
     async def attribute(
+        self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry] = ()
+    ) -> Attribution:
+        return await self.attribute_primary(anomalies, kb_context)
+
+    async def attribute_primary(
         self, anomalies: list[Anomaly], kb_context: Iterable[KBEntry] = ()
     ) -> Attribution:
         if not anomalies:
@@ -594,6 +720,69 @@ class StubLLMClient:
             predicted_next=template.predicted_next,
             kb_citations=citations,
             source_signal_ids=source_ids,
+        )
+
+    async def attribute_redteam(
+        self,
+        primary: Attribution,
+        anomalies: list[Anomaly],
+        kb_context: Iterable[KBEntry] = (),
+    ) -> AttributionChallenge:
+        if not anomalies:
+            template = _DEFAULT_REDTEAM
+        else:
+            dominant_kind, _ = Counter(a.kind for a in anomalies).most_common(1)[0]
+            template = _KIND_TO_REDTEAM.get(dominant_kind, _DEFAULT_REDTEAM)
+
+        # If primary already landed on Unknown, soften the challenge — the
+        # red-team's job there is to defend the uncertainty floor, not invent
+        # an alternative actor.
+        if primary.actor == "Unknown":
+            template = _RedTeamTemplate(
+                alternative_actor=None,
+                objections=[
+                    "Primary held the uncertainty floor; do not raise without corroboration.",
+                ],
+                confidence_delta=0.0,
+                rationale=(
+                    "Primary correctly held the uncertainty floor; defend it "
+                    "until cross-domain evidence accumulates."
+                ),
+            )
+
+        return AttributionChallenge(
+            primary_attribution_id=primary.id,
+            alternative_actor=template.alternative_actor,
+            objections=list(template.objections),
+            confidence_delta=template.confidence_delta,
+            rationale=template.rationale,
+        )
+
+    async def reconcile(
+        self,
+        primary: Attribution,
+        challenge: AttributionChallenge,
+        anomalies: list[Anomaly],
+        kb_context: Iterable[KBEntry] = (),
+    ) -> Attribution:
+        # Apply the red-team's confidence delta against the existing 0.49
+        # uncertainty floor used by the rest of the engine.
+        new_confidence = max(0.49, min(1.0, primary.confidence + challenge.confidence_delta))
+
+        evidence = list(primary.evidence)
+        evidence.append(f"Red-team review: {challenge.rationale}")
+        for objection in challenge.objections:
+            evidence.append(f"Red-team objection: {objection}")
+
+        return Attribution(
+            anomaly_ids=list(primary.anomaly_ids),
+            actor=primary.actor,
+            confidence=round(new_confidence, 3),
+            doctrine_match=primary.doctrine_match,
+            evidence=evidence,
+            predicted_next=primary.predicted_next,
+            kb_citations=list(primary.kb_citations),
+            source_signal_ids=list(primary.source_signal_ids),
         )
 
     async def decide(self, attribution: Attribution) -> Decision:
