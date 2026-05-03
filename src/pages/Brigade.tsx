@@ -8,9 +8,9 @@ import { defaultScenario, scenarios } from '../data/scenarioLibrary'
 import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
 import { useCanopySocket } from '../hooks/useCanopySocket'
 
-const playbackCompression = 12
-const minimumBeatDelayMs = 8000
-const maximumBeatDelayMs = 45000
+const playbackCompression = 3
+const minimumBeatDelayMs = 20000
+const maximumBeatDelayMs = 180000
 
 const signalTimeMs = (ts: string) => {
   const time = Date.parse(ts)
@@ -25,7 +25,7 @@ const nextBeatDelay = (
   const nextTime = signalTimeMs(signals[beatIndex]?.ts ?? '')
 
   if (currentTime === null || nextTime === null || nextTime <= currentTime) {
-    return 12000
+    return 30000
   }
 
   return Math.min(

@@ -128,6 +128,22 @@ const formatDuration = (milliseconds: number) => {
   return `${minutes}M`
 }
 
+const phaseForProgress = (progress: number) => {
+  if (progress >= 100) {
+    return 'ENDEX HOLD'
+  }
+  if (progress >= 72) {
+    return 'DECISION WINDOW'
+  }
+  if (progress >= 42) {
+    return 'CONTACT DEVELOPING'
+  }
+  if (progress >= 18) {
+    return 'INDICATIONS BUILDING'
+  }
+  return 'CONTEXT SET'
+}
+
 const boundsFromPoints = (points: [number, number][]): AorBounds => {
   if (!points.length) {
     return aorBounds
@@ -328,6 +344,7 @@ export function AorMap({
       ? scenarioEndTime - scenarioStartTime
       : 0
   const scenarioClock = `${formatDuration(elapsedMs)} / ${formatDuration(durationMs)}`
+  const scenarioPhase = phaseForProgress(scenarioProgress)
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -414,7 +431,7 @@ export function AorMap({
         source: 'aor-zone',
         paint: {
           'fill-color': '#c9a457',
-          'fill-opacity': 0.02,
+          'fill-opacity': 0.012,
         },
       })
       map.addLayer({
@@ -423,8 +440,8 @@ export function AorMap({
         source: 'aor-zone',
         paint: {
           'line-color': '#c9a457',
-          'line-opacity': 0.42,
-          'line-width': 1.1,
+          'line-opacity': 0.34,
+          'line-width': 0.9,
         },
       })
 
@@ -438,8 +455,8 @@ export function AorMap({
         source: 'mgrs-grid',
         paint: {
           'line-color': '#f5f7f0',
-          'line-opacity': 0.13,
-          'line-width': 0.8,
+          'line-opacity': 0.07,
+          'line-width': 0.7,
         },
       })
 
@@ -625,6 +642,8 @@ export function AorMap({
       </div>
       <div className="aor-map__ops-strip" aria-hidden="true">
         <span>LIVE CONTACTS {visibleSignals.length}</span>
+        <span>{scenarioPhase}</span>
+        <span>FIELD PACE</span>
         <span>SIM {scenarioProgress}%</span>
         <span>MET {scenarioClock}</span>
         <span>THREAT {highSignalCount}</span>
@@ -650,6 +669,8 @@ export function AorMap({
       </div>
       <div className="aor-map__scale">
         <span>Zoom {zoom}</span>
+        <span>{scenarioPhase}</span>
+        <span>FIELD PACE</span>
         <span>SIM {scenarioProgress}%</span>
         <span>MET {scenarioClock}</span>
         <span>10m MGRS labels</span>
