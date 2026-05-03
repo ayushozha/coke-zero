@@ -401,6 +401,7 @@ class FusionService:
                 severity=severity,
                 payload={
                     "satellite": _satellite_name(signal),
+                    "asset": signal.payload.asset,
                     "event_type": signal.payload.event_type,
                     "summary": signal.payload.summary,
                     "observables": observables,

@@ -1,25 +1,41 @@
 import { useState } from 'react'
 import { AorMap } from './AorMap'
 import { CesiumGlobe } from './CesiumGlobe'
+import { MissionAlert } from './MissionAlert'
+import type { ScenarioDefinition } from '../data/scenarioLibrary'
+import { signalEffectState } from '../lib/signalEffects'
+import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
 
 type MapStageProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
+  playback: PlaybackStatus | null
+  scenario: ScenarioDefinition
   signals: Signal[]
 }
 
 export function MapStage({
   correlatedSignalIds,
   focusSignalId,
+  playback,
+  scenario,
   signals,
 }: MapStageProps) {
   const [viewMode, setViewMode] = useState<'nav' | 'globe'>('nav')
   const isGlobe = viewMode === 'globe'
+  const latestSignal = signals[0] ?? null
+  const effectState = signalEffectState(latestSignal)
 
   return (
     <section
-      className={isGlobe ? 'map-stage map-stage--globe' : 'map-stage'}
+      className={[
+        'map-stage',
+        isGlobe ? 'map-stage--globe' : '',
+        `map-stage--${effectState}`,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-label="Operational map"
     >
       {isGlobe ? (
@@ -33,9 +49,12 @@ export function MapStage({
         <AorMap
           correlatedSignalIds={correlatedSignalIds}
           focusSignalId={focusSignalId}
+          playback={playback}
+          scenario={scenario}
           signals={signals}
         />
       )}
+      <MissionAlert playback={playback} signal={latestSignal} />
       <div
         className={
           isGlobe
@@ -60,15 +79,6 @@ export function MapStage({
         >
           GLOBE
         </button>
-      </div>
-      <div className="tak-map-chrome" aria-hidden="true">
-        <span>{isGlobe ? 'SPACE' : 'AOR'}</span>
-        <strong>{isGlobe ? 'CSM CUSTODY' : 'CANOPY COP'}</strong>
-        <em>
-          {isGlobe
-            ? `${correlatedSignalIds.length.toString().padStart(2, '0')} fused`
-            : `${signals.length.toString().padStart(2, '0')} feeds`}
-        </em>
       </div>
     </section>
   )

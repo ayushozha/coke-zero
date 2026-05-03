@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { Signal } from '../types/canopy'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
+import type { PlaybackStatus } from '../types/playback'
 
 type EventFeedProps = {
+  playback: PlaybackStatus | null
   signals: Signal[]
 }
 
@@ -33,11 +35,27 @@ export function EventFeed({ signals }: EventFeedProps) {
           <span>ISR / EW / CSM</span>
           <h2>Signal Stream</h2>
         </div>
+        {latestSignal && latestSummary ? (
+          <div className="event-feed__update-cue" key={latestSignal.id}>
+            <span>New report</span>
+            <strong>{latestSummary.oneLine}</strong>
+          </div>
+        ) : null}
         <div className="event-feed__status">
           <span>{feedState}</span>
           <strong>{visibleSignals.length.toString().padStart(2, '0')}</strong>
         </div>
       </div>
+      {playback ? (
+        <div className="event-feed__clock">
+          <span>MET {formatDuration(playback.elapsedMs)}</span>
+          <span>
+            {playback.nextInjectMs === null
+              ? 'ENDEX hold'
+              : `Next inject ${formatDuration(playback.nextInjectMs)}`}
+          </span>
+        </div>
+      ) : null}
       <div
         className="event-feed__stream"
         role="log"
@@ -57,28 +75,22 @@ export function EventFeed({ signals }: EventFeedProps) {
               className={`event-feed__entry event-feed__entry--${priority}`}
               data-newest={index === 0 ? 'true' : undefined}
               key={signal.id}
+              title={`${summary.oneLine} / ${summary.sourceLabel} / ${summary.location}`}
             >
-              <div className="event-feed__entry-top">
-                <span className="event-feed__time">
-                  {new Date(signal.ts).toLocaleTimeString([], {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-                <span className="event-feed__domain">{summary.label}</span>
-                <span className="event-feed__confidence">
-                  {summary.confidenceLabel}
-                </span>
-              </div>
-              <div className="event-feed__meaning">
-                <strong>{summary.headline}</strong>
-                <p>{summary.whyItMatters}</p>
-              </div>
-              <div className="event-feed__entry-meta">
-                <span>{summary.location}</span>
-                <span>{summary.action}</span>
-              </div>
+              <span className="event-feed__time">
+                {new Date(signal.ts).toLocaleTimeString([], {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+              <span className="event-feed__domain">{summary.label}</span>
+              <strong className="event-feed__message">
+                {summary.oneLine}
+              </strong>
+              <span className="event-feed__confidence">
+                {Math.round(signal.confidence * 100)}%
+              </span>
             </article>
           )
         })}
