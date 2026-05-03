@@ -127,9 +127,6 @@ const beatDecision: Decision = {
   source_signal_ids: ['sig-rf-001', 'sig-sat-023'],
 }
 
-const commanderFocus =
-  'Space, EW, cyber, PNT, SATCOM, and drone signals fused into one commander decision view.'
-
 export function Brigade() {
   const socketState = useCanopySocket()
   const [beatIndex, setBeatIndex] = useState(1)
@@ -167,9 +164,8 @@ export function Brigade() {
     <main className="brigade-shell">
       <header className="app-header">
         <div>
-          <p className="app-header__eyebrow">CANOPY Brigade Workbench</p>
-          <h1>Space Support Common Operating Picture</h1>
-          <p className="app-header__plain">{commanderFocus}</p>
+          <p className="app-header__eyebrow">CANOPY</p>
+          <h1>Brigade COP</h1>
         </div>
         <div className="app-header__right">
           <span
@@ -181,7 +177,7 @@ export function Brigade() {
           >
             {socketState.isConnected ? 'Live data' : 'Demo data'}
           </span>
-          <a href="/operator">Operator Tools</a>
+          <a href="/operator">Ops</a>
         </div>
       </header>
 

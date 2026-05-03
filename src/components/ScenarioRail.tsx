@@ -13,15 +13,18 @@ const scenarios = [
 ]
 
 export function ScenarioRail() {
+  const visibleScenarios = scenarios.slice(0, 6)
+  const hiddenCount = scenarios.length - visibleScenarios.length
+
   return (
     <aside className="scenario-rail" aria-label="Scenario library">
       <div className="scenario-rail__header">
-        <span>Demo Library</span>
-        <strong>11 scenarios</strong>
+        <span>Scenario Queue</span>
+        <strong>Primary demo</strong>
       </div>
 
       <nav className="scenario-list" aria-label="Available scenarios">
-        {scenarios.map((scenario) => (
+        {visibleScenarios.map((scenario) => (
           <button
             className={
               scenario.status === 'Primary'
@@ -33,15 +36,14 @@ export function ScenarioRail() {
           >
             <span>{scenario.id}</span>
             <strong>{scenario.name}</strong>
-            <em>{scenario.status}</em>
+            {scenario.status === 'Primary' ? <em>{scenario.status}</em> : null}
           </button>
         ))}
       </nav>
 
       <div className="scenario-rail__footer">
-        <span>Run state</span>
-        <strong>Deterministic replay</strong>
-        <p>Signals stream through the same schema the backend and UI consume.</p>
+        <span>{hiddenCount} more loaded</span>
+        <strong>Replay ready</strong>
       </div>
     </aside>
   )

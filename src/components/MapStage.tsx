@@ -38,25 +38,23 @@ export function MapStage({
           onClick={() => setViewMode('nav')}
           type="button"
         >
-          Nav View
+          Nav
         </button>
         <button
           className={isGlobe ? 'is-active' : ''}
           onClick={() => setViewMode('globe')}
           type="button"
         >
-          Globe View
+          Globe
         </button>
       </div>
       <div className="tak-map-chrome" aria-hidden="true">
-        <div>
-          <span>{isGlobe ? 'SPACE' : 'AOR'}</span>
-          <strong>{isGlobe ? 'CSM CUSTODY' : 'CANOPY COP'}</strong>
-        </div>
+        <span>{isGlobe ? 'SPACE' : 'AOR'}</span>
+        <strong>{isGlobe ? 'CSM CUSTODY' : 'CANOPY COP'}</strong>
         <em>
           {isGlobe
-            ? `${correlatedSignalIds.length.toString().padStart(2, '0')} fused tracks`
-            : `${signals.length.toString().padStart(2, '0')} CoT feeds`}
+            ? `${correlatedSignalIds.length.toString().padStart(2, '0')} fused`
+            : `${signals.length.toString().padStart(2, '0')} feeds`}
         </em>
       </div>
       {isGlobe ? (
@@ -90,11 +88,6 @@ export function MapStage({
           </div>
         </>
       ) : null}
-      <div className="tak-map-strip" aria-hidden="true">
-        <span>{isGlobe ? 'TEME / ECEF custody overlay' : 'MGRS 38S MB 4287 7319'}</span>
-        <span>{isGlobe ? 'TLE cache live' : 'Link live'}</span>
-        <span>{isGlobe ? 'Orbital threat layer' : 'Space overlay'}</span>
-      </div>
       <div className="map-stage__readout">
         <span>{latestDomain}</span>
         <strong>{latestLabel}</strong>
