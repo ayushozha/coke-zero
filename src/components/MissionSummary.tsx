@@ -65,7 +65,7 @@ export function MissionSummary({
     >
       <div className="mission-summary__topline">
         <span>{compact ? 'Mission state' : 'Posture'}</span>
-        <strong>{state}</strong>
+        {compact ? null : <strong>{state}</strong>}
       </div>
       <div className="mission-summary__main">
         <p className="mission-summary__kicker">
