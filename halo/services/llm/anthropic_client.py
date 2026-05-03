@@ -8,6 +8,10 @@ from typing import Any
 
 from halo.services.kb import KB
 from halo.services.kb.models import KBEntry
+from halo.services.llm.validation import (
+    validate_and_repair_attribution,
+    validate_and_repair_decision,
+)
 from halo.services.schemas.events import Anomaly, Attribution, Decision
 
 log = logging.getLogger(__name__)
@@ -71,6 +75,8 @@ class AnthropicLLMClient:
             ],
         )
         payload = _extract_tool_input(response, ATTRIBUTION_TOOL["name"])
+        validation = validate_and_repair_attribution(payload)
+        payload = validation.repaired
         return Attribution(
             anomaly_ids=[a.id for a in anomalies],
             actor=payload["actor"],
@@ -102,6 +108,7 @@ class AnthropicLLMClient:
             ],
         )
         payload = _extract_tool_input(response, DECISION_TOOL["name"])
+        payload = validate_and_repair_decision(payload)
         return Decision(
             attribution_id=attribution.id,
             action=payload["action"],
