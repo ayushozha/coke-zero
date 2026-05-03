@@ -1,4 +1,5 @@
-import { commanderSignalSummary, domainLabel } from '../lib/commanderLanguage'
+import { useState } from 'react'
+import { commanderSignalSummary, signalKindLabel } from '../lib/commanderLanguage'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { PlaybackStatus } from '../types/playback'
 import type { Signal } from '../types/canopy'
@@ -48,6 +49,10 @@ export function ScenarioTimeline({
   scenario,
   signals,
 }: ScenarioTimelineProps) {
+  const [selectedEvent, setSelectedEvent] = useState<{
+    index: number
+    scenarioId: string
+  } | null>(null)
   const totalInjects = scenario.signals.length
   const completedInjects = playback
     ? Math.min(
@@ -71,9 +76,19 @@ export function ScenarioTimeline({
     : Math.round((completedInjects / Math.max(totalInjects, 1)) * 100)
   const phase = phaseForProgress(progress)
   const currentSignal = scenario.signals[currentIndex] ?? signals[0] ?? null
+  const selectedEventIndex =
+    selectedEvent?.scenarioId === scenario.id &&
+    selectedEvent.index < completedInjects
+      ? selectedEvent.index
+      : null
+  const selectedSignal =
+    selectedEventIndex !== null
+      ? scenario.signals[selectedEventIndex]
+      : null
+  const focusSignal = selectedSignal ?? currentSignal
   const nextSignal = nextIndex >= 0 ? scenario.signals[nextIndex] : null
-  const currentSummary = currentSignal
-    ? commanderSignalSummary(currentSignal)
+  const focusSummary = focusSignal
+    ? commanderSignalSummary(focusSignal)
     : null
   const nextLabel = playback
     ? playback.nextInjectMs === null
@@ -82,15 +97,14 @@ export function ScenarioTimeline({
     : nextSignal
       ? 'QUEUED'
       : 'HOLD'
-  const visibleStart = Math.max(0, completedInjects - 4)
-  const visibleSignals = scenario.signals.slice(visibleStart, completedInjects)
+  const completedSignals = scenario.signals.slice(0, completedInjects)
 
   return (
-    <section className="panel scenario-timeline" aria-label="Scenario timeline">
+    <section className="panel scenario-timeline" aria-label="Timeline and events">
       <div className="scenario-timeline__header">
         <div>
-          <span>Scenario Injects</span>
-          <h2>{scenario.shortName}</h2>
+          <span>Timeline</span>
+          <h2>Events</h2>
         </div>
         <strong>
           {completedInjects.toString().padStart(2, '0')}/
@@ -113,29 +127,38 @@ export function ScenarioTimeline({
         </span>
       </div>
 
-      <div className="scenario-timeline__rail" aria-hidden="true">
+      <div className="scenario-timeline__rail" aria-label="Completed event timeline">
         <span
           className="scenario-timeline__rail-fill"
           style={{ width: `${Math.min(progress, 100)}%` }}
         />
-        {scenario.signals.slice(0, completedInjects).map((signal, index) => {
+        {completedSignals.map((signal, index) => {
           const offset = offsets[index] ?? 0
           const left = Math.min(
             100,
             Math.max(0, (offset / Math.max(durationMs, 1)) * 100),
           )
+          const summary = commanderSignalSummary(signal)
           const markerClass =
             index < completedInjects
               ? 'scenario-timeline__marker scenario-timeline__marker--complete'
               : index === nextIndex
                 ? 'scenario-timeline__marker scenario-timeline__marker--next'
                 : 'scenario-timeline__marker'
+          const isSelected = index === selectedEventIndex
 
           return (
-            <i
-              className={markerClass}
+            <button
+              aria-label={`Show event ${index + 1}: ${summary.oneLine}`}
+              aria-pressed={isSelected}
+              className={`${markerClass}${
+                isSelected ? ' scenario-timeline__marker--selected' : ''
+              }`}
               key={signal.id}
+              onClick={() => setSelectedEvent({ index, scenarioId: scenario.id })}
               style={{ left: `${left}%` }}
+              title={summary.oneLine}
+              type="button"
             />
           )
         })}
@@ -156,19 +179,21 @@ export function ScenarioTimeline({
       </div>
 
       <div className="scenario-timeline__focus">
-        <span>Current phase</span>
-        <strong>{currentSummary?.oneLine ?? scenario.objective}</strong>
+        <span>{selectedSignal ? 'Selected event' : 'Current phase'}</span>
+        <strong>{focusSummary?.oneLine ?? scenario.objective}</strong>
         <p>
-          {nextSignal
+          {selectedSignal
+            ? `${formatDuration(offsets[selectedEventIndex ?? 0] ?? 0)} · ${focusSummary?.label ?? signalKindLabel(selectedSignal)} · ${focusSummary?.location ?? selectedSignal.source}`
+            : nextSignal
             ? 'Next update pending.'
-            : currentSummary?.action ?? 'Scenario complete; hold commander view.'}
+            : focusSummary?.action ?? 'Scenario complete; hold commander view.'}
         </p>
       </div>
 
-      <ol className="scenario-timeline__list">
-        {visibleSignals.map((signal, relativeIndex) => {
-          const absoluteIndex = visibleStart + relativeIndex
+      <ol className="scenario-timeline__list" aria-label="Completed event log">
+        {completedSignals.map((signal, absoluteIndex) => {
           const summary = commanderSignalSummary(signal)
+          const isSelected = absoluteIndex === selectedEventIndex
           const rowState =
             absoluteIndex < completedInjects
               ? 'complete'
@@ -178,14 +203,16 @@ export function ScenarioTimeline({
 
           return (
             <li
-              className={`scenario-timeline__row scenario-timeline__row--${rowState}`}
+              className={`scenario-timeline__row scenario-timeline__row--${rowState}${
+                isSelected ? ' scenario-timeline__row--selected' : ''
+              }`}
               key={signal.id}
             >
               <span className="scenario-timeline__row-time">
                 {formatDuration(offsets[absoluteIndex] ?? 0)}
               </span>
               <span className="scenario-timeline__row-domain">
-                {domainLabel(signal.domain)}
+                {signalKindLabel(signal)}
               </span>
               <strong>{summary.oneLine}</strong>
             </li>

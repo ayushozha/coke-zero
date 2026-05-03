@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   commanderSignalSummary,
-  domainLabel,
   plainEventName,
+  signalKindLabel,
 } from '../lib/commanderLanguage'
 import type { Signal } from '../types/canopy'
 
@@ -111,7 +111,7 @@ const buildDummyDecisionFlow = (
   const actionReady = signal.confidence >= actionThreshold
   const source = commanderSignalSummary(signal).sourceLabel
   const confidence = signal.confidence.toFixed(2)
-  const baseDetail = `${domainLabel(signal.domain)} / ${source} / confidence ${confidence}`
+  const baseDetail = `${signalKindLabel(signal)} / ${source} / confidence ${confidence}`
   const frames: DecisionFlowFrame[] = [
     {
       activeEdges: ['signal-schema'],
@@ -761,7 +761,7 @@ export function EventFeed({
                         {formatTime(signal.ts, true)}
                       </span>
                       <span className="event-feed__raw-domain">
-                        {domainLabel(signal.domain)}
+                        {signalKindLabel(signal)}
                       </span>
                       <span className="event-feed__raw-source">
                         {summary.sourceLabel}
