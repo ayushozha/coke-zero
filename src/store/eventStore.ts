@@ -54,6 +54,10 @@ interface EventState {
   selectedEventId: string | null;
   pendingApproval: UIEvent | null;
   approvedEventIds: Set<string>;
+  /** Decision ids the operator accepted in the left-rail action panel. */
+  acceptedDecisionIds: Set<string>;
+  /** Decision ids the operator denied in the left-rail action panel. */
+  deferredDecisionIds: Set<string>;
   takeoverEvent: UIEvent | null;
 
   // Knowledge base resolved by id (loaded once via GET /kb).
@@ -73,6 +77,9 @@ interface EventState {
   selectEvent: (id: string | null) => void;
   dismissApproval: () => void;
   markApproved: (id: string) => void;
+  acceptDecision: (id: string) => void;
+  deferDecision: (id: string) => void;
+  clearDecisionStatus: (id: string) => void;
   openTakeover: (event: UIEvent) => void;
   closeTakeover: () => void;
   setKB: (entries: KBEntry[]) => void;
@@ -93,6 +100,9 @@ const initialState = (): Omit<
   | "selectEvent"
   | "dismissApproval"
   | "markApproved"
+  | "acceptDecision"
+  | "deferDecision"
+  | "clearDecisionStatus"
   | "openTakeover"
   | "closeTakeover"
   | "setKB"
@@ -113,6 +123,8 @@ const initialState = (): Omit<
   selectedEventId: null,
   pendingApproval: null,
   approvedEventIds: new Set(),
+  acceptedDecisionIds: new Set(),
+  deferredDecisionIds: new Set(),
   takeoverEvent: null,
   kb: {},
 });
@@ -186,6 +198,30 @@ export const useEventStore = create<EventState>()(
         pendingApproval:
           state.pendingApproval?.id === id ? null : state.pendingApproval,
       };
+    }),
+  acceptDecision: (id) =>
+    set((state) => {
+      const acceptedDecisionIds = new Set(state.acceptedDecisionIds);
+      acceptedDecisionIds.add(id);
+      const deferredDecisionIds = new Set(state.deferredDecisionIds);
+      deferredDecisionIds.delete(id);
+      return { acceptedDecisionIds, deferredDecisionIds };
+    }),
+  deferDecision: (id) =>
+    set((state) => {
+      const deferredDecisionIds = new Set(state.deferredDecisionIds);
+      deferredDecisionIds.add(id);
+      const acceptedDecisionIds = new Set(state.acceptedDecisionIds);
+      acceptedDecisionIds.delete(id);
+      return { deferredDecisionIds, acceptedDecisionIds };
+    }),
+  clearDecisionStatus: (id) =>
+    set((state) => {
+      const acceptedDecisionIds = new Set(state.acceptedDecisionIds);
+      const deferredDecisionIds = new Set(state.deferredDecisionIds);
+      acceptedDecisionIds.delete(id);
+      deferredDecisionIds.delete(id);
+      return { acceptedDecisionIds, deferredDecisionIds };
     }),
   openTakeover: (event) => set({ takeoverEvent: event }),
   closeTakeover: () => set({ takeoverEvent: null }),
