@@ -4,14 +4,17 @@ import asyncio
 import logging
 from collections import OrderedDict
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from halo.services.bus import Bus
+from halo.services.decide.tools import DecisionTool, ToolContext, dispatch
 from halo.services.llm import LLMClient
 from halo.services.orbit import (
     MIN_OPERATIONAL_LEAD_S,
     OrbitService,
 )
 from halo.services.schemas.events import Action, Anomaly, Attribution, Decision
+from halo.services.traces import Tracer
 
 log = logging.getLogger(__name__)
 
@@ -56,10 +59,29 @@ class DecideService:
         *,
         orbit: OrbitService | None = None,
         anomaly_cache_size: int = _ANOMALY_CACHE_SIZE,
+        tracer: Tracer | None = None,
+        tools: list[DecisionTool] | None = None,
+        tool_ctx: ToolContext | None = None,
+        kb=None,
     ) -> None:
         self._bus = bus
         self._llm = llm
         self._orbit = orbit
+        self._tracer = tracer
+        # If the caller didn't pre-build a tool registry, build a minimal one
+        # using the orbit service alone — that's enough for the maneuver
+        # enrichment path used by the snapshot tests and direct callers that
+        # don't go through build_engine.
+        if tools is None or tool_ctx is None:
+            from halo.services.decide.tools import build_tool_registry
+            from halo.services.kb import KB
+
+            fallback_kb = kb if kb is not None else KB(entries=[])
+            tool_ctx, tools = build_tool_registry(
+                kb=fallback_kb, orbit=orbit, tracer=tracer
+            )
+        self._tools = tools
+        self._tool_ctx = tool_ctx
         self._anomaly_cache: OrderedDict[str, Anomaly] = OrderedDict()
         self._cache_size = anomaly_cache_size
 
@@ -91,7 +113,7 @@ class DecideService:
                     "decide: LLMClient.decide failed for attribution=%s", event.id
                 )
                 continue
-            decision = self._maybe_enrich_with_orbit(decision, event)
+            decision = await self._maybe_enrich_with_tools(decision, event)
             await self._bus.publish(f"decisions.{decision.authority}", decision)
             log.info(
                 "decide published id=%s action=%s authority=%s",
@@ -99,13 +121,22 @@ class DecideService:
                 decision.action,
                 decision.authority,
             )
+            if self._tracer is not None:
+                await self._tracer.emit(
+                    "decide",
+                    "decision",
+                    f"action={decision.action} authority={decision.authority} target={decision.target}",
+                    ref_id=decision.id,
+                    attribution_id=event.id,
+                    actor=event.actor,
+                )
 
     # ---- Maneuver enrichment ---------------------------------------------
 
-    def _maybe_enrich_with_orbit(
+    async def _maybe_enrich_with_tools(
         self, decision: Decision, attribution: Attribution
     ) -> Decision:
-        if self._orbit is None:
+        if self._orbit is None or self._tool_ctx is None or self._tool_ctx.orbit is None:
             return decision
         if decision.authority != "request":
             return decision
@@ -114,7 +145,7 @@ class DecideService:
         rpo = self._find_rpo_anomaly(attribution)
         if rpo is None:
             return decision
-        return self._apply_maneuver(decision, rpo)
+        return await self._apply_maneuver_via_tools(decision, attribution, rpo)
 
     def _find_rpo_anomaly(self, attribution: Attribution) -> Anomaly | None:
         for aid in attribution.anomaly_ids:
@@ -123,7 +154,20 @@ class DecideService:
                 return anomaly
         return None
 
-    def _apply_maneuver(self, decision: Decision, rpo: Anomaly) -> Decision:
+    async def _apply_maneuver_via_tools(
+        self,
+        decision: Decision,
+        attribution: Attribution,
+        rpo: Anomaly,
+    ) -> Decision:
+        """Drive the maneuver enrichment through the tool registry.
+
+        The math is the same as before, but it runs through the named tools
+        so the reasoning panel sees ``[tools] orbit.simulate_maneuver →
+        post=110.4km``-style lines instead of opaque orbit enrichment.
+        """
+        assert self._tool_ctx is not None and self._tools is not None
+
         observables = (rpo.payload.get("observables") or {}) if rpo.payload else {}
         friendly = observables.get("target") or rpo.payload.get("satellite")
         inspector = rpo.payload.get("asset") or observables.get("asset")
@@ -139,60 +183,94 @@ class DecideService:
         if pre_miss_km is None:
             pre_miss_km = observables.get("range_km")
         if pre_miss_km is None:
-            pre_miss_km = 10.0  # placeholder when neither observable is set
+            pre_miss_km = 10.0
 
         t_tca = _parse_tca(observables.get("time_of_closest_approach"))
         signal_burn_time = _ensure_utc(rpo.ts) + _AUTHORIZATION_LATENCY
-
-        # The "actual" lead is what the engine would have between the signal
-        # arriving and the close approach. Real conjunction analysis provides
-        # hours of advance notice though, so we floor the lead at
-        # MIN_OPERATIONAL_LEAD_S — that's the planning horizon a real cell
-        # would have. The maneuver math represents what the operator could
-        # achieve with that horizon, not what they could achieve in the
-        # seconds remaining of a compressed scenario timeline.
         if t_tca is not None:
             actual_lead_s = max(0.0, (t_tca - signal_burn_time).total_seconds())
             effective_lead_s = max(actual_lead_s, MIN_OPERATIONAL_LEAD_S)
             t_burn = t_tca - timedelta(seconds=effective_lead_s)
         else:
             actual_lead_s = None
-            effective_lead_s = MIN_OPERATIONAL_LEAD_S
             t_burn = signal_burn_time
 
-        dv_m_s = self._orbit.recommended_dv(pre_miss_km, effective_lead_s)
+        tool_by_name = {tool.name: tool for tool in self._tools}
 
-        try:
-            result = self._orbit.simulate_maneuver(
-                friendly,
-                dv_m_s=dv_m_s,
-                t_burn=t_burn,
-                against=inspector,
-                pre_miss_km=pre_miss_km,
-                t_tca=t_tca,
+        # 1) kb.lookup — pull KB context for the actor.
+        kb_tool = tool_by_name.get("kb.lookup")
+        if kb_tool is not None:
+            await dispatch(
+                kb_tool,
+                {"actor": attribution.actor},
+                self._tool_ctx,
+                ref_id=decision.id,
             )
-        except Exception:
-            log.exception(
-                "decide: simulate_maneuver failed for %s vs %s", friendly, inspector
-            )
+
+        # 2) orbit.simulate_maneuver — the actual maneuver math.
+        sim_tool = tool_by_name.get("orbit.simulate_maneuver")
+        if sim_tool is None:
+            return decision
+        sim_args = {
+            "sat": friendly,
+            "against": inspector,
+            "pre_miss_km": pre_miss_km,
+            "t_burn_iso": _format_utc(t_burn),
+        }
+        if t_tca is not None:
+            sim_args["t_tca_iso"] = _format_utc(t_tca)
+        sim_result = await dispatch(
+            sim_tool, sim_args, self._tool_ctx, ref_id=decision.id
+        )
+        if "error" in sim_result:
             return decision
 
-        packet = dict(decision.request_packet or {})
-        packet["recommended_burn"] = {
-            "sat": result.sat,
-            "against": inspector,
-            "dv_m_s": result.dv_m_s,
-            "t_burn_utc": _format_utc(result.t_burn),
-            "lead_seconds": round(result.lead_seconds, 0)
-            if result.lead_seconds is not None
-            else None,
-            "actual_lead_seconds": round(actual_lead_s, 0)
-            if actual_lead_s is not None
-            else None,
+        burn_for_packet = {
+            **sim_result,
+            "lead_seconds": sim_result.get("lead_seconds"),
         }
-        packet["pre_miss_km"] = result.pre_miss_km
-        packet["post_miss_km"] = result.post_miss_km
-        return decision.model_copy(update={"request_packet": packet})
+
+        # 3) request.draft — assemble the CJFSCC request packet.
+        draft_tool = tool_by_name.get("request.draft")
+        request_packet: dict[str, Any] = dict(decision.request_packet or {})
+        if draft_tool is not None:
+            draft_result = await dispatch(
+                draft_tool,
+                {
+                    "actor": attribution.actor,
+                    "confidence": attribution.confidence,
+                    "justification": list(attribution.evidence),
+                    "kb_citations": list(attribution.kb_citations),
+                    "burn": burn_for_packet,
+                },
+                self._tool_ctx,
+                ref_id=decision.id,
+            )
+            drafted = draft_result.get("request_packet") or {}
+            request_packet.update(drafted)
+            request_packet["pre_miss_km"] = sim_result.get("pre_miss_km")
+            request_packet["post_miss_km"] = sim_result.get("post_miss_km")
+            burn_block = request_packet.setdefault("recommended_burn", {})
+            burn_block.setdefault("sat", sim_result.get("sat"))
+            burn_block.setdefault("against", inspector)
+            burn_block.setdefault("dv_m_s", sim_result.get("dv_m_s"))
+            burn_block.setdefault("t_burn_utc", sim_result.get("t_burn"))
+            burn_block.setdefault("lead_seconds", sim_result.get("lead_seconds"))
+            burn_block["actual_lead_seconds"] = (
+                round(actual_lead_s, 0) if actual_lead_s is not None else None
+            )
+
+        # 4) routing.validate — confirm the action+authority pairing.
+        routing_tool = tool_by_name.get("routing.validate")
+        if routing_tool is not None:
+            await dispatch(
+                routing_tool,
+                {"action": decision.action, "authority": decision.authority},
+                self._tool_ctx,
+                ref_id=decision.id,
+            )
+
+        return decision.model_copy(update={"request_packet": request_packet})
 
 
 def _ensure_utc(ts: datetime) -> datetime:

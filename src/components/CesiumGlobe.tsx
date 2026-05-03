@@ -542,7 +542,6 @@ export function CesiumGlobe({
         position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
         billboard: {
           color: Color.WHITE,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
           height: 20,
           image: markerSvg('drone', markerColorHex(contact.color)),
           scaleByDistance: new NearFarScalar(50000, 0.82, 900000, 0.42),
@@ -550,7 +549,6 @@ export function CesiumGlobe({
         },
         label: {
           backgroundColor: MAP_PANEL.withAlpha(0.82),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
           fillColor: Color.WHITE,
           font: MAP_FONT,
           pixelOffset: new Cartesian2(0, -28),
@@ -611,7 +609,6 @@ export function CesiumGlobe({
           position: Cartesian3.fromDegrees(point.lon, point.lat, point.height),
           billboard: {
             color: Color.WHITE,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
             height: isFocus ? 24 : isCorrelated ? 21 : 18,
             image: markerSvg(markerKind, markerColorHex(color)),
             scaleByDistance: new NearFarScalar(1500000, 0.84, 25000000, 0.36),
@@ -619,7 +616,6 @@ export function CesiumGlobe({
           },
           label: {
             backgroundColor: MAP_PANEL.withAlpha(0.84),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
             fillColor: Color.WHITE,
             font: MAP_FONT,
             pixelOffset: new Cartesian2(0, -28),
