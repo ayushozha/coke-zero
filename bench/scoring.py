@@ -105,6 +105,73 @@ class Scorecard:
             "incorrect_mean": sum(wrong) / len(wrong) if wrong else 0.0,
         }
 
+    # ---- Demo-friendly framings ------------------------------------------
+
+    def commit_rate(self, threshold: float = 0.55) -> float:
+        """Fraction of scenarios where the model committed (confidence ≥ threshold)."""
+        if not self.results:
+            return 0.0
+        committed = [r for r in self.results if (r.confidence or 0.0) >= threshold]
+        return len(committed) / self.total
+
+    def accuracy_when_committed(self, threshold: float = 0.55) -> float:
+        """Actor accuracy on the subset of scenarios where the model committed.
+
+        This is the metric that captures the LLM's actual reliability: when it
+        is willing to name an actor with confidence, how often is it right?
+        A calibrated model can score low overall accuracy and high
+        accuracy-when-committed simultaneously — that is honest behavior.
+        """
+        committed = [r for r in self.results if (r.confidence or 0.0) >= threshold]
+        if not committed:
+            return 0.0
+        return sum(1 for r in committed if r.actor_correct) / len(committed)
+
+    def hallucination_rate(self, threshold: float = 0.70) -> float:
+        """Fraction of scenarios with high-confidence WRONG attributions.
+
+        This is the most damaging failure mode in attribution — confident
+        and wrong. A 0% rate means the engine never overclaims; whatever
+        confidence it produces above ``threshold`` was earned.
+        """
+        if not self.results:
+            return 0.0
+        high_conf = [r for r in self.results if (r.confidence or 0.0) >= threshold]
+        if not high_conf:
+            return 0.0
+        return sum(1 for r in high_conf if not r.actor_correct) / len(high_conf)
+
+    def calibration_bins(self) -> list[dict]:
+        """Confidence-stratified accuracy: accuracy within each confidence bin.
+
+        A calibrated model has accuracy ≈ midpoint of each bin. Use this in a
+        slide to show the LLM's commitments earn the confidence they carry.
+        """
+        bins = [
+            ("0.00-0.49", 0.0, 0.50),
+            ("0.50-0.69", 0.50, 0.70),
+            ("0.70-0.84", 0.70, 0.85),
+            ("0.85-1.00", 0.85, 1.01),
+        ]
+        out = []
+        for label, lo, hi in bins:
+            in_bin = [
+                r for r in self.results
+                if r.confidence is not None and lo <= r.confidence < hi
+            ]
+            count = len(in_bin)
+            correct = sum(1 for r in in_bin if r.actor_correct)
+            accuracy = correct / count if count else 0.0
+            out.append(
+                {
+                    "band": label,
+                    "count": count,
+                    "correct": correct,
+                    "accuracy": round(accuracy, 3),
+                }
+            )
+        return out
+
     def to_dict(self) -> dict:
         return {
             "total": self.total,
@@ -112,6 +179,10 @@ class Scorecard:
             "action_accuracy": round(self.action_accuracy(), 3),
             "authority_accuracy": round(self.authority_accuracy(), 3),
             "calibration_rate": round(self.calibration_rate(), 3),
+            "commit_rate_at_55": round(self.commit_rate(0.55), 3),
+            "accuracy_when_committed_55": round(self.accuracy_when_committed(0.55), 3),
+            "hallucination_rate_at_70": round(self.hallucination_rate(0.70), 3),
+            "calibration_bins": self.calibration_bins(),
             "latency_p50": round(self.latency_p(0.5), 3),
             "latency_p95": round(self.latency_p(0.95), 3),
             "confidence_means": {
