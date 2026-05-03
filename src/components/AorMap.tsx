@@ -187,7 +187,6 @@ export function AorMap({
 }: AorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const signalMarkersRef = useRef<maplibregl.Marker[]>([])
   const [isMapReady, setIsMapReady] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>('streets')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
@@ -215,6 +214,31 @@ export function AorMap({
         })
         .slice(0, 5),
     [correlatedSignalIds, focusSignalId, signals],
+  )
+
+  const signalFeatures = useMemo(
+    () =>
+      ({
+        type: 'FeatureCollection',
+        features: visibleSignals.map(({ point, signal }) => ({
+          type: 'Feature',
+          properties: {
+            id: signal.id,
+            label: labelForSignal(signal),
+            meta: `${signal.domain.toUpperCase()} ${Math.round(
+              signal.confidence * 100,
+            )}%`,
+            priority: priorityForSignal(signal),
+            focus: signal.id === focusSignalId,
+            correlated: correlatedSignalIds.includes(signal.id),
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: point,
+          },
+        })),
+      }) as GeoJSON.FeatureCollection,
+    [correlatedSignalIds, focusSignalId, visibleSignals],
   )
 
   useEffect(() => {
@@ -290,8 +314,6 @@ export function AorMap({
       'bottom-left',
     )
 
-    const contactMarkers: maplibregl.Marker[] = []
-
     map.on('load', () => {
       setIsMapReady(true)
       map.addSource('aor-zone', {
@@ -349,33 +371,103 @@ export function AorMap({
         },
       })
 
-      aorContacts.forEach((contact) => {
-        const marker = document.createElement('div')
-        marker.className = `aor-marker aor-marker--${contact.type}`
-        marker.title = `${contact.label} / ${formatMgrs(contact.coordinate)}`
+      map.addSource('aor-contacts', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: aorContacts.map((contact) => ({
+            type: 'Feature',
+            properties: {
+              label: contact.label,
+              grid: formatMgrs(contact.coordinate),
+              type: contact.type,
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: contact.coordinate,
+            },
+          })),
+        } as GeoJSON.FeatureCollection,
+      })
+      map.addLayer({
+        id: 'aor-contact-dot',
+        type: 'circle',
+        source: 'aor-contacts',
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'type'],
+            'friendly',
+            '#c9a457',
+            'asset',
+            '#f5f7f0',
+            'threat',
+            '#e05c4f',
+            '#33f2f0',
+          ],
+          'circle-opacity': 0.88,
+          'circle-radius': 6,
+          'circle-stroke-color': '#020404',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aor-contact-label',
+        type: 'symbol',
+        source: 'aor-contacts',
+        layout: {
+          'text-field': ['concat', ['get', 'label'], '\n', ['get', 'grid']],
+          'text-font': ['Open Sans Semibold'],
+          'text-offset': [0, -1.6],
+          'text-size': 11,
+        },
+        paint: {
+          'text-color': '#f5f7f0',
+          'text-halo-color': '#091112',
+          'text-halo-width': 1.5,
+        },
+      })
 
-        const dot = document.createElement('span')
-        dot.className = 'aor-marker__dot'
-        marker.appendChild(dot)
-
-        const label = document.createElement('span')
-        label.className = 'aor-marker__label'
-        label.textContent = contact.label
-        marker.appendChild(label)
-
-        const grid = document.createElement('span')
-        grid.className = 'aor-marker__grid'
-        grid.textContent = formatMgrs(contact.coordinate)
-        marker.appendChild(grid)
-
-        contactMarkers.push(
-          new maplibregl.Marker({
-            anchor: 'bottom',
-            element: marker,
-          })
-            .setLngLat(contact.coordinate)
-            .addTo(map),
-        )
+      map.addSource('aor-signals', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      map.addLayer({
+        id: 'aor-signal-dot',
+        type: 'circle',
+        source: 'aor-signals',
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'priority'],
+            'high',
+            '#e05c4f',
+            'watch',
+            '#c9a457',
+            '#33f2f0',
+          ],
+          'circle-opacity': 0.9,
+          'circle-radius': ['case', ['get', 'focus'], 8, ['get', 'correlated'], 7, 5],
+          'circle-stroke-color': '#020404',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aor-signal-label',
+        type: 'symbol',
+        source: 'aor-signals',
+        layout: {
+          'text-field': ['concat', ['get', 'label'], '\n', ['get', 'meta']],
+          'text-font': ['Open Sans Semibold'],
+          'text-offset': [1.4, 0],
+          'text-size': 11,
+          'text-anchor': 'left',
+        },
+        paint: {
+          'text-color': '#f5f7f0',
+          'text-halo-color': '#091112',
+          'text-halo-width': 1.5,
+        },
       })
     })
 
@@ -388,9 +480,6 @@ export function AorMap({
     })
 
     return () => {
-      contactMarkers.forEach((marker) => marker.remove())
-      signalMarkersRef.current.forEach((marker) => marker.remove())
-      signalMarkersRef.current = []
       map.remove()
       mapRef.current = null
       setIsMapReady(false)
@@ -403,44 +492,13 @@ export function AorMap({
       return
     }
 
-    signalMarkersRef.current.forEach((marker) => marker.remove())
-    signalMarkersRef.current = visibleSignals.map(({ point, signal }) => {
-      const priority = priorityForSignal(signal)
-      const marker = document.createElement('div')
-      marker.className = [
-        'aor-signal',
-        `aor-signal--${priority}`,
-        signal.id === focusSignalId ? 'aor-signal--focus' : '',
-        correlatedSignalIds.includes(signal.id) ? 'aor-signal--correlated' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-      marker.title = `${labelForSignal(signal)} / ${formatMgrs(point)}`
-
-      const glyph = document.createElement('span')
-      glyph.className = 'aor-signal__glyph'
-      marker.appendChild(glyph)
-
-      const label = document.createElement('span')
-      label.className = 'aor-signal__label'
-      label.textContent = labelForSignal(signal)
-      marker.appendChild(label)
-
-      const meta = document.createElement('span')
-      meta.className = 'aor-signal__meta'
-      meta.textContent = `${signal.domain.toUpperCase()} ${Math.round(
-        signal.confidence * 100,
-      )}%`
-      marker.appendChild(meta)
-
-      return new maplibregl.Marker({
-        anchor: 'center',
-        element: marker,
-      })
-        .setLngLat(point)
-        .addTo(map)
-    })
-  }, [correlatedSignalIds, focusSignalId, isMapReady, visibleSignals])
+    const source = map.getSource('aor-signals') as
+      | maplibregl.GeoJSONSource
+      | undefined
+    if (source) {
+      source.setData(signalFeatures)
+    }
+  }, [isMapReady, signalFeatures])
 
   const switchBasemap = (nextBasemap: Basemap) => {
     const map = mapRef.current

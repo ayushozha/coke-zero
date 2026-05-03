@@ -9,7 +9,7 @@ import os
 import tempfile
 import urllib.error
 import urllib.request
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -18,8 +18,9 @@ from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SATELLITE_ID = 45465
-DEFAULT_OUTPUT = REPO_ROOT / "public" / "orbital" / "n2yo_45465_positions.json"
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "public" / "orbital"
 N2YO_BASE_URL = "https://api.n2yo.com/rest/v1/satellite"
+ORBIT_SAMPLE_COUNT = 360
 
 
 class N2YOError(RuntimeError):
@@ -39,13 +40,17 @@ def timestamp_to_utc(timestamp: int) -> str:
     return datetime.fromtimestamp(timestamp, UTC).isoformat().replace("+00:00", "Z")
 
 
-def fetch_json(url: str, timeout_s: float) -> dict[str, Any]:
+def fetch_text(url: str, timeout_s: float) -> str:
     request = urllib.request.Request(url, headers={"User-Agent": "HALO N2YO GUI cache/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=timeout_s) as response:
-            payload = response.read().decode("utf-8")
+            return response.read().decode("utf-8")
     except urllib.error.URLError as exc:
-        raise N2YOError(f"failed to fetch N2YO positions: {exc}") from exc
+        raise N2YOError(f"failed to fetch N2YO data: {exc}") from exc
+
+
+def fetch_json(url: str, timeout_s: float) -> dict[str, Any]:
+    payload = fetch_text(url, timeout_s)
 
     try:
         value = json.loads(payload)
@@ -57,7 +62,54 @@ def fetch_json(url: str, timeout_s: float) -> dict[str, Any]:
     return value
 
 
-def normalize(payload: dict[str, Any], fetched_at: str, observer: dict[str, float]) -> dict[str, Any]:
+def fetch_tle(satellite_id: int, api_key: str, timeout_s: float) -> tuple[str, str]:
+    payload = fetch_json(f"{N2YO_BASE_URL}/tle/{satellite_id}&apiKey={api_key}", timeout_s)
+    tle = payload.get("tle")
+    if not isinstance(tle, str):
+        raise N2YOError("N2YO TLE response is missing tle")
+    lines = [line.strip() for line in tle.splitlines() if line.strip()]
+    if len(lines) != 2:
+        raise N2YOError("N2YO TLE response did not contain two TLE lines")
+    return lines[0], lines[1]
+
+
+def propagate_orbit(
+    satellite_name: str,
+    line1: str,
+    line2: str,
+    start: datetime,
+) -> list[dict[str, Any]]:
+    from skyfield.api import EarthSatellite, load, wgs84
+
+    ts = load.timescale()
+    satellite = EarthSatellite(line1, line2, satellite_name, ts)
+    period_minutes = (2 * 3.141592653589793) / satellite.model.no_kozai
+    orbit: list[dict[str, Any]] = []
+
+    for index in range(ORBIT_SAMPLE_COUNT + 1):
+        sample_time = start + timedelta(minutes=(period_minutes * index) / ORBIT_SAMPLE_COUNT)
+        geocentric = satellite.at(ts.from_datetime(sample_time))
+        subpoint = wgs84.subpoint(geocentric)
+        orbit.append(
+            {
+                "timestamp_utc": sample_time.replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z"),
+                "lat": float(subpoint.latitude.degrees),
+                "lng": float(subpoint.longitude.degrees),
+                "alt_km": float(subpoint.elevation.km),
+            }
+        )
+
+    return orbit
+
+
+def normalize(
+    payload: dict[str, Any],
+    fetched_at: str,
+    observer: dict[str, float],
+    tle: tuple[str, str],
+) -> dict[str, Any]:
     info = payload.get("info")
     positions = payload.get("positions")
     if not isinstance(info, dict):
@@ -84,18 +136,27 @@ def normalize(payload: dict[str, Any], fetched_at: str, observer: dict[str, floa
             }
         )
 
+    satellite_id = int(info.get("satid", DEFAULT_SATELLITE_ID))
+    satellite_name = str(info.get("satname", f"NORAD {DEFAULT_SATELLITE_ID}"))
+    fetched_dt = datetime.fromisoformat(fetched_at.replace("Z", "+00:00"))
+
     return {
         "source": "n2yo",
-        "source_endpoint": "positions",
+        "source_endpoint": "positions+tle",
         "realism": "real_source",
         "fetched_at": fetched_at,
         "satellite": {
-            "id": int(info.get("satid", DEFAULT_SATELLITE_ID)),
-            "name": str(info.get("satname", f"NORAD {DEFAULT_SATELLITE_ID}")),
+            "id": satellite_id,
+            "name": satellite_name,
         },
         "observer": observer,
         "transactions_count": info.get("transactionscount"),
+        "tle": {
+            "line1": tle[0],
+            "line2": tle[1],
+        },
         "track": track,
+        "orbit": propagate_orbit(satellite_name, tle[0], tle[1], fetched_dt),
     }
 
 
@@ -113,14 +174,18 @@ def env_float(name: str, default: float) -> float:
     return default if raw in (None, "") else float(raw)
 
 
+def default_output_path(satellite_id: int) -> Path:
+    return DEFAULT_OUTPUT_DIR / f"n2yo_{satellite_id}_positions.json"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--satellite-id", type=int, default=DEFAULT_SATELLITE_ID)
-    parser.add_argument("--seconds", type=int, default=1, help="N2YO position samples, max 300")
+    parser.add_argument("--seconds", type=int, default=300, help="N2YO position samples, max 300")
     parser.add_argument("--observer-lat", type=float, default=None)
     parser.add_argument("--observer-lng", type=float, default=None)
     parser.add_argument("--observer-alt-m", type=float, default=None)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--timeout-s", type=float, default=20.0)
     return parser.parse_args()
 
@@ -143,8 +208,11 @@ def main() -> int:
         f"{observer['lat']}/{observer['lng']}/{observer['alt_m']}/{seconds}/"
         f"&apiKey={api_key}"
     )
-    normalized = normalize(fetch_json(url, args.timeout_s), utc_now(), observer)
-    output = args.output if args.output.is_absolute() else REPO_ROOT / args.output
+    fetched_at = utc_now()
+    tle = fetch_tle(args.satellite_id, api_key, args.timeout_s)
+    normalized = normalize(fetch_json(url, args.timeout_s), fetched_at, observer, tle)
+    output = args.output or default_output_path(args.satellite_id)
+    output = output if output.is_absolute() else REPO_ROOT / output
     write_json(output, normalized)
     sat = normalized["satellite"]
     print(f"wrote {len(normalized['track'])} point(s) for {sat['name']} ({sat['id']}) to {output}")

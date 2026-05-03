@@ -13,17 +13,25 @@ import {
   NearFarScalar,
   PolylineDashMaterialProperty,
   Rectangle,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
   TileMapServiceImageryProvider,
   Viewer,
 } from 'cesium'
 import { forward as toMgrs, toPoint as mgrsToPoint } from 'mgrs'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import {
-  addN2YOSatelliteLayer,
-  clearN2YOSatelliteLayer,
+  addN2YOSatellite,
+  clearN2YOSatelliteLayers,
+  deselectN2YOSatellite,
   fetchN2YOPositionCache,
-  flyToN2YOSatellite,
+  isN2YOGeostationaryFamily,
+  N2YO_SATELLITES,
+  selectN2YOSatellite,
+  setN2YOSatelliteLayerVisible,
+  setN2YOOrbitsVisible,
   type N2YOLayerState,
+  type N2YOSatelliteFamily,
 } from '../lib/n2yoSatelliteLayer'
 import type { Signal } from '../types/canopy'
 
@@ -85,33 +93,17 @@ type MapPoint = {
   label: string
 }
 
-const contacts = [
-  {
-    name: 'SAT-BRAVO',
-    lon: 63.4,
-    lat: 31.2,
-    height: 650000,
-    color: MAP_RED,
-  },
-  {
-    name: 'PNT DRIFT',
-    lon: 70.5,
-    lat: 38.1,
-    height: 420000,
-    color: MAP_AMBER,
-  },
-  {
-    name: 'RF BURST',
-    lon: 51.9,
-    lat: 34.8,
-    height: 360000,
-    color: MAP_CYAN,
-  },
-]
+type SatelliteFamilyFilter = 'all' | N2YOSatelliteFamily
 
-const arcPositions = Cartesian3.fromDegreesArrayHeights([
-  63.4, 31.2, 650000, 70.5, 38.1, 420000, 51.9, 34.8, 360000,
-])
+const SATELLITE_FAMILY_FILTERS: SatelliteFamilyFilter[] = [
+  'all',
+  'AEHF',
+  'MUOS',
+  'WGS',
+  'SBIRS',
+  'GSSAP',
+  'GPS-3',
+]
 
 const localAorBounds = {
   west: -116.61,
@@ -229,106 +221,6 @@ const signalPolygon = (signal: Signal) => {
 const addMinutes = (date: Date, minutes: number) =>
   new Date(date.getTime() + minutes * 60000).toISOString()
 
-const createSatelliteCzml = () => {
-  const start = new Date()
-  const stop = addMinutes(start, 12)
-  const epoch = start.toISOString()
-  const interval = `${epoch}/${stop}`
-
-  return [
-    {
-      id: 'document',
-      name: 'CANOPY Satellite Tracks',
-      version: '1.0',
-      clock: {
-        interval,
-        currentTime: epoch,
-        multiplier: 8,
-        range: 'LOOP_STOP',
-        step: 'SYSTEM_CLOCK_MULTIPLIER',
-      },
-    },
-    {
-      id: 'Satellite/SAT-BRAVO',
-      availability: interval,
-      name: 'SAT-BRAVO',
-      position: {
-        epoch,
-        interpolationAlgorithm: 'LAGRANGE',
-        interpolationDegree: 2,
-        cartographicDegrees: [
-          0, 28, 18, 720000, 120, 45, 28, 760000, 240, 63.4, 31.2,
-          650000, 360, 83, 37, 740000, 520, 104, 34, 720000,
-        ],
-      },
-      billboard: {
-        height: 20,
-        image: markerSvg('satellite', '#e05c4f'),
-        scale: 1,
-        width: 20,
-      },
-      label: {
-        text: 'SAT-BRAVO',
-        font: MAP_FONT,
-        fillColor: { rgba: [255, 255, 255, 255] },
-        show: false,
-        showBackground: true,
-        backgroundColor: { rgba: [9, 17, 18, 220] },
-        pixelOffset: { cartesian2: [0, -28] },
-      },
-      path: {
-        leadTime: 0,
-        trailTime: 900,
-        width: 1.1,
-        material: {
-          solidColor: {
-            color: { rgba: [201, 164, 87, 116] },
-          },
-        },
-      },
-    },
-    {
-      id: 'Satellite/PNT-CUSTODY',
-      availability: interval,
-      name: 'PNT-CUSTODY',
-      position: {
-        epoch,
-        interpolationAlgorithm: 'LAGRANGE',
-        interpolationDegree: 2,
-        cartographicDegrees: [
-          0, 96, 8, 540000, 120, 82, 23, 560000, 240, 70.5, 38.1,
-          420000, 360, 49, 44, 510000, 520, 24, 36, 530000,
-        ],
-      },
-      billboard: {
-        height: 20,
-        image: markerSvg('satellite', '#33f2f0'),
-        scale: 1,
-        width: 20,
-      },
-      label: {
-        text: 'PNT-CUSTODY',
-        font: MAP_FONT,
-        fillColor: { rgba: [255, 255, 255, 255] },
-        show: false,
-        showBackground: true,
-        backgroundColor: { rgba: [9, 17, 18, 220] },
-        pixelOffset: { cartesian2: [0, -28] },
-      },
-      path: {
-        leadTime: 0,
-        trailTime: 900,
-        width: 1,
-        material: {
-          solidColor: {
-            color: { rgba: [245, 247, 240, 84] },
-          },
-        },
-      },
-    },
-  ]
-}
-
 const createVehicleCzml = () => {
   const start = new Date()
   const stop = addMinutes(start, 8)
@@ -400,10 +292,25 @@ export function CesiumGlobe({
   const creditRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const signalEntityIdsRef = useRef<Set<string>>(new Set())
-  const n2yoLayerRef = useRef<N2YOLayerState | null>(null)
+  const n2yoLayersRef = useRef<N2YOLayerState[]>([])
+  const selectedN2yoLayerRef = useRef<N2YOLayerState | null>(null)
   const [activeLayer, setActiveLayer] = useState('baseline')
   const [imageryMode, setImageryMode] = useState('Loading imagery')
-  const [realSatelliteStatus, setRealSatelliteStatus] = useState('Real 45465')
+  const [realSatelliteStatus, setRealSatelliteStatus] = useState('Satellites')
+  const [satelliteFamilyFilter, setSatelliteFamilyFilter] =
+    useState<SatelliteFamilyFilter>('all')
+  const [selectedSatellite, setSelectedSatellite] = useState<N2YOLayerState | null>(null)
+  const [showAllOrbits, setShowAllOrbits] = useState(false)
+  const showAllOrbitsRef = useRef(false)
+  const satelliteFamilyFilterRef = useRef<SatelliteFamilyFilter>('all')
+
+  useEffect(() => {
+    showAllOrbitsRef.current = showAllOrbits
+  }, [showAllOrbits])
+
+  useEffect(() => {
+    satelliteFamilyFilterRef.current = satelliteFamilyFilter
+  }, [satelliteFamilyFilter])
 
   useEffect(() => {
     if (!containerRef.current || !creditRef.current) {
@@ -443,6 +350,53 @@ export function CesiumGlobe({
     viewer.scene.globe.showGroundAtmosphere = true
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 42000000
+
+    const flyToCenteredEarth = (duration = 0.45) => {
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(0, 0, 22000000),
+        duration,
+      })
+    }
+
+    const clickHandler = new ScreenSpaceEventHandler(viewer.scene.canvas)
+    clickHandler.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
+      const picked = viewer.scene.pick(event.position)
+      const pickedId = typeof picked?.id?.id === 'string' ? picked.id.id : null
+      if (!pickedId?.startsWith('n2yo-') || !pickedId.endsWith('-satellite')) {
+        if (selectedN2yoLayerRef.current) {
+          deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+          setN2YOOrbitsVisible(viewer, n2yoLayersRef.current, false)
+          showAllOrbitsRef.current = false
+          setShowAllOrbits(false)
+          selectedN2yoLayerRef.current = null
+          setSelectedSatellite(null)
+          flyToCenteredEarth()
+          viewer.scene.requestRender()
+        }
+        return
+      }
+
+      const layer = n2yoLayersRef.current.find((candidate) =>
+        candidate.entityIds.includes(pickedId),
+      )
+      if (!layer) {
+        return
+      }
+
+      if (showAllOrbitsRef.current) {
+        setN2YOOrbitsVisible(viewer, n2yoLayersRef.current, false)
+        showAllOrbitsRef.current = false
+        setShowAllOrbits(false)
+      }
+
+      if (selectedN2yoLayerRef.current) {
+        deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+      }
+      selectedN2yoLayerRef.current = layer
+      selectN2YOSatellite(viewer, layer)
+      setSelectedSatellite(layer)
+      viewer.scene.requestRender()
+    }, ScreenSpaceEventType.LEFT_CLICK)
 
     const addLocalImagery = () => {
       void TileMapServiceImageryProvider.fromUrl(
@@ -604,51 +558,13 @@ export function CesiumGlobe({
       })
     })
 
-    contacts.forEach((contact) => {
-      viewer.entities.add({
-        name: contact.name,
-        position: Cartesian3.fromDegrees(contact.lon, contact.lat, contact.height),
-        billboard: {
-          color: Color.WHITE,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          height: 20,
-          image: markerSvg('satellite', markerColorHex(contact.color)),
-          scaleByDistance: new NearFarScalar(1500000, 0.86, 25000000, 0.38),
-          width: 20,
-        },
-        label: {
-          backgroundColor: MAP_PANEL.withAlpha(0.82),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          fillColor: Color.WHITE,
-          font: MAP_FONT,
-          pixelOffset: new Cartesian2(0, -22),
-          show: false,
-          showBackground: true,
-          style: LabelStyle.FILL,
-          text: contact.name,
-        },
-      })
-    })
-
-    viewer.entities.add({
-      name: 'Cross-domain correlation',
-      polyline: {
-        clampToGround: false,
-        material: new PolylineDashMaterialProperty({
-          color: MAP_AMBER.withAlpha(0.46),
-          dashLength: 28,
-        }),
-        positions: arcPositions,
-        width: 1,
-      },
-    })
-
     viewer.camera.setView({
-      destination: Cartesian3.fromDegrees(58, 28, 18500000),
+      destination: Cartesian3.fromDegrees(0, 0, 22000000),
     })
 
     return () => {
       isDisposed = true
+      clickHandler.destroy()
       viewerRef.current = null
       if (!viewer.isDestroyed()) {
         viewer.destroy()
@@ -799,39 +715,23 @@ export function CesiumGlobe({
     }
 
     viewer.dataSources.removeAll()
-    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
-    n2yoLayerRef.current = null
+    if (selectedN2yoLayerRef.current) {
+      deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+    }
+    clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
+    n2yoLayersRef.current = []
+    selectedN2yoLayerRef.current = null
+    setSelectedSatellite(null)
+    satelliteFamilyFilterRef.current = 'all'
+    setSatelliteFamilyFilter('all')
+    showAllOrbitsRef.current = false
+    setShowAllOrbits(false)
     viewer.clock.shouldAnimate = true
     setActiveLayer('baseline')
     viewer.camera.flyTo({
-      destination: Cartesian3.fromDegrees(58, 28, 18500000),
+      destination: Cartesian3.fromDegrees(0, 0, 22000000),
       duration: 0.6,
     })
-  }
-
-  const loadSatellites = () => {
-    const viewer = viewerRef.current
-    if (!viewer || viewer.isDestroyed()) {
-      return
-    }
-
-    viewer.dataSources.removeAll()
-    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
-    n2yoLayerRef.current = null
-    void viewer.dataSources
-      .add(CzmlDataSource.load(createSatelliteCzml()))
-      .then(() => {
-        if (viewer.isDestroyed()) {
-          return
-        }
-
-        viewer.clock.shouldAnimate = true
-        viewer.camera.flyTo({
-          destination: Cartesian3.fromDegrees(58, 28, 18500000),
-          duration: 0.6,
-        })
-        setActiveLayer('satellites')
-      })
   }
 
   const loadVehicle = () => {
@@ -841,8 +741,17 @@ export function CesiumGlobe({
     }
 
     viewer.dataSources.removeAll()
-    clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
-    n2yoLayerRef.current = null
+    if (selectedN2yoLayerRef.current) {
+      deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+    }
+    clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
+    n2yoLayersRef.current = []
+    selectedN2yoLayerRef.current = null
+    setSelectedSatellite(null)
+    satelliteFamilyFilterRef.current = 'all'
+    setSatelliteFamilyFilter('all')
+    showAllOrbitsRef.current = false
+    setShowAllOrbits(false)
     void viewer.dataSources.add(CzmlDataSource.load(createVehicleCzml())).then(() => {
       if (viewer.isDestroyed()) {
         return
@@ -862,36 +771,131 @@ export function CesiumGlobe({
     })
   }
 
-  const loadRealSatellite = () => {
+  const visibleN2yoLayers = (
+    familyFilter = satelliteFamilyFilterRef.current,
+  ) =>
+    n2yoLayersRef.current.filter(
+      (layer) => familyFilter === 'all' || layer.satelliteFamily === familyFilter,
+    )
+
+  const visibleOrbitCapableLayers = (
+    familyFilter = satelliteFamilyFilterRef.current,
+  ) =>
+    visibleN2yoLayers(familyFilter).filter(
+      (layer) => !isN2YOGeostationaryFamily(layer.satelliteFamily),
+    )
+
+  const applySatelliteFamilyFilter = (familyFilter: SatelliteFamilyFilter) => {
     const viewer = viewerRef.current
     if (!viewer || viewer.isDestroyed()) {
       return
     }
 
-    setRealSatelliteStatus('Loading 45465')
+    satelliteFamilyFilterRef.current = familyFilter
+    setSatelliteFamilyFilter(familyFilter)
+
+    if (
+      selectedN2yoLayerRef.current &&
+      familyFilter !== 'all' &&
+      selectedN2yoLayerRef.current.satelliteFamily !== familyFilter
+    ) {
+      deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+      selectedN2yoLayerRef.current = null
+      setSelectedSatellite(null)
+    }
+
+    setN2YOOrbitsVisible(viewer, n2yoLayersRef.current, false)
+    n2yoLayersRef.current.forEach((layer) => {
+      setN2YOSatelliteLayerVisible(
+        viewer,
+        layer,
+        familyFilter === 'all' || layer.satelliteFamily === familyFilter,
+      )
+    })
+
+    const orbitCapableLayers = visibleOrbitCapableLayers(familyFilter)
+
+    if (selectedN2yoLayerRef.current) {
+      selectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+    } else if (showAllOrbitsRef.current && orbitCapableLayers.length > 0) {
+      setN2YOOrbitsVisible(viewer, orbitCapableLayers, true)
+    } else if (showAllOrbitsRef.current) {
+      showAllOrbitsRef.current = false
+      setShowAllOrbits(false)
+    }
+
+    viewer.scene.requestRender()
+  }
+
+  const loadRealSatellites = () => {
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+
+    setRealSatelliteStatus('Loading sats')
     viewer.dataSources.removeAll()
-    void fetchN2YOPositionCache()
-      .then((cache) => {
+    void Promise.all(
+      N2YO_SATELLITES.map((satellite) =>
+        fetchN2YOPositionCache(satellite).then((cache) => ({ cache, satellite })),
+      ),
+    )
+      .then((payloads) => {
         if (viewer.isDestroyed()) {
           return
         }
 
-        clearN2YOSatelliteLayer(viewer, n2yoLayerRef.current)
-        n2yoLayerRef.current = addN2YOSatelliteLayer(viewer, cache)
+        if (selectedN2yoLayerRef.current) {
+          deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+        }
+        clearN2YOSatelliteLayers(viewer, n2yoLayersRef.current)
+        n2yoLayersRef.current = payloads.map(({ cache, satellite }) =>
+          addN2YOSatellite(viewer, cache, satellite),
+        )
+        selectedN2yoLayerRef.current = null
+        setSelectedSatellite(null)
+        satelliteFamilyFilterRef.current = 'all'
+        setSatelliteFamilyFilter('all')
+        showAllOrbitsRef.current = false
+        setShowAllOrbits(false)
         viewer.clock.shouldAnimate = true
         setActiveLayer('real-satellite')
-        setRealSatelliteStatus('Real 45465')
-        flyToN2YOSatellite(viewer, n2yoLayerRef.current)
+        setRealSatelliteStatus('Satellites')
         viewer.scene.requestRender()
       })
       .catch(() => {
-        setRealSatelliteStatus('45465 unavailable')
+        setRealSatelliteStatus('Sats unavailable')
       })
+  }
+
+  const toggleAllOrbits = () => {
+    const viewer = viewerRef.current
+    if (!viewer || viewer.isDestroyed()) {
+      return
+    }
+    if (activeLayer !== 'real-satellite' || n2yoLayersRef.current.length === 0) {
+      showAllOrbitsRef.current = false
+      setShowAllOrbits(false)
+      return
+    }
+
+    setShowAllOrbits((current) => {
+      const next = !current
+      if (next && selectedN2yoLayerRef.current) {
+        deselectN2YOSatellite(viewer, selectedN2yoLayerRef.current)
+        selectedN2yoLayerRef.current = null
+        setSelectedSatellite(null)
+      }
+      setN2YOOrbitsVisible(viewer, visibleOrbitCapableLayers(), next)
+      showAllOrbitsRef.current = next
+      viewer.scene.requestRender()
+      return next
+    })
   }
 
   useEffect(() => {
     if (displayMode === 'globe') {
-      loadSatellites()
+      resetDynamicSources()
       return
     }
 
@@ -903,13 +907,6 @@ export function CesiumGlobe({
       <div className="cesium-globe" ref={containerRef} />
       <div className="cesium-scenario-controls" aria-label="Map layers">
         <button
-          className={activeLayer === 'satellites' ? 'is-active' : ''}
-          onClick={loadSatellites}
-          type="button"
-        >
-          Satellites
-        </button>
-        <button
           className={activeLayer === 'local-aor' ? 'is-active' : ''}
           onClick={loadVehicle}
           type="button"
@@ -918,7 +915,7 @@ export function CesiumGlobe({
         </button>
         <button
           className={activeLayer === 'real-satellite' ? 'is-active' : ''}
-          onClick={loadRealSatellite}
+          onClick={loadRealSatellites}
           type="button"
         >
           {realSatelliteStatus}
@@ -927,6 +924,69 @@ export function CesiumGlobe({
           Reset
         </button>
       </div>
+      {activeLayer === 'real-satellite' ? (
+        <>
+          <div className="satellite-family-controls" aria-label="Satellite families">
+            {SATELLITE_FAMILY_FILTERS.map((familyFilter) => (
+              <button
+                className={
+                  satelliteFamilyFilter === familyFilter ? 'is-active' : ''
+                }
+                disabled={n2yoLayersRef.current.length === 0}
+                key={familyFilter}
+                onClick={() => applySatelliteFamilyFilter(familyFilter)}
+                type="button"
+              >
+                {familyFilter === 'all' ? 'All' : familyFilter}
+              </button>
+            ))}
+          </div>
+          <button
+            aria-pressed={showAllOrbits}
+            className={showAllOrbits ? 'orbit-toggle orbit-toggle--active' : 'orbit-toggle'}
+            disabled={visibleOrbitCapableLayers().length === 0}
+            onClick={toggleAllOrbits}
+            type="button"
+          >
+            <span className="orbit-toggle__box" aria-hidden="true" />
+            <span>Orbitals</span>
+          </button>
+        </>
+      ) : null}
+      {selectedSatellite ? (
+        <aside className="satellite-detail" aria-label="Selected satellite">
+          <span>Selected Satellite</span>
+          <strong>{selectedSatellite.satelliteName}</strong>
+          <dl>
+            <div>
+              <dt>NORAD</dt>
+              <dd>{selectedSatellite.satelliteId}</dd>
+            </div>
+            <div>
+              <dt>True Alt</dt>
+              <dd>{Math.round(selectedSatellite.point.alt_km).toLocaleString()} km</dd>
+            </div>
+            <div>
+              <dt>Lat / Lon</dt>
+              <dd>
+                {selectedSatellite.point.lat.toFixed(2)} /{' '}
+                {selectedSatellite.point.lng.toFixed(2)}
+              </dd>
+            </div>
+            <div>
+              <dt>Fix</dt>
+              <dd>
+                {new Date(selectedSatellite.point.timestamp_utc).toLocaleTimeString([], {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+              </dd>
+            </div>
+          </dl>
+        </aside>
+      ) : null}
       <div className="map-stage__mode">{imageryMode}</div>
       <div className="cesium-credits" ref={creditRef} />
     </>
