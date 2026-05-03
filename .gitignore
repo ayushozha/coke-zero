@@ -55,3 +55,4 @@ Thumbs.db
 bench/scenarios/*.jsonl
 bench/scenarios/labels.json
 bench/scorecard.json
+bench/compare/
