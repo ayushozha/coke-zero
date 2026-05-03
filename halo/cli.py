@@ -14,6 +14,7 @@ from halo.services.decide import DecideService
 from halo.services.fusion import FusionService
 from halo.services.kb import KB
 from halo.services.llm import LLMClient
+from halo.services.orbit import OrbitService
 from halo.services.scenario_replay import ScenarioReplayService
 from halo.services.ui_events import UIEventService
 
@@ -26,8 +27,11 @@ DEFAULT_BEATS = (
 )
 
 
-def _build_llm(*, live: bool, kb: KB) -> LLMClient:
-    if live:
+LLM_PROVIDERS = ("stub", "anthropic", "ollama")
+
+
+def _build_llm(*, provider: str, kb: KB) -> LLMClient:
+    if provider == "anthropic":
         from halo.services.llm.anthropic_client import (
             DEFAULT_MODEL,
             AnthropicLLMClient,
@@ -35,9 +39,25 @@ def _build_llm(*, live: bool, kb: KB) -> LLMClient:
 
         model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
         return AnthropicLLMClient(kb, model=model)
+    if provider == "ollama":
+        from halo.services.llm.ollama_client import OllamaLLMClient
+
+        return OllamaLLMClient(kb)
     from halo.services.llm.stub import StubLLMClient
 
     return StubLLMClient(kb)
+
+
+def _resolve_provider(*, llm_flag: str | None, live_flag: bool) -> str:
+    """Pick provider from --llm > CANOPY_LLM env > --live/CANOPY_LIVE > stub."""
+    if llm_flag:
+        return llm_flag
+    env_llm = os.environ.get("CANOPY_LLM")
+    if env_llm:
+        return env_llm.lower()
+    if live_flag or os.environ.get("CANOPY_LIVE"):
+        return "anthropic"
+    return "stub"
 
 
 def _live_from_env() -> bool:
@@ -46,7 +66,7 @@ def _live_from_env() -> bool:
 
 async def main(
     *,
-    live: bool = False,
+    provider: str = "stub",
     log_level: str = "INFO",
     scenarios: list[str] | None = None,
     scenario_speed: float = 20.0,
@@ -60,16 +80,19 @@ async def main(
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     log = logging.getLogger("halo.cli")
-    log.info("CANOPY engine starting (live=%s scenarios=%s)", live, scenarios)
+    log.info("CANOPY engine starting (llm=%s scenarios=%s)", provider, scenarios)
 
     bus = InProcessBus()
     kb = KB.load_from_json(kb_path)
     log.info("KB loaded: %d entries from %s", len(kb), kb_path)
-    llm = _build_llm(live=live, kb=kb)
+    llm = _build_llm(provider=provider, kb=kb)
+
+    orbit = OrbitService()
+    log.info("Orbit service loaded with %d cached satellites", len(orbit.known_satellites()))
 
     fusion = FusionService(bus)
     attrib = AttribService(bus, llm, kb, window_s=attrib_window_s)
-    decide = DecideService(bus, llm)
+    decide = DecideService(bus, llm, orbit=orbit)
     ui = UIEventService(bus)
 
     services = [
@@ -123,13 +146,21 @@ def cli() -> None:
         prog="halo", description="CANOPY engine orchestrator"
     )
     parser.add_argument(
+        "--llm",
+        choices=LLM_PROVIDERS,
+        default=None,
+        help=(
+            "LLM provider: 'stub' (default, no network), 'anthropic' (requires "
+            "ANTHROPIC_API_KEY), or 'ollama' (requires CANOPY_OLLAMA_URL). "
+            "Falls back to CANOPY_LLM env var, then to --live/CANOPY_LIVE, "
+            "then to stub."
+        ),
+    )
+    parser.add_argument(
         "--live",
         action="store_true",
         default=_live_from_env(),
-        help=(
-            "Use the live Anthropic LLM client (requires ANTHROPIC_API_KEY). "
-            "Defaults to True if CANOPY_LIVE is set in the environment."
-        ),
+        help="Deprecated alias for --llm anthropic.",
     )
     parser.add_argument(
         "--log-level",
@@ -162,6 +193,8 @@ def cli() -> None:
     )
     args = parser.parse_args()
 
+    provider = _resolve_provider(llm_flag=args.llm, live_flag=args.live)
+
     scenarios = list(args.scenario)
     if args.beats:
         scenarios = list(DEFAULT_BEATS) + scenarios
@@ -169,7 +202,7 @@ def cli() -> None:
     try:
         asyncio.run(
             main(
-                live=args.live,
+                provider=provider,
                 log_level=args.log_level,
                 scenarios=scenarios or None,
                 scenario_speed=args.scenario_speed,

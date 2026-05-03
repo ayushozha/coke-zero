@@ -79,7 +79,32 @@ def _build_message(decision: Decision, attribution: Attribution | None) -> str:
         parts.append(actor_clause)
         if attribution.predicted_next:
             parts.append(f"Forecast: {attribution.predicted_next}")
+    maneuver_clause = _maneuver_clause(decision.request_packet)
+    if maneuver_clause:
+        parts.append(maneuver_clause)
     return " ".join(parts)
+
+
+def _maneuver_clause(request_packet: dict | None) -> str | None:
+    if not request_packet:
+        return None
+    pre = request_packet.get("pre_miss_km")
+    post = request_packet.get("post_miss_km")
+    if pre is None or post is None:
+        return None
+    burn = request_packet.get("recommended_burn") or {}
+    sat = burn.get("sat", "the protected asset")
+    dv = burn.get("dv_m_s")
+    lead_s = burn.get("lead_seconds")
+    gain = round(post - pre, 1)
+    dv_str = f"{dv} m/s" if dv is not None else "an impulsive"
+    lead_clause = (
+        f" with {lead_s / 3600:.0f} h planning lead" if lead_s else ""
+    )
+    return (
+        f"Recommended maneuver{lead_clause}: {sat} {dv_str} prograde burn, "
+        f"miss {pre:.1f} → {post:.1f} km (+{gain:.1f} km separation)."
+    )
 
 
 class UIEventService:
