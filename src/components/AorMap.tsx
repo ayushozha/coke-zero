@@ -5,7 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { Signal } from '../types/canopy'
 
-type Basemap = 'imagery' | 'streets'
+type Basemap = 'imagery' | 'terrain'
 type AorMapProps = {
   correlatedSignalIds: string[]
   focusSignalId: string | null
@@ -268,7 +268,7 @@ export function AorMap({
   const mapRef = useRef<maplibregl.Map | null>(null)
   const signalMarkersRef = useRef<maplibregl.Marker[]>([])
   const [isMapReady, setIsMapReady] = useState(false)
-  const [basemap, setBasemap] = useState<Basemap>('streets')
+  const [basemap, setBasemap] = useState<Basemap>('imagery')
   const [cursorGrid, setCursorGrid] = useState(formatMgrs(aorCenter))
   const [zoom, setZoom] = useState('15.2')
 
@@ -371,12 +371,15 @@ export function AorMap({
             attribution:
               'Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
           },
-          osmStreets: {
+          esriTerrain: {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [
+              'https://services.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
+            ],
             tileSize: 256,
             maxzoom: 19,
-            attribution: 'OpenStreetMap contributors',
+            attribution:
+              'Sources: Esri, USGS, NOAA, Garmin, FAO, NPS, and the GIS User Community',
           },
         },
         layers: [
@@ -384,27 +387,27 @@ export function AorMap({
             id: 'imagery',
             type: 'raster',
             source: 'esriWorldImagery',
+            paint: {
+              'raster-brightness-max': 0.64,
+              'raster-brightness-min': 0.03,
+              'raster-contrast': 0.2,
+              'raster-fade-duration': 0,
+              'raster-saturation': -0.22,
+            },
+          },
+          {
+            id: 'terrain',
+            type: 'raster',
+            source: 'esriTerrain',
             layout: {
               visibility: 'none',
             },
             paint: {
-              'raster-brightness-max': 0.58,
-              'raster-brightness-min': 0.03,
-              'raster-contrast': 0.2,
+              'raster-brightness-max': 0.5,
+              'raster-brightness-min': 0.02,
+              'raster-contrast': 0.18,
               'raster-fade-duration': 0,
-              'raster-saturation': -0.28,
-            },
-          },
-          {
-            id: 'streets',
-            type: 'raster',
-            source: 'osmStreets',
-            paint: {
-              'raster-brightness-max': 0.52,
-              'raster-brightness-min': 0,
-              'raster-contrast': 0.26,
-              'raster-fade-duration': 0,
-              'raster-saturation': -0.95,
+              'raster-saturation': -0.75,
             },
           },
         ],
@@ -604,9 +607,9 @@ export function AorMap({
       nextBasemap === 'imagery' ? 'visible' : 'none',
     )
     map.setLayoutProperty(
-      'streets',
+      'terrain',
       'visibility',
-      nextBasemap === 'streets' ? 'visible' : 'none',
+      nextBasemap === 'terrain' ? 'visible' : 'none',
     )
     setBasemap(nextBasemap)
   }
@@ -660,11 +663,11 @@ export function AorMap({
           Imagery
         </button>
         <button
-          className={basemap === 'streets' ? 'is-active' : ''}
-          onClick={() => switchBasemap('streets')}
+          className={basemap === 'terrain' ? 'is-active' : ''}
+          onClick={() => switchBasemap('terrain')}
           type="button"
         >
-          Streets
+          Terrain
         </button>
       </div>
       <div className="aor-map__scale">
@@ -673,7 +676,7 @@ export function AorMap({
         <span>FIELD PACE</span>
         <span>SIM {scenarioProgress}%</span>
         <span>MET {scenarioClock}</span>
-        <span>10m MGRS labels</span>
+        <span>Real-world basemap</span>
       </div>
     </div>
   )
