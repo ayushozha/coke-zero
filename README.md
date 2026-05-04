@@ -15,6 +15,8 @@ CANOPY is a tactical multi-domain awareness and decision-support system for the 
 - **Sense to decide in under 20 seconds.**
 - 100% local LLM inference via Ollama — no cloud, no PII egress. Designed to be entirely hosted on-prem.
 
+YouTube demo [here](https://www.youtube.com/watch?v=NzDcP5XryC4).
+
 ---
 
 ## Architecture
