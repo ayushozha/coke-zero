@@ -13,7 +13,7 @@ CANOPY is a tactical multi-domain awareness and decision-support system for the 
 
 - Runs at the **edge** on a single NVIDIA RTX 3090.
 - **Sense to decide in under 20 seconds.**
-- 100% local LLM inference via Ollama — no cloud, no PII egress. Designed to be entirely hosted on-prem.
+- 100% local LLM inference via Ollama — no cloud, no PII egress. Designed to be hosted entirely on-prem.
 
 YouTube demo [here](https://www.youtube.com/watch?v=NzDcP5XryC4).
 
@@ -162,7 +162,7 @@ kb/                    # capability + routing knowledge base
 
 CANOPY ships with its own evaluation harness ([`bench/`](bench/)), which contains 11 hand-labelled seed scenarios plus ~40 procedural variants, each with ground-truth `expected_actor` / `expected_action` / `expected_authority` / `expected_band` labels. `bench/run.py` boots the engine in-process, replays every scenario, and produces a scorecard covering attribution accuracy, action match, authority routing, calibration (correct ↔ confidence band), and p50/p95 latency. 
 
-We're aware that small open-weight models leave headroom on multi-domain attribution compared to large cloud-hosted LLMs. We're interested in pursuing further research in this direction and are happy to move forward with the right collaborators on.
+We're aware that small open-weight models leave headroom on multi-domain attribution compared to large cloud-hosted LLMs. We're interested in pursuing further research in this direction and are happy to move forward with the right collaborators on this.
 
 ## Partnering with frontier labs
 
