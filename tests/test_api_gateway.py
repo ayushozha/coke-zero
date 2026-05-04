@@ -6,7 +6,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from halo.api import app
+from canopy.api import app
 
 
 @pytest.fixture(scope="module")

@@ -4,14 +4,14 @@ import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
-from halo.services.attrib import AttribService
-from halo.services.bus import InProcessBus
-from halo.services.decide import DecideService
-from halo.services.fusion import FusionService
-from halo.services.kb import KB
-from halo.services.llm.stub import StubLLMClient
-from halo.services.scenario_replay import ScenarioReplayService
-from halo.services.schemas.events import (
+from canopy.services.attrib import AttribService
+from canopy.services.bus import InProcessBus
+from canopy.services.decide import DecideService
+from canopy.services.fusion import FusionService
+from canopy.services.kb import KB
+from canopy.services.llm.stub import StubLLMClient
+from canopy.services.scenario_replay import ScenarioReplayService
+from canopy.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,
@@ -20,7 +20,7 @@ from halo.services.schemas.events import (
     Signal,
     UIEvent,
 )
-from halo.services.ui_events import UIEventService
+from canopy.services.ui_events import UIEventService
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"

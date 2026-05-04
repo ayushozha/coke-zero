@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from halo.services.attrib import AttribService
-from halo.services.bus import InProcessBus
-from halo.services.fusion import FusionService
-from halo.services.kb import KB
-from halo.services.llm.stub import StubLLMClient
-from halo.services.schemas.events import (
+from canopy.services.attrib import AttribService
+from canopy.services.bus import InProcessBus
+from canopy.services.fusion import FusionService
+from canopy.services.kb import KB
+from canopy.services.llm.stub import StubLLMClient
+from canopy.services.schemas.events import (
     Anomaly,
     Attribution,
     Location,
@@ -24,7 +24,7 @@ from halo.services.schemas.events import (
     ReasoningTrace,
     Signal,
 )
-from halo.services.traces import Tracer
+from canopy.services.traces import Tracer
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"

@@ -29,16 +29,16 @@ from pathlib import Path
 
 import pytest
 
-from halo.services.attrib import AttribService
-from halo.services.bus import InProcessBus
-from halo.services.decide import DecideService
-from halo.services.fusion import FusionService
-from halo.services.kb import KB
-from halo.services.llm.stub import StubLLMClient
-from halo.services.orbit import OrbitService
-from halo.services.scenario_replay import ScenarioReplayService
-from halo.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
-from halo.services.ui_events import UIEventService
+from canopy.services.attrib import AttribService
+from canopy.services.bus import InProcessBus
+from canopy.services.decide import DecideService
+from canopy.services.fusion import FusionService
+from canopy.services.kb import KB
+from canopy.services.llm.stub import StubLLMClient
+from canopy.services.orbit import OrbitService
+from canopy.services.scenario_replay import ScenarioReplayService
+from canopy.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
+from canopy.services.ui_events import UIEventService
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIO = ROOT / "scenarios" / "army_multidomain_attack_chain.jsonl"
@@ -77,7 +77,7 @@ EXPECTED_ANOMALY_SEVERITIES = [0.81, 0.86, 0.82, 0.90, 0.88, 0.83, 0.84, 0.82, 0
 EXPECTED_ATTRIBUTION_ACTOR = "China"
 # 0.74 (primary) - 0.03 (red-team confidence_delta for orbital_rpo_risk) = 0.71.
 # The multi-agent pipeline reconciles primary against red-team challenge before
-# publishing; see halo/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
+# publishing; see canopy/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
 EXPECTED_ATTRIBUTION_CONFIDENCE = 0.71
 EXPECTED_ATTRIBUTION_CITATIONS = {
     "kb-rpo-ambiguity-001",

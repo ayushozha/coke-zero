@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from halo.services.bus import InProcessBus
-from halo.services.schemas.events import Location, Provenance, Signal
+from canopy.services.bus import InProcessBus
+from canopy.services.schemas.events import Location, Provenance, Signal
 
 
 def _signal(domain: str = "cyber", confidence: float = 0.5) -> Signal:

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from halo.services.bus import InProcessBus
-from halo.services.decide.tools import (
+from canopy.services.bus import InProcessBus
+from canopy.services.decide.tools import (
     KBLookupTool,
     OrbitSimulateManeuverTool,
     RequestDraftTool,
@@ -16,10 +16,10 @@ from halo.services.decide.tools import (
     build_tool_registry,
     dispatch,
 )
-from halo.services.kb import KB
-from halo.services.orbit import OrbitService
-from halo.services.schemas.events import ReasoningTrace
-from halo.services.traces import Tracer
+from canopy.services.kb import KB
+from canopy.services.orbit import OrbitService
+from canopy.services.schemas.events import ReasoningTrace
+from canopy.services.traces import Tracer
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"

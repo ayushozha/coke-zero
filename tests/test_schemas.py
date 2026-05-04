@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from halo.services.schemas.events import (
+from canopy.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,

@@ -277,7 +277,7 @@ export const useEventStore = create<EventState>()(
       // every tab switch). Persisting the engine event ring buffers means
       // the reasoning panel and event timeline keep their history when
       // the user moves between pages.
-      name: "halo-event-store",
+      name: "canopy-event-store",
       version: 2,
       storage: createJSONStorage(() => sessionStorage),
       // Skip live UI/connection state and the Set (Sets don't survive
