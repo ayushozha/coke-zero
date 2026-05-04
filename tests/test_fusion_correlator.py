@@ -4,9 +4,9 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from halo.services.bus import InProcessBus
-from halo.services.fusion import FusionService
-from halo.services.schemas.events import (
+from canopy.services.bus import InProcessBus
+from canopy.services.fusion import FusionService
+from canopy.services.schemas.events import (
     Anomaly,
     Location,
     Provenance,

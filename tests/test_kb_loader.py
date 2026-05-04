@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from halo.services.kb import KB
-from halo.services.kb.loader import load_kb_json
-from halo.services.kb.models import KBEntry
+from canopy.services.kb import KB
+from canopy.services.kb.loader import load_kb_json
+from canopy.services.kb.models import KBEntry
 
 KB_FILE = Path(__file__).resolve().parent.parent / "data" / "kb_seed_entries.json"
 

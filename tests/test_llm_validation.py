@@ -1,4 +1,4 @@
-from halo.services.llm.validation import (
+from canopy.services.llm.validation import (
     UNCERTAINTY_ANCHOR,
     validate_and_repair_attribution,
     validate_and_repair_decision,

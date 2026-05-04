@@ -29,14 +29,14 @@ from bench.scoring import (
     confidence_band,
     confidence_band_match,
 )
-from halo._engine import (
+from canopy._engine import (
     Engine,
     build_engine,
     resolve_provider,
     start_engine_tasks,
 )
-from halo.services.scenario_replay import ScenarioReplayService
-from halo.services.schemas.events import (
+from canopy.services.scenario_replay import ScenarioReplayService
+from canopy.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,

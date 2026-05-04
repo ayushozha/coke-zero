@@ -13,7 +13,7 @@ import type {
 } from '../types/canopy'
 
 export const MOCK_URL: string | null = null
-// Backend gateway exposes /ws (see halo/api/__init__.py). The earlier
+// Backend gateway exposes /ws (see canopy/api/__init__.py). The earlier
 // /ws/brigade URL pointed at a route that doesn't exist, so the socket
 // never connected and everything fell back to the local demo stream.
 const DEV_BRIDGE_URL = 'ws://127.0.0.1:8000/ws'
@@ -39,7 +39,7 @@ const prependLimited = <T extends { id: string }>(
 ) => [next, ...items.filter((item) => item.id !== next.id)].slice(0, limit)
 
 // The gateway sends {"topic", "kind", "data"} envelopes (see
-// halo/api/__init__.py:_fanout). Older fixtures used a {"type", "data"}
+// canopy/api/__init__.py:_fanout). Older fixtures used a {"type", "data"}
 // shape — accept either so we don't drop real engine traffic on shape
 // drift. Returns the normalized {type, data} value or null.
 function normalizeMessage(value: unknown): CanopyMessage | null {
