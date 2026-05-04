@@ -52,7 +52,5 @@ Thumbs.db
 *.sw?
 
 # Bench-generated scenario variants
-bench/scenarios/*.jsonl
-bench/scenarios/labels.json
 bench/scorecard.json
 bench/compare/
