@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from halo.services.orbit import (
+from canopy.services.orbit import (
     DEFAULT_DV_CAP_M_S,
     DEFAULT_TARGET_MISS_KM,
     LEO_MEAN_MOTION_RAD_S,

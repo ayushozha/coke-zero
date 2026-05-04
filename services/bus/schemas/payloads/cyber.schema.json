@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://halo.local/schemas/payloads/cyber.schema.json",
+  "$id": "https://canopy.local/schemas/payloads/cyber.schema.json",
   "title": "Cyber Payload",
   "type": "object",
   "additionalProperties": false,

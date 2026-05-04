@@ -55,12 +55,12 @@ Use it for:
 
 ## Local WebSocket Bridge
 
-The experimental bridge lives at `halo.api:app`.
+The experimental bridge lives at `canopy.api:app`.
 
 Run it with:
 
 ```bash
-python -m uvicorn halo.api:app --host 127.0.0.1 --port 8000
+python -m uvicorn canopy.api:app --host 127.0.0.1 --port 8000
 ```
 
 It exposes:

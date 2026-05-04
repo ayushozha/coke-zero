@@ -5,15 +5,15 @@ import asyncio
 
 import pytest
 
-from halo.services.bus import InProcessBus
-from halo.services.fusion import FusionService
-from halo.services.schemas.events import (
+from canopy.services.bus import InProcessBus
+from canopy.services.fusion import FusionService
+from canopy.services.schemas.events import (
     Location,
     Provenance,
     ReasoningTrace,
     Signal,
 )
-from halo.services.traces import Tracer
+from canopy.services.traces import Tracer
 
 
 def _signal() -> Signal:

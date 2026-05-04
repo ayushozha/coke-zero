@@ -80,7 +80,7 @@ CANOPY reads `CANOPY_OLLAMA_URL` (default `http://localhost:11434`) and `CANOPY_
 ### Backend gateway
 In one terminal, run the following to start the backend:
 ```bash
-./run uvicorn halo.api:app --host 0.0.0.0 --port 8000
+./run uvicorn canopy.api:app --host 0.0.0.0 --port 8000
 ```
 
 The gateway boots the in-process bus, the three services, and exposes:
@@ -141,7 +141,7 @@ The reasoning panel will surface `[stress] PNT data unavailable, lowering confid
 ## Repo layout
 
 ```
-halo/                  # Python engine (services, schemas, API gateway)
+canopy/                  # Python engine (services, schemas, API gateway)
   api/                 # FastAPI gateway + WebSocket fanout
   services/            # fusion, attrib (multi-agent), decide (tool-using), llm, orbit, kb, traces
 src/                   # React + Cesium + MapLibre console

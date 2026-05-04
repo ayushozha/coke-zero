@@ -12,9 +12,9 @@ import asyncio
 import numpy as np
 import pytest
 
-from halo.services.bus import InProcessBus
-from halo.services.osint_cluster import OsintClusterService
-from halo.services.schemas.events import (
+from canopy.services.bus import InProcessBus
+from canopy.services.osint_cluster import OsintClusterService
+from canopy.services.schemas.events import (
     Anomaly,
     Location,
     OsintEmbeddingSnapshot,
@@ -22,7 +22,7 @@ from halo.services.schemas.events import (
     ReasoningTrace,
     Signal,
 )
-from halo.services.traces import Tracer
+from canopy.services.traces import Tracer
 
 
 class _MockEncoder:

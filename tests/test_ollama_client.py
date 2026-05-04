@@ -12,9 +12,9 @@ from typing import Any
 import httpx
 import pytest
 
-from halo.services.kb import KB
-from halo.services.llm.ollama_client import OllamaLLMClient, _extract_json
-from halo.services.schemas.events import Anomaly, Attribution
+from canopy.services.kb import KB
+from canopy.services.llm.ollama_client import OllamaLLMClient, _extract_json
+from canopy.services.schemas.events import Anomaly, Attribution
 
 KB_FILE = Path(__file__).resolve().parent.parent / "data" / "kb_seed_entries.json"
 
