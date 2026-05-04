@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://halo.local/schemas/signal.schema.json",
+  "$id": "https://canopy.local/schemas/signal.schema.json",
   "title": "CANOPY Signal",
   "description": "Canonical Signal emitted by every CANOPY data adapter, real or mock.",
   "type": "object",

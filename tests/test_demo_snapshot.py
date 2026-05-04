@@ -29,16 +29,16 @@ from pathlib import Path
 
 import pytest
 
-from halo.services.attrib import AttribService
-from halo.services.bus import InProcessBus
-from halo.services.decide import DecideService
-from halo.services.fusion import FusionService
-from halo.services.kb import KB
-from halo.services.llm.stub import StubLLMClient
-from halo.services.orbit import OrbitService
-from halo.services.scenario_replay import ScenarioReplayService
-from halo.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
-from halo.services.ui_events import UIEventService
+from canopy.services.attrib import AttribService
+from canopy.services.bus import InProcessBus
+from canopy.services.decide import DecideService
+from canopy.services.fusion import FusionService
+from canopy.services.kb import KB
+from canopy.services.llm.stub import StubLLMClient
+from canopy.services.orbit import OrbitService
+from canopy.services.scenario_replay import ScenarioReplayService
+from canopy.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
+from canopy.services.ui_events import UIEventService
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIO = ROOT / "scenarios" / "army_multidomain_attack_chain.jsonl"
@@ -47,15 +47,24 @@ KB_FILE = ROOT / "data" / "kb_seed_entries.json"
 EXPECTED_ANOMALY_KINDS_IN_ORDER = [
     "orbital_rpo_risk",
     "rf_anomaly",
-    # army-chain-009 (satcom_queue_pressure) was added when the
-    # raw-signals + reasoning-trace merges introduced new mid-attack
-    # signals; queue pressure rising is a real degradation cue, mapped
-    # to satcom_degradation.
+    "rf_anomaly",
+    # army-chain-009 (satcom_queue_pressure) is a mid-attack queue-pressure
+    # cue mapped to satcom_degradation.
     "satcom_degradation",
+    "gnss_spoof",
     "gnss_spoof",
     "drone_relay_handoff",
     "cyber_probe_burst",
+    "cyber_probe_burst",
+    # The army-chain-x* series is the brigade-scenario expansion (commit
+    # 7c710b4); each x-signal pairs with one of the original chain signals
+    # to thicken the multi-domain campaign signature. The fusion correlator
+    # emits a separate anomaly per signal, so doubled signal kinds (rf,
+    # gnss, cyber) yield doubled anomalies.
     "satcom_degradation",
+    "drone_relay_handoff",
+    "satcom_degradation",
+    "orbital_rpo_risk",
     "orbital_rpo_risk",
     "osint_multi_domain_attack",
 ]
@@ -63,21 +72,30 @@ EXPECTED_ANOMALY_KINDS_IN_ORDER = [
 EXPECTED_ANOMALY_SOURCE_SIGNALS = [
     "army-chain-001",
     "army-chain-002",
+    "army-chain-x01",
     "army-chain-009",
     "army-chain-003",
+    "army-chain-x02",
     "army-chain-004",
+    "army-chain-x03",
     "army-chain-005",
+    "army-chain-x04",
+    "army-chain-x05",
     "army-chain-006",
+    "army-chain-x06",
     "army-chain-007",
     "army-chain-008",
 ]
 
-EXPECTED_ANOMALY_SEVERITIES = [0.81, 0.86, 0.82, 0.90, 0.88, 0.83, 0.84, 0.82, 0.91]
+EXPECTED_ANOMALY_SEVERITIES = [
+    0.81, 0.86, 0.83, 0.82, 0.90, 0.89, 0.88, 0.83,
+    0.83, 0.83, 0.91, 0.84, 0.82, 0.82, 0.91,
+]
 
 EXPECTED_ATTRIBUTION_ACTOR = "China"
 # 0.74 (primary) - 0.03 (red-team confidence_delta for orbital_rpo_risk) = 0.71.
 # The multi-agent pipeline reconciles primary against red-team challenge before
-# publishing; see halo/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
+# publishing; see canopy/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
 EXPECTED_ATTRIBUTION_CONFIDENCE = 0.71
 EXPECTED_ATTRIBUTION_CITATIONS = {
     "kb-rpo-ambiguity-001",
@@ -176,7 +194,7 @@ def pipeline_output() -> dict[str, list]:
 
 
 def test_event_counts(pipeline_output) -> None:
-    assert len(pipeline_output["anomaly"]) == 9
+    assert len(pipeline_output["anomaly"]) == 15
     assert len(pipeline_output["attribution"]) == 1
     assert len(pipeline_output["decision"]) == 1
     assert len(pipeline_output["ui_event"]) == 1

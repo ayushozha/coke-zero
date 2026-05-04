@@ -17,21 +17,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv  # noqa: E402
 
-from halo.services.attrib import AttribService  # noqa: E402
-from halo.services.bus import InProcessBus  # noqa: E402
-from halo.services.decide import DecideService  # noqa: E402
-from halo.services.fusion import FusionService  # noqa: E402
-from halo.services.kb import KB  # noqa: E402
-from halo.services.llm import LLMClient  # noqa: E402
-from halo.services.orbit import OrbitService  # noqa: E402
-from halo.services.scenario_replay import ScenarioReplayService  # noqa: E402
-from halo.services.schemas.events import (  # noqa: E402
+from canopy.services.attrib import AttribService  # noqa: E402
+from canopy.services.bus import InProcessBus  # noqa: E402
+from canopy.services.decide import DecideService  # noqa: E402
+from canopy.services.fusion import FusionService  # noqa: E402
+from canopy.services.kb import KB  # noqa: E402
+from canopy.services.llm import LLMClient  # noqa: E402
+from canopy.services.orbit import OrbitService  # noqa: E402
+from canopy.services.scenario_replay import ScenarioReplayService  # noqa: E402
+from canopy.services.schemas.events import (  # noqa: E402
     Anomaly,
     Attribution,
     Decision,
     UIEvent,
 )
-from halo.services.ui_events import UIEventService  # noqa: E402
+from canopy.services.ui_events import UIEventService  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SCENARIOS = [
@@ -59,7 +59,7 @@ LLM_PROVIDERS = ("stub", "anthropic", "ollama")
 
 def _build_llm(*, provider: str, kb: KB) -> LLMClient:
     if provider == "anthropic":
-        from halo.services.llm.anthropic_client import (
+        from canopy.services.llm.anthropic_client import (
             DEFAULT_MODEL,
             AnthropicLLMClient,
         )
@@ -67,10 +67,10 @@ def _build_llm(*, provider: str, kb: KB) -> LLMClient:
         model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
         return AnthropicLLMClient(kb, model=model)
     if provider == "ollama":
-        from halo.services.llm.ollama_client import OllamaLLMClient
+        from canopy.services.llm.ollama_client import OllamaLLMClient
 
         return OllamaLLMClient(kb)
-    from halo.services.llm.stub import StubLLMClient
+    from canopy.services.llm.stub import StubLLMClient
 
     return StubLLMClient(kb)
 
