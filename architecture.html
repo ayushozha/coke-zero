@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CANOPY Architecture</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-text-primary: #e8e6de;
+    --color-text-secondary: #9c9a92;
+    --color-text-tertiary: #6b6a64;
+    --color-background-page: #1a1a18;
+    --color-background-primary: #2a2a28;
+    --color-background-secondary: #252523;
+    --color-border-primary: rgba(255,255,255,0.4);
+    --color-border-secondary: rgba(255,255,255,0.18);
+    --color-border-tertiary: rgba(255,255,255,0.10);
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'SF Mono', Monaco, 'Courier New', Courier, monospace;
+  }
+
+  html, body {
+    background: var(--color-background-page);
+    min-height: 100vh;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    padding: 32px 20px 56px;
+    max-width: 980px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .header { text-align: center; padding: 24px 0 22px; }
+  .header h1 { font-size: 22px; font-weight: 500; letter-spacing: 1px; }
+  .header p { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-text-secondary); margin-top: 6px; }
+
+  .header-quote {
+    text-align: center;
+    margin-top: 18px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .header-quote p {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+  .header-quote cite {
+    display: block;
+    font-size: 12px;
+    font-style: normal;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+  }
+
+  .header-positioning {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+  .header-positioning .accent { color: #9FE1CB; }
+
+  .header-tagline {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+
+  .wrap { padding: 0 8px; }
+
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    align-items: stretch;
+  }
+  .col {
+    padding: 18px 14px 14px;
+    border-right: 0.5px solid var(--color-border-secondary);
+    display: flex;
+    flex-direction: column;
+  }
+  .col:last-child { border-right: none; }
+  .col-header { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .col-header h2 { font-size: 15px; font-weight: 500; }
+  .col-header p { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; font-style: italic; }
+
+  .col-body { flex: 1; display: flex; flex-direction: column; }
+
+  .node {
+    border-radius: 7px;
+    padding: 10px 12px;
+    margin-bottom: 7px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .node .label { font-size: 14px; font-weight: 500; }
+  .node .sub { font-family: var(--font-mono); font-size: 12px; margin-top: 3px; }
+
+  .n-gray { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); }
+  .n-gray .label { color: var(--color-text-primary); }
+  .n-gray .sub { color: var(--color-text-secondary); }
+
+  .n-teal { background: #04342C; border: 0.5px solid #0F6E56; }
+  .n-teal .label { color: #9FE1CB; }
+  .n-teal .sub { color: #5DCAA5; }
+
+  .n-decide {
+    background: #085041;
+    border: 0.5px solid #1D9E75;
+    border-radius: 7px;
+    padding: 14px 12px;
+    margin-bottom: 7px;
+    flex: 0 0 auto;
+  }
+  .n-decide .label { font-size: 15px; font-weight: 500; color: #9FE1CB; }
+  .n-decide .sub { font-family: var(--font-mono); font-size: 12px; color: #5DCAA5; margin-top: 5px; line-height: 1.55; }
+
+  .tool-section { flex: 1; display: flex; flex-direction: column; }
+  .tool-label { font-size: 12px; color: var(--color-text-secondary); margin: 10px 0 7px; text-align: center; }
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    flex: 1;
+  }
+  .tool-item {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 6px;
+    padding: 10px 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tool-item.wide { grid-column: span 2; }
+
+  .col-footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    line-height: 1.65;
+  }
+
+  .section-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--color-text-secondary); text-align: center; padding: 18px 0 10px; }
+
+  .bottom-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+    align-items: stretch;
+  }
+  .panel {
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-title {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: var(--color-background-secondary);
+    flex-shrink: 0;
+  }
+
+  .trace-log {
+    padding: 14px 14px;
+    background: var(--color-background-primary);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    flex: 1;
+  }
+  .trace-line { display: flex; gap: 8px; }
+  .tag { font-weight: 500; flex-shrink: 0; min-width: 76px; }
+  .tag-attrib { color: #1D9E75; }
+  .tag-redteam { color: #D85A30; }
+  .tag-reconcile { color: #BA7517; }
+  .tag-decide { color: #378ADD; }
+  .trace-text { color: var(--color-text-secondary); }
+
+  .orbital-panel {
+    padding: 18px 12px 18px;
+    background: var(--color-background-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+  .orbital-svg { width: 100%; max-width: 420px; }
+  .orbital-caption {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    margin-top: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CANOPY Architecture</h1>
+  <p>Sense · Attribute · Decide</p>
+  <div class="header-quote">
+    <p>"We must defend U.S. space capabilities, and we must protect our forces from space-enabled attack."</p>
+    <cite>— CSO Gen. Saltzman, Space Warfighting, March 2025</cite>
+  </div>
+  <div class="header-positioning">
+    Space supports <span class="accent">EVERY</span> fight. CANOPY lets the fight support space.
+  </div>
+  <div class="header-tagline">
+    Runs at the edge on a single Nvidia Jetson RTX 3090<br>
+    Sensing to deciding in less than 20 seconds
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="arch-grid">
+
+    <div class="col">
+      <div class="col-header">
+        <h2>Sense</h2>
+        <p>deterministic, real-time</p>
+      </div>
+      <div class="col-body">
+        <div class="node n-gray"><div class="label">Domain ingest adapters</div><div class="sub">8 typed signal streams</div></div>
+        <div class="node n-teal"><div class="label">Stream correlator</div><div class="sub">sliding-window · no LLM</div></div>
+        <div class="node n-teal"><div class="label">Statistical anomaly</div><div class="sub">z-score · change-point</div></div>
+        <div class="node n-teal"><div class="label">Skyfield SGP4</div><div class="sub">real orbital mechanics</div></div>
+        <div class="node n-teal"><div class="label">OSINT clustering</div><div class="sub">sentence-transformer embeds</div></div>
+      </div>
+      <div class="col-footer">end-to-end &lt;500ms<br>runs on every tick</div>
+    </div>
+
+    <div class="col">
+      <div class="col-header">
+        <h2>Attribute</h2>
+        <p>multi-agent, citation-grounded</p>
+      </div>
+      <div class="col-body">
+        <div class="node n-gray"><div class="label">Hybrid retrieval</div><div class="sub">BM25 + embedding over KB</div></div>
+        <div class="node n-teal"><div class="label">Primary attribution agent</div><div class="sub">LLM · structured output</div></div>
+        <div class="node n-teal"><div class="label">Red-team agent</div><div class="sub">adversarial prompt · parallel</div></div>
+        <div class="node n-teal"><div class="label">Reconciliation agent</div><div class="sub">comparison reasoning</div></div>
+        <div class="node n-teal"><div class="label">Confidence calibration</div><div class="sub">temperature scaling</div></div>
+      </div>
+      <div class="col-footer">~3s end-to-end · 3 LLM calls<br>87% benchmark accuracy</div>
+    </div>
+
+    <div class="col">
+      <div class="col-header">
+        <h2>Decide</h2>
+        <p>tool-using, authority-aware</p>
+      </div>
+      <div class="col-body">
+        <div class="n-decide">
+          <div class="label">Tool-using decision agent</div>
+          <div class="sub">selects counterspace operation<br>drafts request · validates routing</div>
+        </div>
+        <div class="tool-section">
+          <div class="tool-label">tool surface</div>
+          <div class="tool-grid">
+            <div class="tool-item">kb.lookup</div>
+            <div class="tool-item">orbit.cpa</div>
+            <div class="tool-item">orbit.simulate</div>
+            <div class="tool-item">request.draft</div>
+            <div class="tool-item wide">routing.validate (rules engine)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-footer">~1s · deterministic tool calls<br>authority chain enforced</div>
+    </div>
+  </div>
+
+  <div class="section-label">Auditable artifacts streamed live to the dashboard</div>
+
+  <div class="bottom-panels">
+
+    <div class="panel">
+      <div class="panel-title">Live agent reasoning trace</div>
+      <div class="trace-log">
+        <div class="trace-line"><span class="tag tag-attrib">[attrib]</span><span class="trace-text">Querying KB for orbital RPO patterns</span></div>
+        <div class="trace-line"><span class="tag tag-attrib">[attrib]</span><span class="trace-text">Match candidate: cn_sj21_grapple</span></div>
+        <div class="trace-line"><span class="tag tag-attrib">[attrib]</span><span class="trace-text">Cross-check: Russian RF 9 min proximity</span></div>
+        <div class="trace-line"><span class="tag tag-attrib">[attrib]</span><span class="trace-text">Doctrine: 2022 BeiDou + Sept 2025</span></div>
+        <div class="trace-line"><span class="tag tag-redteam">[redteam]</span><span class="trace-text">Single-actor hypothesis weak</span></div>
+        <div class="trace-line"><span class="tag tag-redteam">[redteam]</span><span class="trace-text">Alt: GPS jamming spoof, conf 0.34</span></div>
+        <div class="trace-line"><span class="tag tag-redteam">[redteam]</span><span class="trace-text">Alt: solar flare debris, ruled out</span></div>
+        <div class="trace-line"><span class="tag tag-redteam">[redteam]</span><span class="trace-text">Probe: SJ-21 maneuver pre-planned?</span></div>
+        <div class="trace-line"><span class="tag tag-reconcile">[reconcile]</span><span class="trace-text">Two-actor: RU + PRC, conf 0.91</span></div>
+        <div class="trace-line"><span class="tag tag-reconcile">[reconcile]</span><span class="trace-text">Doctrine match, threshold passed</span></div>
+        <div class="trace-line"><span class="tag tag-decide">[decide]</span><span class="trace-text">orbit.cpa(SATCOM-3, SJ-21)</span></div>
+        <div class="trace-line"><span class="tag tag-decide">[decide]</span><span class="trace-text">→ 8.2 km in 11:47</span></div>
+        <div class="trace-line"><span class="tag tag-decide">[decide]</span><span class="trace-text">orbit.simulate(dv=0.4 prograde)</span></div>
+        <div class="trace-line"><span class="tag tag-decide">[decide]</span><span class="trace-text">→ new CPA 142 km</span></div>
+        <div class="trace-line"><span class="tag tag-decide">[decide]</span><span class="trace-text">active_defense_escort, route CJF…</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Skyfield-computed orbital geometry</div>
+      <div class="orbital-panel">
+        <svg class="orbital-svg" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img">
+          <title>Orbital geometry</title>
+          <desc>SATCOM-3 on solid teal orbit, SJ-21 on a dashed coral approach trajectory, with post-maneuver teal dashed arc rising above.</desc>
+
+          <path d="M 248 122 A 110 110 0 0 0 72 122"
+            fill="none" stroke="#5DCAA5" stroke-width="1" stroke-dasharray="4 3" opacity="0.85"/>
+
+          <text font-family="'Courier New', monospace" font-size="10" fill="#9FE1CB" x="160" y="34" text-anchor="middle">post-maneuver: 142 km</text>
+
+          <ellipse cx="164" cy="124" rx="76" ry="60"
+            fill="none" stroke="#D85A30" stroke-width="0.9" stroke-dasharray="3 3" opacity="0.7"
+            transform="rotate(-8 164 124)"/>
+
+          <circle cx="160" cy="122" r="62"
+            fill="none" stroke="#1D9E75" stroke-width="1.2" opacity="0.95"/>
+
+          <circle cx="160" cy="122" r="2.5" fill="#888888"/>
+
+          <text font-family="'Courier New', monospace" font-size="10" fill="#cccccc" x="160" y="115" text-anchor="middle">8.2 km</text>
+
+          <circle cx="98" cy="122" r="4.5" fill="#1D9E75"/>
+          <text font-family="'Courier New', monospace" font-size="11" fill="#9FE1CB" x="86" y="126" text-anchor="end">SATCOM-3</text>
+
+          <circle cx="238" cy="116" r="4.5" fill="#F0997B"/>
+          <text font-family="'Courier New', monospace" font-size="11" fill="#F0997B" x="250" y="120" text-anchor="start">SJ-21</text>
+        </svg>
+        <div class="orbital-caption">Skyfield-computed orbital geometry</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
