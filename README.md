@@ -82,7 +82,7 @@ CANOPY reads `CANOPY_OLLAMA_URL` (default `http://localhost:11434`) and `CANOPY_
 ### Backend gateway
 In one terminal, run the following to start the backend:
 ```bash
-./run uvicorn canopy.api:app --host 0.0.0.0 --port 8000
+uv run uvicorn canopy.api:app --host 0.0.0.0 --port 8000
 ```
 
 The gateway boots the in-process bus, the three services, and exposes:
@@ -102,7 +102,7 @@ You can view and interact with the frontend by going to `http://localhost:5173` 
 ### One-shot verification
 
 ```bash
-./run python scripts/verify.py scenarios/army_multidomain_attack_chain.jsonl
+uv run python scripts/verify.py scenarios/army_multidomain_attack_chain.jsonl
 ```
 
 Replays a scenario through the engine in-process, asserts the expected sense → attribute → decide chain, and prints the reasoning trace.
@@ -110,7 +110,7 @@ Replays a scenario through the engine in-process, asserts the expected sense →
 ### Benchmark
 
 ```bash
-./run python -m bench.run
+uv run python -m bench.run
 ```
 
 Runs the 51-scenario harness (11 seeds + ~40 procedural variants) and writes a scorecard with attribution accuracy, calibration, and p50/p95 latency.
