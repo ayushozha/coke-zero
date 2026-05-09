@@ -1,0 +1,832 @@
+/* =============================================================
+   COKE-ZERO REDESIGN LAYER
+   Loaded after App.css. Reshapes color, surface, motion, and the
+   primary panel motifs while keeping the layout grid intact.
+   ============================================================= */
+
+@keyframes cz-scan {
+  from { background-position: 0 0; }
+  to   { background-position: 0 -240px; }
+}
+
+@keyframes cz-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(77, 217, 255, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(77, 217, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(77, 217, 255, 0); }
+}
+
+@keyframes cz-card-in {
+  from { transform: translateY(8px) scale(0.985); opacity: 0; filter: blur(6px); }
+  to   { transform: none; opacity: 1; filter: blur(0); }
+}
+
+@keyframes cz-glow-shift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ---------- Shell background: cooler, calmer ambient grid ---------- */
+
+.brigade-shell,
+.operator-shell {
+  padding: 16px;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(77, 217, 255, 0.08), transparent 32%),
+    radial-gradient(circle at 88% 14%, rgba(167, 139, 255, 0.05), transparent 30%),
+    radial-gradient(circle at 50% 110%, rgba(94, 234, 212, 0.05), transparent 40%),
+    linear-gradient(180deg, #050a12 0%, #03070d 60%, #01030a 100%);
+}
+
+.brigade-shell::before,
+.operator-shell::before {
+  background:
+    radial-gradient(rgba(77, 217, 255, 0.16) 1px, transparent 1.5px) 0 0 / 28px 28px,
+    linear-gradient(180deg, transparent 0%, rgba(77, 217, 255, 0.04) 50%, transparent 100%);
+  opacity: 0.7;
+  animation: cz-scan 9s linear infinite;
+}
+
+.brigade-shell::after,
+.operator-shell::after {
+  background:
+    conic-gradient(from 200deg at 60% 40%, transparent, rgba(77, 217, 255, 0.07), transparent 32%),
+    radial-gradient(circle, rgba(167, 139, 255, 0.05), transparent 50%);
+  opacity: 0.55;
+}
+
+/* ---------- Header: cleaner, with neon underline ---------- */
+
+.app-header {
+  position: relative;
+  align-items: flex-end;
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, rgba(77, 217, 255, 0.55) 22%, rgba(167, 139, 255, 0.42) 60%, transparent) 1;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(77, 217, 255, 0.18), rgba(167, 139, 255, 0.14), transparent);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.app-header h1 {
+  font-size: 1.36rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  color: #f5fbff;
+}
+
+.app-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cyan-bright);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.app-header__eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--cyan-bright);
+  box-shadow: 0 0 10px var(--cyan-bright);
+  animation: cz-pulse-ring 2.4s ease-out infinite;
+}
+
+.app-header__right {
+  gap: 10px;
+}
+
+.app-header a,
+.app-header__right a {
+  border: 1px solid rgba(120, 195, 230, 0.32);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.08), rgba(77, 217, 255, 0.02));
+  color: #d6ecf6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.app-header a:hover,
+.app-header__right a:hover {
+  border-color: var(--cyan-bright);
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
+  color: #fff;
+  box-shadow: var(--glow-cyan-soft);
+}
+
+/* ---------- Status pill (Engine live / Feed) ---------- */
+
+.socket-status {
+  position: relative;
+  border: 1px solid rgba(94, 234, 212, 0.35);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(94, 234, 212, 0.08), rgba(94, 234, 212, 0.02));
+  color: var(--status-live-bright);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 8px 14px 8px 26px;
+}
+
+.socket-status::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: var(--radius-pill);
+  background: var(--status-live-bright);
+  box-shadow: 0 0 10px var(--status-live-bright);
+}
+
+.socket-status--online::before {
+  animation: cz-pulse-ring 2.2s ease-out infinite;
+}
+
+/* ---------- Workbench grid: tighter columns ---------- */
+
+.command-workbench {
+  grid-template-columns: 232px minmax(0, 1fr) 360px;
+  gap: 14px;
+}
+
+/* ---------- Panel surface: replace clip-path chamfer with corner ticks ---------- */
+
+.scenario-rail,
+.mission-summary,
+.event-feed,
+.narration,
+.approve-banner,
+.details-panel,
+.panel {
+  border: 1px solid rgba(120, 195, 230, 0.18);
+  border-radius: var(--radius-panel);
+  clip-path: none;
+  background:
+    linear-gradient(180deg, rgba(77, 217, 255, 0.04), transparent 24%),
+    linear-gradient(180deg, rgba(10, 19, 32, 0.92), rgba(6, 12, 22, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(77, 217, 255, 0.04),
+    0 18px 44px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+/* Replace the hot red ::before tint with a cool cyan top accent */
+.scenario-rail::before,
+.mission-summary::before,
+.event-feed::before,
+.narration::before,
+.approve-banner::before,
+.panel::before {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(77, 217, 255, 0.38) 14%, rgba(167, 139, 255, 0.32) 60%, transparent 100%);
+  height: 1px;
+  inset: 0 0 auto 0;
+  opacity: 0.85;
+  border-radius: 0;
+}
+
+/* Replace single corner bracket with refined L-tick at all four corners */
+.scenario-rail::after,
+.mission-summary::after,
+.event-feed::after,
+.narration::after,
+.approve-banner::after,
+.panel::after {
+  top: 6px;
+  right: 6px;
+  width: var(--tick-size);
+  height: var(--tick-size);
+  border-top: 1px solid rgba(77, 217, 255, 0.5);
+  border-right: 1px solid rgba(77, 217, 255, 0.5);
+  opacity: 0.75;
+}
+
+/* Add bottom-left tick via panel decor utility */
+.scenario-rail,
+.mission-summary,
+.event-feed,
+.narration,
+.approve-banner,
+.panel {
+  position: relative;
+}
+
+.scenario-rail > :first-child,
+.mission-summary > :first-child,
+.event-feed > :first-child,
+.narration > :first-child,
+.approve-banner > :first-child,
+.panel > :first-child {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Scenario rail ---------- */
+
+.scenario-rail {
+  border-radius: var(--radius-panel);
+}
+
+.scenario-list__item::before {
+  background: var(--cyan-bright);
+  box-shadow: 0 0 8px var(--cyan-bright);
+}
+
+.scenario-list__item--active {
+  border-color: rgba(77, 217, 255, 0.45);
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.1), rgba(77, 217, 255, 0.02));
+  box-shadow: var(--glow-cyan-soft);
+}
+
+/* ---------- Mission summary cards ---------- */
+
+.mission-summary--white {
+  border-color: rgba(180, 210, 230, 0.24);
+}
+
+.mission-summary--amber {
+  border-color: rgba(241, 179, 71, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--glow-warn),
+    0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+.mission-summary--red {
+  border-color: rgba(255, 91, 108, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--glow-danger),
+    0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+.mission-summary--amber::before {
+  background: linear-gradient(90deg, transparent, rgba(241, 179, 71, 0.7), transparent);
+}
+
+.mission-summary--red::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 91, 108, 0.85), transparent);
+  animation: cz-glow-shift 3.2s linear infinite;
+  background-size: 200% 100%;
+}
+
+/* ---------- Status cards ---------- */
+
+.status-card {
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, rgba(15, 26, 40, 0.78), rgba(10, 19, 32, 0.62));
+  transition: border-color 180ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.status-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-cyan-soft);
+}
+
+.status-card--white {
+  border-left: 2px solid var(--cyan-bright);
+}
+
+.status-card--amber {
+  border-left: 2px solid var(--amber);
+}
+
+.status-card--red {
+  border-left: 2px solid var(--red);
+}
+
+/* ---------- Map stage ---------- */
+
+.map-stage {
+  border-radius: var(--radius-panel);
+  border: 1px solid rgba(120, 195, 230, 0.2);
+  box-shadow:
+    inset 0 0 0 1px rgba(77, 217, 255, 0.04),
+    0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.map-stage::before,
+.map-stage::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.85;
+}
+
+.map-stage::before {
+  top: 8px;
+  left: 8px;
+  border-top: 1px solid rgba(77, 217, 255, 0.55);
+  border-left: 1px solid rgba(77, 217, 255, 0.55);
+}
+
+.map-stage::after {
+  bottom: 8px;
+  right: 8px;
+  border-bottom: 1px solid rgba(77, 217, 255, 0.55);
+  border-right: 1px solid rgba(77, 217, 255, 0.55);
+}
+
+/* Threat update banner inside map */
+.mission-alert {
+  border-radius: var(--radius-panel);
+  border: 1px solid rgba(241, 179, 71, 0.45);
+  background:
+    linear-gradient(180deg, rgba(241, 179, 71, 0.14), rgba(15, 26, 40, 0.86));
+  box-shadow: var(--glow-warn);
+  backdrop-filter: blur(8px);
+}
+
+.mission-alert--danger {
+  border-color: rgba(255, 91, 108, 0.55);
+  background: linear-gradient(180deg, rgba(255, 91, 108, 0.18), rgba(15, 26, 40, 0.88));
+  box-shadow: var(--glow-danger);
+}
+
+/* Map view toggle (NAV / GLOBE) */
+.map-view-toggle {
+  border: 1px solid rgba(120, 195, 230, 0.32);
+  border-radius: var(--radius-pill);
+  background: rgba(10, 19, 32, 0.78);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.map-view-toggle button {
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.map-view-toggle button:hover,
+.map-view-toggle button.is-active {
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
+  color: #f5fbff;
+  box-shadow: inset 0 0 0 1px rgba(77, 217, 255, 0.4);
+}
+
+/* TAK / space hud chrome */
+.tak-map-chrome,
+.tak-map-strip,
+.space-hud {
+  border: 1px solid rgba(120, 195, 230, 0.22);
+  border-radius: var(--radius-panel);
+  background: rgba(10, 19, 32, 0.78);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.tak-map-chrome strong,
+.space-hud strong {
+  color: var(--cyan-bright);
+}
+
+/* Cesium scenario controls */
+.cesium-scenario-controls button,
+.satellite-family-controls button,
+.orbit-toggle {
+  border: 1px solid rgba(120, 195, 230, 0.28);
+  border-radius: var(--radius-pill);
+  background: rgba(10, 19, 32, 0.78);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: all 160ms ease;
+  backdrop-filter: blur(6px);
+}
+
+.cesium-scenario-controls button:hover,
+.cesium-scenario-controls button.is-active,
+.satellite-family-controls button:hover,
+.satellite-family-controls button.is-active {
+  border-color: var(--cyan-bright);
+  color: #f5fbff;
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
+  box-shadow: var(--glow-cyan-soft);
+}
+
+/* ---------- Decision stack (right column) ---------- */
+
+.decision-stack {
+  border: 1px solid rgba(120, 195, 230, 0.18);
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, rgba(10, 19, 32, 0.92), rgba(6, 12, 22, 0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 44px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+/* Stack section headers */
+.stack-section {
+  border-bottom: 1px solid rgba(120, 195, 230, 0.1);
+}
+
+.stack-section__summary,
+.stack-section > summary {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.stack-section__summary:hover,
+.stack-section > summary:hover {
+  color: var(--cyan-bright);
+  background: rgba(77, 217, 255, 0.04);
+}
+
+/* DECISION LOOP awaiting approval marker */
+.decision-loop .panel__header,
+.reasoning-panel .panel__header,
+.action-log .panel__header,
+.embedding-viz .panel__header {
+  border-bottom: 1px solid rgba(120, 195, 230, 0.14);
+}
+
+.decision-loop .panel__header h2,
+.reasoning-panel .panel__header h2,
+.action-log .panel__header h2,
+.embedding-viz .panel__header h2 {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan-bright);
+}
+
+/* ---------- Approval banner: floating glass card with magenta glow ---------- */
+
+.approve-banner {
+  position: relative;
+  overflow: visible;
+  border: 1px solid rgba(255, 91, 108, 0.42);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 91, 108, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(15, 26, 40, 0.92), rgba(10, 19, 32, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 91, 108, 0.08),
+    var(--glow-danger),
+    0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: cz-card-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.approve-banner::before {
+  background: linear-gradient(90deg, transparent, var(--red), var(--cyan-bright), transparent);
+  background-size: 200% 100%;
+  animation: cz-glow-shift 4s linear infinite;
+  height: 1.5px;
+  opacity: 1;
+}
+
+.approve-banner::after {
+  /* "PRIORITY" tick */
+  border-color: rgba(255, 91, 108, 0.7);
+}
+
+.approve-banner__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.approve-banner__kicker::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  animation: cz-pulse-ring 1.6s ease-out infinite;
+}
+
+.approve-banner h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #fff;
+  margin-top: 6px;
+}
+
+.approve-banner__button {
+  position: relative;
+  border: 1px solid rgba(94, 234, 212, 0.55);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(94, 234, 212, 0.2), rgba(94, 234, 212, 0.04));
+  color: #d8fff5;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  transition: all 180ms ease;
+}
+
+.approve-banner__button:hover {
+  border-color: var(--green);
+  background: linear-gradient(180deg, rgba(94, 234, 212, 0.32), rgba(94, 234, 212, 0.08));
+  color: #fff;
+  box-shadow: 0 0 20px rgba(94, 234, 212, 0.4);
+  transform: translateY(-1px);
+}
+
+.approve-banner__button--secondary {
+  border-color: rgba(180, 210, 230, 0.32);
+  background: rgba(10, 19, 32, 0.6);
+  color: var(--text-muted);
+}
+
+.approve-banner__button--secondary:hover {
+  border-color: rgba(180, 210, 230, 0.6);
+  background: rgba(20, 32, 48, 0.85);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* ---------- Event feed (Signal Stream) ---------- */
+
+.event-feed {
+  border-color: rgba(120, 195, 230, 0.2);
+}
+
+.event-feed::before {
+  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.45), rgba(77, 217, 255, 0.4), transparent);
+}
+
+/* ---------- Scenario timeline ---------- */
+
+.scenario-timeline {
+  border-radius: var(--radius-panel);
+}
+
+/* ---------- Panel tabs (collapse handles) ---------- */
+
+.panel-tab {
+  border: 1px solid rgba(120, 195, 230, 0.32);
+  background: linear-gradient(180deg, rgba(15, 26, 40, 0.92), rgba(6, 12, 22, 0.94));
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 22px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  transition: all 180ms ease;
+}
+
+.panel-tab:hover {
+  border-color: var(--cyan-bright);
+  color: #f5fbff;
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(15, 26, 40, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--glow-cyan-soft),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.panel-tab__arrow {
+  color: var(--cyan-bright);
+}
+
+/* ---------- Reasoning trace lines ---------- */
+
+.reasoning-line {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  border-left: 1.5px solid rgba(120, 195, 230, 0.2);
+  padding-left: 10px;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.reasoning-line:hover {
+  border-left-color: var(--cyan-bright);
+  background: rgba(77, 217, 255, 0.04);
+}
+
+.reasoning-line--decision {
+  border-left-color: var(--green);
+}
+
+.reasoning-line--decision .reasoning-line__msg {
+  color: #d8fff5;
+}
+
+.reasoning-line--tool {
+  border-left-color: var(--violet);
+}
+
+.reasoning-line--tool .reasoning-line__msg {
+  color: #d9d0ff;
+}
+
+.reasoning-line--warn {
+  border-left-color: var(--amber);
+}
+
+.reasoning-line--warn .reasoning-line__msg {
+  color: #ffe1ad;
+}
+
+/* ---------- AOR signals: refresh markers ---------- */
+
+.aor-signal__glyph {
+  filter: drop-shadow(0 0 6px rgba(77, 217, 255, 0.4));
+}
+
+.aor-signal--high .aor-signal__glyph {
+  filter: drop-shadow(0 0 8px rgba(255, 91, 108, 0.55));
+}
+
+.aor-signal--watch .aor-signal__glyph {
+  filter: drop-shadow(0 0 7px rgba(241, 179, 71, 0.5));
+}
+
+.aor-signal--newest .aor-signal__glyph {
+  animation: cz-pulse-ring 2s ease-out infinite;
+}
+
+/* ---------- Operator action card ---------- */
+
+.operator-action {
+  border-radius: var(--radius-panel);
+  border: 1px solid rgba(120, 195, 230, 0.22);
+  background: linear-gradient(180deg, rgba(15, 26, 40, 0.85), rgba(10, 19, 32, 0.92));
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.operator-action:hover {
+  border-color: rgba(77, 217, 255, 0.5);
+  box-shadow: var(--glow-cyan-soft);
+}
+
+.operator-action--accepted {
+  border-color: rgba(94, 234, 212, 0.5);
+  box-shadow: 0 0 18px rgba(94, 234, 212, 0.18);
+}
+
+.operator-action--denied {
+  border-color: rgba(255, 91, 108, 0.5);
+  box-shadow: 0 0 18px rgba(255, 91, 108, 0.18);
+}
+
+/* ---------- Request packet ---------- */
+
+.request-packet {
+  border-radius: var(--radius-panel);
+  border: 1px solid rgba(167, 139, 255, 0.32);
+  background:
+    linear-gradient(180deg, rgba(167, 139, 255, 0.06), transparent 40%),
+    linear-gradient(180deg, rgba(15, 26, 40, 0.85), rgba(10, 19, 32, 0.92));
+  font-family: var(--font-mono);
+}
+
+/* ---------- Details panel ---------- */
+
+.details-panel {
+  border-radius: var(--radius-panel);
+}
+
+.details-panel summary {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ---------- Scrollbars ---------- */
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(10, 19, 32, 0.4);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.32), rgba(167, 139, 255, 0.28));
+  border-radius: 8px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(77, 217, 255, 0.55), rgba(167, 139, 255, 0.45));
+}
+
+/* ---------- Selection ---------- */
+
+::selection {
+  background: rgba(77, 217, 255, 0.32);
+  color: #fff;
+}
+
+/* ---------- Subtle text refinements ---------- */
+
+.app-header__plain {
+  color: var(--text-muted);
+  letter-spacing: 0.005em;
+}
+
+/* Buttons throughout: refined focus ring */
+button:focus-visible,
+a:focus-visible {
+  outline: 1px solid var(--cyan-bright);
+  outline-offset: 2px;
+  box-shadow: var(--glow-cyan-soft);
+}
+
+/* ---------- Text utility refresh ---------- */
+
+.scenario-list__item h3,
+.mission-summary h2,
+.status-card h2 {
+  letter-spacing: -0.005em;
+}
+
+/* ---------- Live animations on key indicators ---------- */
+
+.scenario-list__item--active::before {
+  animation: cz-pulse-ring 2.4s ease-out infinite;
+}
+
+/* ---------- Approve banner meta + details ---------- */
+
+.approve-banner__meta dt {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.approve-banner__meta dd {
+  font-family: var(--font-mono);
+  color: var(--cyan-bright);
+}
+
+/* ---------- Narration ---------- */
+
+.narration {
+  border-color: rgba(167, 139, 255, 0.24);
+}
+
+.narration::before {
+  background: linear-gradient(90deg, transparent, rgba(167, 139, 255, 0.55), rgba(77, 217, 255, 0.45), transparent);
+}
