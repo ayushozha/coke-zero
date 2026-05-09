@@ -11,6 +11,7 @@ import type {
   Signal,
   UIEvent,
 } from '../types/coke_zero'
+import { CapabilityBackbone } from './CapabilityBackbone'
 import { RequestPacketSummary } from './RequestPacketSummary'
 
 type DecisionLoopPanelProps = {
@@ -250,6 +251,7 @@ export function DecisionLoopPanel({
           {currentApprovalLabel}
         </span>
       </div>
+      {compact ? <CapabilityBackbone compact /> : null}
       <div className="decision-loop__metrics" aria-label="Decision loop counts">
         <div>
           <span>Signals</span>
@@ -268,6 +270,7 @@ export function DecisionLoopPanel({
           <strong>{recommendationCount}</strong>
         </div>
       </div>
+      {!compact ? <CapabilityBackbone /> : null}
       {latestDecision?.request_packet ? (
         <RequestPacketSummary
           compact={compact}
