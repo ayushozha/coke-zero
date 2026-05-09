@@ -3,7 +3,7 @@
 ## Goal
 
 Make the Brigade view run any of the 11 checked-in scenarios as a simple
-commander demo: choose a story, press play, watch CANOPY brief what changed,
+commander demo: choose a story, press play, watch coke-zero brief what changed,
 why it matters, and whether a decision is needed.
 
 ## Scenario Groups

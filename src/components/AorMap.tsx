@@ -6,7 +6,7 @@ import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import { commanderSignalSummary, signalKindLabel } from '../lib/commanderLanguage'
 import { boundsForSignals, signalCoordinate } from '../lib/signalLocation'
 import type { PlaybackStatus } from '../types/playback'
-import type { Signal } from '../types/canopy'
+import type { Signal } from '../types/coke_zero'
 
 type Basemap = 'imagery' | 'muted'
 type AorMapProps = {

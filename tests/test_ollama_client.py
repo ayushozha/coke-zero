@@ -12,9 +12,9 @@ from typing import Any
 import httpx
 import pytest
 
-from canopy.services.kb import KB
-from canopy.services.llm.ollama_client import OllamaLLMClient, _extract_json
-from canopy.services.schemas.events import Anomaly, Attribution
+from coke_zero.services.kb import KB
+from coke_zero.services.llm.ollama_client import OllamaLLMClient, _extract_json
+from coke_zero.services.schemas.events import Anomaly, Attribution
 
 KB_FILE = Path(__file__).resolve().parent.parent / "data" / "kb_seed_entries.json"
 
@@ -26,11 +26,11 @@ def _kb() -> KB:
 def _anomaly() -> Anomaly:
     return Anomaly(
         kind="orbital_rpo_risk",
-        source_signal="canopy-beat47-002",
-        source_signal_ids=["canopy-beat47-002"],
+        source_signal="coke-zero-beat47-002",
+        source_signal_ids=["coke-zero-beat47-002"],
         severity=0.82,
         payload={
-            "satellite": "CANOPY-LEO-07",
+            "satellite": "coke-zero-LEO-07",
             "asset": "UNKNOWN-RSO-441",
             "summary": "test",
             "observables": {"miss_distance_km": 8.6},
@@ -45,7 +45,7 @@ def _attribution() -> Attribution:
         confidence=0.74,
         evidence=["test"],
         kb_citations=["kb-rpo-ambiguity-001", "kb-attribution-uncertainty-001"],
-        source_signal_ids=["canopy-beat47-002"],
+        source_signal_ids=["coke-zero-beat47-002"],
     )
 
 
@@ -75,8 +75,8 @@ def test_extract_json_raises_on_garbage() -> None:
 
 
 def test_constructor_uses_explicit_args_over_env(monkeypatch) -> None:
-    monkeypatch.setenv("CANOPY_OLLAMA_URL", "http://env-host:11434")
-    monkeypatch.setenv("CANOPY_OLLAMA_MODEL", "env-model")
+    monkeypatch.setenv("COKE_ZERO_OLLAMA_URL", "http://env-host:11434")
+    monkeypatch.setenv("COKE_ZERO_OLLAMA_MODEL", "env-model")
     client = OllamaLLMClient(
         _kb(),
         model="explicit-model",
@@ -89,9 +89,9 @@ def test_constructor_uses_explicit_args_over_env(monkeypatch) -> None:
 
 
 def test_constructor_picks_up_env_when_no_args(monkeypatch) -> None:
-    monkeypatch.setenv("CANOPY_OLLAMA_URL", "http://env-host:11434")
-    monkeypatch.setenv("CANOPY_OLLAMA_MODEL", "env-model")
-    monkeypatch.setenv("CANOPY_OLLAMA_TIMEOUT_S", "30")
+    monkeypatch.setenv("COKE_ZERO_OLLAMA_URL", "http://env-host:11434")
+    monkeypatch.setenv("COKE_ZERO_OLLAMA_MODEL", "env-model")
+    monkeypatch.setenv("COKE_ZERO_OLLAMA_TIMEOUT_S", "30")
     client = OllamaLLMClient(_kb())
     assert client._model == "env-model"
     assert client._base_url == "http://env-host:11434"
@@ -141,7 +141,7 @@ async def test_attribute_speaks_correct_wire_format() -> None:
         "kb-rpo-ambiguity-001",
         "kb-attribution-uncertainty-001",
     ]
-    assert attribution.source_signal_ids == ["canopy-beat47-002"]
+    assert attribution.source_signal_ids == ["coke-zero-beat47-002"]
 
     # Check the wire request shape
     assert len(transport.requests) == 1
@@ -177,7 +177,7 @@ async def test_decide_speaks_correct_wire_format() -> None:
     assert decision.target == "threatened_geo_asset"
     assert decision.request_packet == {"to": "CJFSCC"}
     # source_signal_ids should propagate from the attribution.
-    assert decision.source_signal_ids == ["canopy-beat47-002"]
+    assert decision.source_signal_ids == ["coke-zero-beat47-002"]
 
 
 async def test_attribute_falls_back_to_plain_json_format_if_schema_rejected() -> None:

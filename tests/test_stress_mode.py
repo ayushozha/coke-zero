@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.attrib import AttribService
-from canopy.services.bus import InProcessBus
-from canopy.services.fusion import FusionService
-from canopy.services.kb import KB
-from canopy.services.llm.stub import StubLLMClient
-from canopy.services.schemas.events import (
+from coke_zero.services.attrib import AttribService
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.fusion import FusionService
+from coke_zero.services.kb import KB
+from coke_zero.services.llm.stub import StubLLMClient
+from coke_zero.services.schemas.events import (
     Anomaly,
     Attribution,
     Location,
@@ -24,7 +24,7 @@ from canopy.services.schemas.events import (
     ReasoningTrace,
     Signal,
 )
-from canopy.services.traces import Tracer
+from coke_zero.services.traces import Tracer
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"

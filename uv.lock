@@ -62,7 +62,7 @@ wheels = [
 ]
 
 [[package]]
-name = "canopy"
+name = "coke-zero"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

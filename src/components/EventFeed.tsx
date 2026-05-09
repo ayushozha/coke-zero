@@ -5,7 +5,7 @@ import {
   plainEventName,
   signalKindLabel,
 } from '../lib/commanderLanguage'
-import type { Signal } from '../types/canopy'
+import type { Signal } from '../types/coke_zero'
 
 type EventFeedProps = {
   isMapAutoFocusEnabled?: boolean
@@ -141,7 +141,7 @@ const buildDummyDecisionFlow = (
         activeNode: 'hold',
         completedEdges: ['signal-schema', 'schema-hold'],
         completedNodes: ['signal', 'schema'],
-        detail: 'Holding event while CANOPY asks for missing context',
+        detail: 'Holding event while coke-zero asks for missing context',
         headline: 'LLM routes event to enrichment hold',
       },
     ]
@@ -470,7 +470,7 @@ export function EventFeed({
       {activeView === 'flow' ? (
         <div
           className={`event-feed__flow-view event-feed__flow-view--${flowPriority}`}
-          aria-label="CANOPY decision flow"
+          aria-label="coke-zero decision flow"
         >
           <div className="event-feed__flow-summary">
             <span>Sense / Attribute / Decide</span>
@@ -711,7 +711,7 @@ export function EventFeed({
         <div className="event-feed__raw-view">
           <div className="event-feed__bus-status">
             <span className="event-feed__live-dot" aria-hidden="true" />
-            <span>canopy://bus</span>
+            <span>coke_zero://bus</span>
             <span>signals.* topics</span>
             <span>{arrivalTimes.length} events/min</span>
             <span>{activeDomains} domains active</span>

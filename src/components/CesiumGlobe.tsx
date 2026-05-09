@@ -52,7 +52,7 @@ import {
 } from '../lib/n2yoSatelliteLayer'
 import { commanderSignalSummary } from '../lib/commanderLanguage'
 import { useEventStore } from '../store/eventStore'
-import type { Signal } from '../types/canopy'
+import type { Signal } from '../types/coke_zero'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN?.trim()
 const MAP_FONT =
@@ -315,7 +315,7 @@ const createVehicleCzml = () => {
   return [
     {
       id: 'document',
-      name: 'CANOPY Vehicle Track',
+      name: 'coke-zero Vehicle Track',
       version: '1.0',
       clock: {
         interval,

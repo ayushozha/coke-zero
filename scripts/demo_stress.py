@@ -25,9 +25,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from canopy._engine import build_engine, start_engine_tasks  # noqa: E402
-from canopy.services.scenario_replay import ScenarioReplayService  # noqa: E402
-from canopy.services.schemas.events import (  # noqa: E402
+from coke_zero._engine import build_engine, start_engine_tasks  # noqa: E402
+from coke_zero.services.scenario_replay import ScenarioReplayService  # noqa: E402
+from coke_zero.services.schemas.events import (  # noqa: E402
     Anomaly,
     Attribution,
     Decision,

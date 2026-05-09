@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://canopy.local/schemas/anomaly.schema.json",
-  "title": "CANOPY Anomaly",
+  "$id": "https://coke_zero.local/schemas/anomaly.schema.json",
+  "title": "coke-zero Anomaly",
   "description": "Derived anomaly emitted by fusion services after reading canonical Signals.",
   "type": "object",
   "additionalProperties": true,

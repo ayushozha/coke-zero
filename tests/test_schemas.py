@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from canopy.services.schemas.events import (
+from coke_zero.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,
@@ -31,7 +31,7 @@ def _signal_kwargs(**overrides) -> dict:
             "event_type": "rf_interference",
             "summary": "RF interference",
         },
-        "provenance": Provenance(source_id="canopy-demo-feed-worker"),
+        "provenance": Provenance(source_id="coke-zero-demo-feed-worker"),
     }
     base.update(overrides)
     return base
@@ -122,9 +122,9 @@ def test_attribution_carries_source_signal_ids() -> None:
         confidence=0.78,
         evidence=["consistent with Russian EW"],
         kb_citations=["kb-gps-jamming-001"],
-        source_signal_ids=["canopy-beat2-001"],
+        source_signal_ids=["coke-zero-beat2-001"],
     )
-    assert a.source_signal_ids == ["canopy-beat2-001"]
+    assert a.source_signal_ids == ["coke-zero-beat2-001"]
 
 
 def test_decision_action_and_authority() -> None:
@@ -135,7 +135,7 @@ def test_decision_action_and_authority() -> None:
         rationale="Test",
         authority="request",
         request_packet={"to": "CJFSCC"},
-        source_signal_ids=["canopy-beat47-002"],
+        source_signal_ids=["coke-zero-beat47-002"],
     )
     assert d.authority == "request"
     with pytest.raises(ValidationError):

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActionLog } from '../components/ActionLog'
 import { ApproveBanner } from '../components/ApproveBanner'
 import { CollapsibleStackSection } from '../components/CollapsibleStackSection'
+import { DecisionLoopPanel } from '../components/DecisionLoopPanel'
 import { EmbeddingViz } from '../components/EmbeddingViz'
 import { EventFeed } from '../components/EventFeed'
 import { MapStage } from '../components/MapStage'
@@ -10,12 +11,17 @@ import { ScenarioRail } from '../components/ScenarioRail'
 import { ScenarioTimeline } from '../components/ScenarioTimeline'
 import { StressMode } from '../components/StressMode'
 import { defaultScenario, scenarios } from '../data/scenarioLibrary'
-import { useCanopyMissionState } from '../hooks/useCanopyMissionState'
-import { useCanopySocket } from '../hooks/useCanopySocket'
+import { useCokeZeroMissionState } from '../hooks/useCokeZeroMissionState'
+import { useCokeZeroSocket } from '../hooks/useCokeZeroSocket'
 import { triggerReplay } from '../hooks/useEngineSocket'
+import {
+  recordOperatorAction,
+  uiEventMemorySignature,
+  uiEventOperatorAction,
+} from '../lib/missionMemory'
 import { useEventStore } from '../store/eventStore'
 import type { PlaybackStatus } from '../types/playback'
-import type { Attribution, Decision, Signal } from '../types/canopy'
+import type { Attribution, Decision, Signal } from '../types/coke_zero'
 
 const fieldDurationFloorMs = 12 * 60 * 1000
 const fieldDurationScale = 1
@@ -91,7 +97,7 @@ const beatDecision: Decision = {
 }
 
 export function Brigade() {
-  const socketState = useCanopySocket()
+  const socketState = useCokeZeroSocket()
   const [beatIndex] = useState(1)
   const [isMapAutoFocusEnabled, setIsMapAutoFocusEnabled] = useState(true)
   const [activeScenarioId, setActiveScenarioId] = useState(defaultScenario.id)
@@ -99,6 +105,10 @@ export function Brigade() {
   const pendingApproval = useEventStore((state) => state.pendingApproval)
   const approvedEventIds = useEventStore((state) => state.approvedEventIds)
   const markApproved = useEventStore((state) => state.markApproved)
+  const dismissApproval = useEventStore((state) => state.dismissApproval)
+  const rememberOperatorAction = useEventStore(
+    (state) => state.rememberOperatorAction,
+  )
   // Collapse state for the three foldable side panels. Each tab handle
   // sits on the panel's outer edge and toggles the open/closed state.
   const [scenarioRailCollapsed, setScenarioRailCollapsed] = useState(false)
@@ -175,20 +185,25 @@ export function Brigade() {
     socketState.attributions[0] ?? (beatIndex >= 4 ? beatAttribution : null)
   const latestDecision =
     socketState.decisions[0] ?? (beatIndex >= 5 ? beatDecision : null)
+  const latestRequestDecision =
+    socketState.decisions.find(
+      (decision) => decision.authority === 'request' || decision.request_packet,
+    ) ?? (beatIndex >= 5 ? beatDecision : null)
+  const approvalDecision = latestRequestDecision ?? latestDecision
   const latestUiEvent = socketState.uiEvents[0] ?? null
   const approvalEvent = pendingApproval ?? latestUiEvent
   const hasApprovalRequest =
     Boolean(
       pendingApproval?.recommendation ??
         latestUiEvent?.recommendation ??
-        (latestDecision?.authority === 'request' ? latestDecision : null),
+        (approvalDecision?.authority === 'request' ? approvalDecision : null),
     ) &&
     !(
       approvalEvent?.id &&
       approvedEventIds instanceof Set &&
       approvedEventIds.has(approvalEvent.id)
     )
-  const missionState = useCanopyMissionState(signals, socketState.uiEvents, {
+  const missionState = useCokeZeroMissionState(signals, socketState.uiEvents, {
     enableMapAutoFocus: isMapAutoFocusEnabled,
     mapFocusMinConfidence: 0,
   })
@@ -197,7 +212,7 @@ export function Brigade() {
     <main className="brigade-shell">
       <header className="app-header">
         <div>
-          <p className="app-header__eyebrow">CANOPY</p>
+          <p className="app-header__eyebrow">coke-zero</p>
           <h1>Brigade COP</h1>
         </div>
         <div className="app-header__right">
@@ -293,12 +308,48 @@ export function Brigade() {
           aria-label="Commander decision stack"
           aria-hidden={decisionStackCollapsed}
         >
+          <CollapsibleStackSection title="Decision loop">
+            <DecisionLoopPanel
+              compact
+              fallbackAttribution={latestAttribution}
+              fallbackDecision={latestDecision}
+              fallbackSignals={signals}
+              fallbackUiEvent={latestUiEvent}
+            />
+          </CollapsibleStackSection>
           {hasApprovalRequest ? (
             <CollapsibleStackSection title="Approval">
               <ApproveBanner
-                decision={latestDecision}
+                decision={approvalDecision}
                 uiEvent={approvalEvent}
-                onApprove={(id) => markApproved(id)}
+                onApprove={(id) => {
+                  markApproved(id)
+                  if (approvalEvent) {
+                    const signature = uiEventMemorySignature(approvalEvent)
+                    rememberOperatorAction(signature, 'approved')
+                    void recordOperatorAction(
+                      uiEventOperatorAction(
+                        approvalEvent,
+                        'approved',
+                        approvalDecision,
+                      ),
+                    )
+                  }
+                }}
+                onDismiss={() => {
+                  dismissApproval()
+                  if (approvalEvent) {
+                    const signature = uiEventMemorySignature(approvalEvent)
+                    rememberOperatorAction(signature, 'dismissed')
+                    void recordOperatorAction(
+                      uiEventOperatorAction(
+                        approvalEvent,
+                        'dismissed',
+                        approvalDecision,
+                      ),
+                    )
+                  }
+                }}
               />
             </CollapsibleStackSection>
           ) : null}

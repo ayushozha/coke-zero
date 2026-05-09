@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate CANOPY scenario JSONL files against the Signal data contract."""
+"""Validate coke-zero scenario JSONL files against the Signal data contract."""
 
 from __future__ import annotations
 

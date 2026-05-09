@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useEventStore } from '../store/eventStore'
-import type { EmbeddingPoint } from '../types/canopy'
+import type { EmbeddingPoint } from '../types/coke_zero'
 
 interface Props {
   /** When true, renders compact (sidebar slot). */

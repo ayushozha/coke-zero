@@ -4,14 +4,14 @@ import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
-from canopy.services.attrib import AttribService
-from canopy.services.bus import InProcessBus
-from canopy.services.decide import DecideService
-from canopy.services.fusion import FusionService
-from canopy.services.kb import KB
-from canopy.services.llm.stub import StubLLMClient
-from canopy.services.scenario_replay import ScenarioReplayService
-from canopy.services.schemas.events import (
+from coke_zero.services.attrib import AttribService
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.decide import DecideService
+from coke_zero.services.fusion import FusionService
+from coke_zero.services.kb import KB
+from coke_zero.services.llm.stub import StubLLMClient
+from coke_zero.services.scenario_replay import ScenarioReplayService
+from coke_zero.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,
@@ -20,7 +20,7 @@ from canopy.services.schemas.events import (
     Signal,
     UIEvent,
 )
-from canopy.services.ui_events import UIEventService
+from coke_zero.services.ui_events import UIEventService
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"
@@ -108,7 +108,7 @@ async def test_signals_flow_through_to_ui_events() -> None:
         _signal(
             domain="rf_ew",
             event_type="rf_interference",
-            sig_id="canopy-beat2-001",
+            sig_id="coke-zero-beat2-001",
         ),
     ]
     collected = await _drive_pipeline(bus, signals)
@@ -142,7 +142,7 @@ async def test_rpo_signal_produces_request_authority_decision() -> None:
     bus = InProcessBus()
     signals = [
         Signal(
-            id="canopy-beat47-002",
+            id="coke-zero-beat47-002",
             ts=datetime(2026, 6, 18, 14, 42, 10, tzinfo=UTC),
             domain="orbit",
             source="rpo-close-approach-overlay",
@@ -153,9 +153,9 @@ async def test_rpo_signal_produces_request_authority_decision() -> None:
                 "event_type": "rpo_close_approach",
                 "summary": "Close approach inside watch box",
                 "asset": "UNKNOWN-RSO-441",
-                "observables": {"miss_distance_km": 8.6, "target": "CANOPY-LEO-07"},
+                "observables": {"miss_distance_km": 8.6, "target": "coke-zero-LEO-07"},
             },
-            provenance=Provenance(source_id="canopy-demo-feed-worker"),
+            provenance=Provenance(source_id="coke-zero-demo-feed-worker"),
         )
     ]
     collected = await _drive_pipeline(bus, signals)

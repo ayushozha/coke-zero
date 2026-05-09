@@ -2,7 +2,7 @@
   "id": "sig_drone_000001",
   "ts": "2026-05-02T15:18:10Z",
   "domain": "drone",
-  "source": "canopy-drone-adapter",
+  "source": "coke-zero-drone-adapter",
   "realism": "mock_operational",
   "confidence": 0.83,
   "location": {
@@ -23,8 +23,8 @@
     "summary": "drone signal"
   },
   "provenance": {
-    "source_id": "canopy-drone-adapter",
+    "source_id": "coke-zero-drone-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

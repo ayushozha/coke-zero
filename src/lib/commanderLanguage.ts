@@ -1,4 +1,4 @@
-import type { Domain, Signal, UIEvent } from '../types/canopy'
+import type { Domain, Signal, UIEvent } from '../types/coke_zero'
 
 const domainCopy: Record<
   Domain,
@@ -75,7 +75,7 @@ const eventTypeOverrides: Record<string, string> = {
   commander_update: 'Commander update escalates the convergence picture.',
   concealment_route_check: 'Covered movement route reduces overhead exposure.',
   collection_cue: 'Collection cue aligns with the operating window.',
-  collection_risk_assessment: 'CANOPY recommends reducing collection exposure.',
+  collection_risk_assessment: 'coke-zero recommends reducing collection exposure.',
   convergence: 'Cross-domain anomalies converged in one window.',
   counterspace_capability_context: 'Known counterspace capability is relevant to this fight.',
   credential_probe: 'A key command or support system is being probed.',
@@ -90,7 +90,7 @@ const eventTypeOverrides: Record<string, string> = {
   emission_cluster_detected: 'Active emitters remain inside collection footprint.',
   emission_posture_risk: 'Active emitters raise overhead collection risk.',
   ew_bearing_refined: 'EW bearing narrowed the interference area.',
-  fdir_assessment: 'CANOPY believes this is interference, not drone failure.',
+  fdir_assessment: 'coke-zero believes this is interference, not drone failure.',
   fdir_mission_update: 'FDIR update keeps ISR moving with backup staged.',
   fdir_recovery_action: 'Drone isolated bad navigation input and recovered.',
   gateway_config_probe: 'Gateway configuration service is being probed.',
@@ -108,7 +108,7 @@ const eventTypeOverrides: Record<string, string> = {
   maintenance_api_rate_limit: 'Gateway API rate limits are protecting access.',
   maritime_space_picture_shift: 'Space-derived maritime picture changed.',
   militia_uas_risk_context: 'Militia UAS threat context raises base-defense posture.',
-  multi_domain_attack_assessment: 'CANOPY fused the multi-domain attack chain.',
+  multi_domain_attack_assessment: 'coke-zero fused the multi-domain attack chain.',
   observer_feed_quality_drop: 'Observer video quality is starting to drop.',
   overhead_collection_window: 'Adversary collection window is opening overhead.',
   overhead_ir_cue: 'Overhead warning detected possible inbound UAS activity.',
@@ -126,7 +126,7 @@ const eventTypeOverrides: Record<string, string> = {
   relay_commander_update: 'Relay update confirms observer feed restoration.',
   relay_candidate_ready: 'A better drone relay is ready.',
   relay_mesh_status: 'Drone relay mesh status changed.',
-  relay_resilience_assessment: 'CANOPY confirms relay resilience held.',
+  relay_resilience_assessment: 'coke-zero confirms relay resilience held.',
   response_action: 'Mission cell hardened the gateway profile.',
   rf_bearing_crosscheck: 'EW bearing cross-check narrowed the affected area.',
   rpo_close_approach: 'Nearby space object entered the protected watch box.',
@@ -140,16 +140,16 @@ const eventTypeOverrides: Record<string, string> = {
   sda_catalog_match: 'Orbital catalog match supports collection risk.',
   screening_overlay: 'Space screening overlay entered the watch shell.',
   space_support_option: 'Alternate space-support pass is available soon.',
-  space_enabled_base_defense_assessment: 'CANOPY fused the base-defense space-support problem.',
-  space_support_hold_recommendation: 'CANOPY recommends a space-support hold.',
+  space_enabled_base_defense_assessment: 'coke-zero fused the base-defense space-support problem.',
+  space_support_hold_recommendation: 'coke-zero recommends a space-support hold.',
   terrain_masking_risk: 'Terrain may block the current relay path.',
   telemetry_degradation: 'Telemetry quality is degrading.',
   telemetry_update: 'Drone telemetry baseline established.',
   track_handoff_success: 'Track handoff preserved local sensor custody.',
   uas_control_link_detected: 'Possible UAS control link detected.',
-  convoy_release_update: 'CANOPY recommends limited convoy release.',
+  convoy_release_update: 'coke-zero recommends limited convoy release.',
   ground_segment_baseline: 'Gateway baseline established.',
-  iran_counter_c5isr_assessment: 'CANOPY fused the counter-C5ISR event set.',
+  iran_counter_c5isr_assessment: 'coke-zero fused the counter-C5ISR event set.',
   missile_uas_capability_context: 'Missile and UAS capability context added.',
   osint_context: 'Public reporting adds context to the watch item.',
   pnt_rf_alignment: 'GPS and RF anomalies align on the same route.',
@@ -177,7 +177,7 @@ const sourceAliases: Record<string, string> = {
   'bde-spectrum-team': 'Brigade EW team',
   'bde-siem': 'Brigade cyber sensor',
   'cached-aor-terrain': 'Terrain model',
-  'canopy-correlation-engine': 'CANOPY mission cell',
+  'coke-zero-correlation-engine': 'coke-zero mission cell',
   'convoy-pnt-health-monitor': 'Convoy GPS monitor',
   'gateway-siem': 'Gateway cyber sensor',
   'gnss-integrity-fusion': 'GPS integrity fusion',
@@ -198,10 +198,10 @@ const sourceAliases: Record<string, string> = {
 
 const locationAliases: Record<string, string> = {
   'Brigade support area collection cone': 'Collection window',
-  'CANOPY-LEO-07 downlink footprint': 'LEO downlink',
-  'CANOPY-LEO-07 ground track': 'LEO support pass',
-  'CANOPY-LEO-07 pass footprint': 'LEO pass',
-  'CANOPY-LEO-07 relative motion frame': 'LEO close approach',
+  'coke-zero-LEO-07 downlink footprint': 'LEO downlink',
+  'coke-zero-LEO-07 ground track': 'LEO support pass',
+  'coke-zero-LEO-07 pass footprint': 'LEO pass',
+  'coke-zero-LEO-07 relative motion frame': 'LEO close approach',
   'Division support area orbital track': 'LEO watch track',
   'Friendly LEO support architecture': 'LEO support',
   'Friendly LEO support relative motion frame': 'LEO close approach',
@@ -217,7 +217,7 @@ const assetAliases: Record<string, string> = {
   'BDE-C2-GATEWAY': 'Brigade C2 gateway',
   'BDE-SATCOM-1': 'Brigade SATCOM',
   'BDE-UAS-MESH': 'Brigade drone mesh',
-  'CANOPY-MISSION-CELL': 'CANOPY mission cell',
+  'coke-zero-MISSION-CELL': 'coke-zero mission cell',
   'GNSS-MON-LUZON-2': 'Luzon GPS monitor',
   'SPACE-PNT-SUPPORT': 'GPS support cell',
   'UAS-LINK-GROUP-B': 'UAS link group B',
@@ -493,7 +493,7 @@ const oneLineForSignal = (signal: Signal) => {
     case 'fdir_recovery_action':
       return `${signal.payload.asset ?? 'Drone'} isolated bad GPS input; ISR continues with reduced coordinate confidence.`
     case 'fdir_assessment':
-      return 'CANOPY sees spoofing, not drone failure; keep ISR moving.'
+      return 'coke-zero sees spoofing, not drone failure; keep ISR moving.'
     case 'fdir_mission_update':
       return 'Continue route ISR on non-GPS nav; backup drone is staged.'
     case 'observer_feed_quality_drop':
@@ -542,7 +542,7 @@ const oneLineForSignal = (signal: Signal) => {
     case 'collection_cue':
       return 'Collection cue overlaps the operation; reduce visible movement.'
     case 'collection_risk_assessment':
-      return 'CANOPY recommends pause plus emission reduction.'
+      return 'coke-zero recommends pause plus emission reduction.'
     case 'imagery_request_update':
       return 'Imagery request urgency increased; delay exposed movement.'
     case 'post_pass_collection_update':
@@ -669,7 +669,7 @@ export function commanderEventSummary(event: UIEvent | null): {
   if (!event) {
     return {
       state: 'White',
-      headline: 'CANOPY is building the picture',
+      headline: 'coke-zero is building the picture',
       body: 'Signals are arriving. No commander-facing threat package is ready yet.',
       action: 'Keep monitoring',
       urgency: 'No immediate action',

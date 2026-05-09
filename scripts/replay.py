@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay CANOPY scenario JSONL records deterministically."""
+"""Replay coke-zero scenario JSONL records deterministically."""
 
 from __future__ import annotations
 

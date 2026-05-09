@@ -1,7 +1,7 @@
-# CANOPY Orbital Cache
+# coke-zero Orbital Cache
 
 This directory holds cached public orbital catalog snapshots and curated demo-only
-objects for CANOPY. The cache worker is `scripts/fetch_orbital_cache.py`.
+objects for coke-zero. The cache worker is `scripts/fetch_orbital_cache.py`.
 
 ## Sources
 
@@ -53,7 +53,7 @@ The manifest is JSON with this top-level shape:
 
 ```json
 {
-  "cache_version": "canopy-orbital-cache-v1",
+  "cache_version": "coke-zero-orbital-cache-v1",
   "updated_at": "2026-05-02T00:00:00Z",
   "mode": "offline_fixture",
   "refresh_policy": "Manual refresh only; do not refresh CelesTrak data more often than every 2 hours.",
@@ -73,7 +73,7 @@ The manifest is JSON with this top-level shape:
   ],
   "synthetic_overlays": [
     {
-      "id": "CANOPY-RPO-1",
+      "id": "coke-zero-RPO-1",
       "realism": "synthetic_orbital_overlay",
       "cache_path": "data/orbital/curated/rpo_placeholders.json",
       "notes": "Fictional inspector object used to demonstrate close-approach detection."

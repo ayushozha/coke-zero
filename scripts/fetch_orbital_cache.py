@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch or stage CelesTrak orbital catalog cache files for CANOPY.
+"""Fetch or stage CelesTrak orbital catalog cache files for coke-zero.
 
 The script is deterministic in offline mode so CI and local tests do not need
 network access. Live refreshes are explicit and rate-limit conscious.
@@ -106,7 +106,7 @@ def validate_celestrak_records(dataset_id: str, records: list[dict[str, Any]]) -
 
 
 def fetch_url(url: str, timeout_s: float) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": "CANOPY orbital cache worker/1.0"})
+    request = urllib.request.Request(url, headers={"User-Agent": "coke-zero orbital cache worker/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=timeout_s) as response:
             return response.read()
@@ -183,7 +183,7 @@ def write_cache(
         )
 
     manifest = {
-        "cache_version": "canopy-orbital-cache-v1",
+        "cache_version": "coke-zero-orbital-cache-v1",
         "updated_at": cached_at,
         "mode": "offline_fixture" if mode == "offline" else "celestrak_live",
         "refresh_policy": "Manual refresh only; do not refresh CelesTrak data more often than every 2 hours.",
@@ -196,7 +196,7 @@ def write_cache(
                 "notes": "Fictional friendly SATCOM dependency used for Beat 4.7.",
             },
             {
-                "id": "CANOPY-RPO-1",
+                "id": "coke-zero-RPO-1",
                 "realism": "synthetic_orbital_overlay",
                 "cache_path": "data/orbital/curated/rpo_placeholders.json",
                 "notes": "Fictional inspector object used to demonstrate close-approach detection.",

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useEventStore } from '../store/eventStore'
-import type { ReasoningTrace, TraceStage } from '../types/canopy'
+import type { ReasoningTrace, TraceStage } from '../types/coke_zero'
 
 const STAGE_COLORS: Record<TraceStage, string> = {
   fusion: 'var(--cyan)',
@@ -10,6 +10,8 @@ const STAGE_COLORS: Record<TraceStage, string> = {
   decide: 'var(--violet)',
   tools: 'var(--amber)',
   stress: 'var(--red)',
+  watch: 'var(--cyan)',
+  memory: 'var(--amber)',
 }
 
 const STAGE_LABEL: Record<TraceStage, string> = {
@@ -20,6 +22,8 @@ const STAGE_LABEL: Record<TraceStage, string> = {
   decide: 'decide',
   tools: 'tools',
   stress: 'stress',
+  watch: 'watch',
+  memory: 'memory',
 }
 
 function formatTime(ts: string): string {

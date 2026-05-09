@@ -6,7 +6,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from canopy.api import app
+from coke_zero.api import app
 
 
 @pytest.fixture(scope="module")
@@ -92,3 +92,30 @@ def test_post_signal_publishes_to_bus(client: TestClient) -> None:
     body = response.json()
     assert body["status"] == "queued"
     assert body["id"] == "test-sig-001"
+
+
+def test_watch_run_once_emits_autonomous_trace_to_websocket(
+    client: TestClient,
+) -> None:
+    with client.websocket_connect("/ws") as ws:
+        response = client.post(
+            "/watch/run-once?scenario=beat2.jsonl&speed=1000&max_delay_s=0"
+        )
+        assert response.status_code == 200
+        body = response.json()["watch"]
+        assert body["status"] == "ok"
+        assert body["run_id"]
+        assert body["signals_published"] > 0
+
+        deadline = time.time() + 5.0
+        while time.time() < deadline:
+            envelope = ws.receive_json()
+            if (
+                envelope.get("kind") == "trace"
+                and envelope.get("data", {}).get("stage") == "watch"
+            ):
+                message = envelope["data"]["message"]
+                assert "autonomous mission watch cycle" in message
+                assert envelope["data"]["payload"]["autonomous"] is True
+                return
+        pytest.fail("no watch trace seen within deadline")

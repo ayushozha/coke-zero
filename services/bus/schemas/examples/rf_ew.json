@@ -2,7 +2,7 @@
   "id": "sig_rf_ew_000001",
   "ts": "2026-05-02T15:12:30Z",
   "domain": "rf_ew",
-  "source": "canopy-rf-ew-adapter",
+  "source": "coke-zero-rf-ew-adapter",
   "realism": "mock_operational",
   "confidence": 0.81,
   "location": {
@@ -22,8 +22,8 @@
     "summary": "rf_ew signal"
   },
   "provenance": {
-    "source_id": "canopy-rf-ew-adapter",
+    "source_id": "coke-zero-rf-ew-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

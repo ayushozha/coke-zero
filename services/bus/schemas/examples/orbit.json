@@ -2,7 +2,7 @@
   "id": "sig_orbit_0000001",
   "ts": "2026-05-02T15:10:00Z",
   "domain": "orbit",
-  "source": "canopy-orbit-adapter",
+  "source": "coke-zero-orbit-adapter",
   "realism": "real_source",
   "confidence": 0.94,
   "location": {
@@ -21,8 +21,8 @@
     "summary": "orbit signal"
   },
   "provenance": {
-    "source_id": "canopy-orbit-adapter",
+    "source_id": "coke-zero-orbit-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

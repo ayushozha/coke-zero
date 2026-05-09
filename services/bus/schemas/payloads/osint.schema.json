@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://canopy.local/schemas/payloads/osint.schema.json",
+  "$id": "https://coke_zero.local/schemas/payloads/osint.schema.json",
   "title": "OSINT Payload",
   "type": "object",
   "additionalProperties": false,

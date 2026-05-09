@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.kb import KB
-from canopy.services.kb.loader import load_kb_json
-from canopy.services.kb.models import KBEntry
+from coke_zero.services.kb import KB
+from coke_zero.services.kb.loader import load_kb_json
+from coke_zero.services.kb.models import KBEntry
 
 KB_FILE = Path(__file__).resolve().parent.parent / "data" / "kb_seed_entries.json"
 
@@ -26,11 +26,11 @@ def test_no_duplicate_ids() -> None:
 
 def test_facade_indexes_by_scenario_signal_id() -> None:
     kb = KB.load_from_json(KB_FILE)
-    russia = kb.by_scenario_signal_id("canopy-beat2-001")
+    russia = kb.by_scenario_signal_id("coke-zero-beat2-001")
     assert russia, "expected at least one KB entry for beat2-001"
     assert russia[0].actor == "Russia"
 
-    rpo = kb.by_scenario_signal_id("canopy-beat47-002")
+    rpo = kb.by_scenario_signal_id("coke-zero-beat47-002")
     assert rpo, "expected at least one KB entry for beat47-002"
     assert rpo[0].capability_type == "co_orbital_rpo"
 

@@ -1,4 +1,4 @@
-from canopy.services.llm.validation import (
+from coke_zero.services.llm.validation import (
     UNCERTAINTY_ANCHOR,
     validate_and_repair_attribution,
     validate_and_repair_decision,
@@ -81,7 +81,7 @@ def test_request_decision_gets_stub_packet() -> None:
     repaired = validate_and_repair_decision(
         {
             "action": "sda_tasking",
-            "target": "CANOPY-LEO-07",
+            "target": "coke-zero-LEO-07",
             "rationale": "Request SDA retask.",
             "authority": "request",
             "request_packet": None,

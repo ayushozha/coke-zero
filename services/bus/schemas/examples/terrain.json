@@ -2,7 +2,7 @@
   "id": "sig_terrain_0001",
   "ts": "2026-05-02T12:30:00Z",
   "domain": "terrain",
-  "source": "canopy-terrain-adapter",
+  "source": "coke-zero-terrain-adapter",
   "realism": "real_source",
   "confidence": 0.76,
   "location": {
@@ -20,8 +20,8 @@
     "summary": "terrain signal"
   },
   "provenance": {
-    "source_id": "canopy-terrain-adapter",
+    "source_id": "coke-zero-terrain-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

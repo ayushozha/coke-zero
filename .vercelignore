@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.git
+.venv
+.pytest_cache
+node_modules
+dist
+dist-web
+dist-ssr
+data/mission_memory.json
+data/mission_memory.json.tmp
+dist/tensorlake
+logs
+*.log

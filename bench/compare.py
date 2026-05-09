@@ -41,7 +41,7 @@ from bench.run import _run, BENCH_DIR
 from bench.scoring import Scorecard
 
 # Pull ANTHROPIC_API_KEY (and any other provider creds) out of .env at the
-# repo root before we check for them. Mirrors canopy.api lifespan behaviour.
+# repo root before we check for them. Mirrors coke_zero.api lifespan behaviour.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 ROOT = Path(__file__).resolve().parent.parent

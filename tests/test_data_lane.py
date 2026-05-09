@@ -88,15 +88,17 @@ class DataLaneBehaviorTest(unittest.TestCase):
             for example_path in sorted(EXAMPLES_DIR.glob("*.json"))
         ]
 
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".jsonl") as feed:
-            for signal in example_signals:
-                feed.write(json.dumps(signal) + "\n")
-            feed.flush()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            feed = Path(tmp_dir) / "signals.jsonl"
+            feed.write_text(
+                "".join(json.dumps(signal) + "\n" for signal in example_signals),
+                encoding="utf-8",
+            )
 
             for domain, adapter in adapters.items():
                 with self.subTest(domain=domain):
-                    expected_signals = list(iter_domain_signals(feed.name, domain))
-                    adapter_signals = list(adapter.iter_signals(feed.name))
+                    expected_signals = list(iter_domain_signals(feed, domain))
+                    adapter_signals = list(adapter.iter_signals(feed))
 
                     self.assertEqual(expected_signals, adapter_signals)
                     self.assertEqual(1, len(adapter_signals))

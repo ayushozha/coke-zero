@@ -1,4 +1,4 @@
-"""End-to-end smoke for the CANOPY engine.
+"""End-to-end smoke for the coke-zero engine.
 
 Replays scenarios through the full pipeline (fusion -> attribution -> decision
 -> UIEvent) using either the stub LLM or live Claude. Exits 0 on success, 1
@@ -17,21 +17,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv  # noqa: E402
 
-from canopy.services.attrib import AttribService  # noqa: E402
-from canopy.services.bus import InProcessBus  # noqa: E402
-from canopy.services.decide import DecideService  # noqa: E402
-from canopy.services.fusion import FusionService  # noqa: E402
-from canopy.services.kb import KB  # noqa: E402
-from canopy.services.llm import LLMClient  # noqa: E402
-from canopy.services.orbit import OrbitService  # noqa: E402
-from canopy.services.scenario_replay import ScenarioReplayService  # noqa: E402
-from canopy.services.schemas.events import (  # noqa: E402
+from coke_zero.services.attrib import AttribService  # noqa: E402
+from coke_zero.services.bus import InProcessBus  # noqa: E402
+from coke_zero.services.decide import DecideService  # noqa: E402
+from coke_zero.services.fusion import FusionService  # noqa: E402
+from coke_zero.services.kb import KB  # noqa: E402
+from coke_zero.services.llm import LLMClient  # noqa: E402
+from coke_zero.services.orbit import OrbitService  # noqa: E402
+from coke_zero.services.scenario_replay import ScenarioReplayService  # noqa: E402
+from coke_zero.services.schemas.events import (  # noqa: E402
     Anomaly,
     Attribution,
     Decision,
     UIEvent,
 )
-from canopy.services.ui_events import UIEventService  # noqa: E402
+from coke_zero.services.ui_events import UIEventService  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SCENARIOS = [
@@ -59,18 +59,18 @@ LLM_PROVIDERS = ("stub", "anthropic", "ollama")
 
 def _build_llm(*, provider: str, kb: KB) -> LLMClient:
     if provider == "anthropic":
-        from canopy.services.llm.anthropic_client import (
+        from coke_zero.services.llm.anthropic_client import (
             DEFAULT_MODEL,
             AnthropicLLMClient,
         )
 
-        model = os.environ.get("CANOPY_ANTHROPIC_MODEL") or DEFAULT_MODEL
+        model = os.environ.get("COKE_ZERO_ANTHROPIC_MODEL") or DEFAULT_MODEL
         return AnthropicLLMClient(kb, model=model)
     if provider == "ollama":
-        from canopy.services.llm.ollama_client import OllamaLLMClient
+        from coke_zero.services.llm.ollama_client import OllamaLLMClient
 
         return OllamaLLMClient(kb)
-    from canopy.services.llm.stub import StubLLMClient
+    from coke_zero.services.llm.stub import StubLLMClient
 
     return StubLLMClient(kb)
 
@@ -78,10 +78,10 @@ def _build_llm(*, provider: str, kb: KB) -> LLMClient:
 def _resolve_provider(*, llm_flag: str | None, live_flag: bool) -> str:
     if llm_flag:
         return llm_flag
-    env_llm = os.environ.get("CANOPY_LLM")
+    env_llm = os.environ.get("COKE_ZERO_LLM")
     if env_llm:
         return env_llm.lower()
-    if live_flag or os.environ.get("CANOPY_LIVE"):
+    if live_flag or os.environ.get("COKE_ZERO_LIVE"):
         return "anthropic"
     return "stub"
 
@@ -247,14 +247,14 @@ def main() -> int:
         help=(
             "LLM provider: 'stub' (default, no network), 'anthropic' "
             "(requires ANTHROPIC_API_KEY), or 'ollama' (requires "
-            "CANOPY_OLLAMA_URL). Falls back to CANOPY_LLM env var, "
-            "then to --live/CANOPY_LIVE, then to stub."
+            "COKE_ZERO_OLLAMA_URL). Falls back to COKE_ZERO_LLM env var, "
+            "then to --live/COKE_ZERO_LIVE, then to stub."
         ),
     )
     parser.add_argument(
         "--live",
         action="store_true",
-        default=bool(os.environ.get("CANOPY_LIVE")),
+        default=bool(os.environ.get("COKE_ZERO_LIVE")),
         help="Deprecated alias for --llm anthropic.",
     )
     parser.add_argument(

@@ -3,7 +3,7 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 import { useEventStore } from "../store/eventStore";
-import type { RequestPacket, Signal } from "../types/canopy";
+import type { RequestPacket, Signal } from "../types/coke_zero";
 
 const ORBIT_ALT_KM = 550;
 const KM_PER_DEG_LAT = 111.32;

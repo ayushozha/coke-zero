@@ -1,5 +1,5 @@
-import type { Attribution, Decision, UIEvent } from '../types/canopy'
-import type { Signal } from '../types/canopy'
+import type { Attribution, Decision, UIEvent } from '../types/coke_zero'
+import type { Signal } from '../types/coke_zero'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import { commanderEventSummary, commanderSignalSummary } from '../lib/commanderLanguage'
 
@@ -48,7 +48,7 @@ export function MissionSummary({
   const stateClass = state.toLowerCase()
   const compactHeadline = signalSummary?.label ?? scenario.shortName
   const compactSummary =
-    signalSummary?.oneLine ?? summary.replace(/^CANOPY\s+/i, '')
+    signalSummary?.oneLine ?? summary.replace(/^coke-zero\s+/i, '')
   const compactAction = signalSummary?.action ?? action
   const compactMeta = `${signalCount.toString().padStart(2, '0')} reports / ${confidence} conf / ${scenario.theater}`
 

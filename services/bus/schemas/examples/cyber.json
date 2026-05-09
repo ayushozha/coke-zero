@@ -2,7 +2,7 @@
   "id": "sig_cyber_000001",
   "ts": "2026-05-02T15:01:22Z",
   "domain": "cyber",
-  "source": "canopy-cyber-adapter",
+  "source": "coke-zero-cyber-adapter",
   "realism": "mock_operational",
   "confidence": 0.89,
   "location": {
@@ -20,8 +20,8 @@
     "summary": "cyber signal"
   },
   "provenance": {
-    "source_id": "canopy-cyber-adapter",
+    "source_id": "coke-zero-cyber-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }
