@@ -149,9 +149,14 @@ export function createStaticDemoMessages(): CokeZeroMessage[] {
       stage: 'watch',
       level: 'info',
       message:
-        '[watch] autonomous mission watch cycle replayed the deployed static scenario.',
+        '[watch] Tensorlake-compatible mission watch cycle replayed the deployed static scenario.',
       ref_id: scenario.file,
-      payload: { mode: 'static_deploy', scenario: scenario.file },
+      payload: {
+        execution: 'tensorlake_compatible_worker',
+        mode: 'static_deploy',
+        run_id: sessionId,
+        scenario: scenario.file,
+      },
     },
     {
       id: `${sessionId}-trace-memory`,
