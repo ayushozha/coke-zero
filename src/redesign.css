@@ -378,6 +378,7 @@
   background: rgba(10, 19, 32, 0.78);
   overflow: hidden;
   backdrop-filter: blur(8px);
+  clip-path: none;
 }
 
 .map-view-toggle button {
