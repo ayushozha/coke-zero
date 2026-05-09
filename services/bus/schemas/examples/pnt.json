@@ -2,7 +2,7 @@
   "id": "sig_pnt_00000001",
   "ts": "2026-05-02T15:08:15Z",
   "domain": "pnt",
-  "source": "canopy-pnt-adapter",
+  "source": "coke-zero-pnt-adapter",
   "realism": "mock_operational",
   "confidence": 0.78,
   "location": {
@@ -21,8 +21,8 @@
     "summary": "pnt signal"
   },
   "provenance": {
-    "source_id": "canopy-pnt-adapter",
+    "source_id": "coke-zero-pnt-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

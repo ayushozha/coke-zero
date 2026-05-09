@@ -29,14 +29,14 @@ from bench.scoring import (
     confidence_band,
     confidence_band_match,
 )
-from canopy._engine import (
+from coke_zero._engine import (
     Engine,
     build_engine,
     resolve_provider,
     start_engine_tasks,
 )
-from canopy.services.scenario_replay import ScenarioReplayService
-from canopy.services.schemas.events import (
+from coke_zero.services.scenario_replay import ScenarioReplayService
+from coke_zero.services.schemas.events import (
     Anomaly,
     Attribution,
     Decision,

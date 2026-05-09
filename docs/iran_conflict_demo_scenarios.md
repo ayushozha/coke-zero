@@ -1,11 +1,11 @@
 # Iran Conflict Demo Scenarios
 
 These feeds translate public reporting on the 2026 Iran crisis into
-schema-valid CANOPY demo data with a space-first focus. The records are
+schema-valid coke-zero demo data with a space-first focus. The records are
 fictionalized for the hackathon: they are not operational guidance, target
 lists, or real intelligence.
 
-The goal is to show what CANOPY would do for an Army or joint tactical user
+The goal is to show what coke-zero would do for an Army or joint tactical user
 when space-enabled services degrade: PNT, SATCOM, satellite ISR, overhead
 warning, space-support workflows, and RPO/counterspace risk.
 
@@ -31,7 +31,7 @@ warning, space-support workflows, and RPO/counterspace risk.
 
 ### `scenarios/iran_hormuz_convoy_resilience.jsonl`
 
-Question: what would CANOPY do at 10:00 a.m. ET on April 13, when the blockade
+Question: what would coke-zero do at 10:00 a.m. ET on April 13, when the blockade
 timeline hits and a theater sustainment convoy depends on space-enabled
 navigation, SATCOM, UAS relay, and satellite maritime awareness?
 
@@ -49,7 +49,7 @@ Demo answer:
 
 ### `scenarios/iran_proxy_uas_base_defense.jsonl`
 
-Question: what would CANOPY do at 0130Z when a base in Iraq sees proxy UAS
+Question: what would coke-zero do at 0130Z when a base in Iraq sees proxy UAS
 warning signs and its space-support chain starts degrading?
 
 Demo answer:
@@ -66,7 +66,7 @@ Demo answer:
 
 ### `scenarios/iran_counter_c5isr_brigade.jsonl`
 
-Question: what would CANOPY do when a brigade's space support stack degrades
+Question: what would coke-zero do when a brigade's space support stack degrades
 inside the same short window: GPS, SATCOM, satellite-product distribution,
 cyber access, and RPO risk?
 
@@ -94,7 +94,7 @@ uv run python scripts/replay.py scenarios/iran_counter_c5isr_brigade.jsonl --dry
 Use:
 
 ```txt
-CANOPY is not claiming proof of attribution. It is showing the commander a
+coke-zero is not claiming proof of attribution. It is showing the commander a
 confidence-scored assessment that the pattern is consistent with pressure on
 space-enabled warfighting functions: GPS/PNT trust, SATCOM reachback,
 satellite ISR distribution, overhead warning, cyber access to space-support

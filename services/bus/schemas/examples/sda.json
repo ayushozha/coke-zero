@@ -2,7 +2,7 @@
   "id": "sig_sda_00000001",
   "ts": "2026-05-02T15:04:00Z",
   "domain": "sda",
-  "source": "canopy-sda-adapter",
+  "source": "coke-zero-sda-adapter",
   "realism": "real_source",
   "confidence": 0.86,
   "location": {
@@ -22,8 +22,8 @@
     "summary": "sda signal"
   },
   "provenance": {
-    "source_id": "canopy-sda-adapter",
+    "source_id": "coke-zero-sda-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

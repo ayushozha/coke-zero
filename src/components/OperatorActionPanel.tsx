@@ -1,4 +1,10 @@
 import { useEventStore, type ManeuverDemo } from '../store/eventStore'
+import {
+  decisionMemorySignature,
+  decisionOperatorAction,
+  recordOperatorAction,
+} from '../lib/missionMemory'
+import { RequestPacketSummary } from './RequestPacketSummary'
 
 const ACTION_LABELS: Record<string, string> = {
   active_defense_escort: 'Active defense escort',
@@ -40,17 +46,35 @@ const formatAction = (action: string) =>
  *  produces a Decision, the operator can ACCEPT (authorize the action)
  *  or DENY (refuse it). Status persists per-decision via Zustand. */
 export function OperatorActionPanel() {
-  const decision = useEventStore((s) => s.decisions[0] ?? null)
+  const decisions = useEventStore((s) => s.decisions)
+  const decision =
+    decisions.find(
+      (candidate) =>
+        candidate.authority === 'request' || candidate.request_packet,
+    ) ??
+    decisions[0] ??
+    null
   const accepted = useEventStore((s) =>
-    decision ? s.acceptedDecisionIds.has(decision.id) : false,
+    decision
+      ? s.acceptedDecisionIds.has(decision.id) ||
+        s.operatorMemoryBySignature[decisionMemorySignature(decision)] ===
+          'approved'
+      : false,
   )
   const deferred = useEventStore((s) =>
-    decision ? s.deferredDecisionIds.has(decision.id) : false,
+    decision
+      ? s.deferredDecisionIds.has(decision.id) ||
+        s.operatorMemoryBySignature[decisionMemorySignature(decision)] ===
+          'denied'
+      : false,
   )
   const acceptDecision = useEventStore((s) => s.acceptDecision)
   const deferDecision = useEventStore((s) => s.deferDecision)
   const clearDecisionStatus = useEventStore((s) => s.clearDecisionStatus)
   const startManeuverDemo = useEventStore((s) => s.startManeuverDemo)
+  const rememberOperatorAction = useEventStore(
+    (s) => s.rememberOperatorAction,
+  )
 
   // Render nothing until the engine produces a decision. The empty
   // space stays empty rather than carrying placeholder chrome — the
@@ -85,9 +109,32 @@ export function OperatorActionPanel() {
           <dt>Target</dt>
           <dd>{decision.target}</dd>
         </div>
+        <div>
+          <dt>Approval state</dt>
+          <dd>{status}</dd>
+        </div>
+        <div>
+          <dt>Signals</dt>
+          <dd>{decision.source_signal_ids.length}</dd>
+        </div>
       </dl>
 
       <p className="operator-action__rationale">{decision.rationale}</p>
+
+      {decision.request_packet ? (
+        <RequestPacketSummary compact packet={decision.request_packet} />
+      ) : null}
+
+      {decision.source_signal_ids.length ? (
+        <div className="operator-action__sources">
+          <span>Attribution chain</span>
+          <div>
+            {decision.source_signal_ids.slice(0, 6).map((id) => (
+              <code key={id}>{id}</code>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {status === 'pending' ? (
         <div className="operator-action__buttons" role="group">
@@ -96,6 +143,13 @@ export function OperatorActionPanel() {
             className="operator-action__btn operator-action__btn--accept"
             onClick={() => {
               acceptDecision(decision.id)
+              rememberOperatorAction(
+                decisionMemorySignature(decision),
+                'approved',
+              )
+              void recordOperatorAction(
+                decisionOperatorAction(decision, 'approved'),
+              )
               const packet = (decision.request_packet ?? {}) as Record<
                 string,
                 unknown
@@ -127,7 +181,13 @@ export function OperatorActionPanel() {
           <button
             type="button"
             className="operator-action__btn operator-action__btn--deny"
-            onClick={() => deferDecision(decision.id)}
+            onClick={() => {
+              deferDecision(decision.id)
+              rememberOperatorAction(decisionMemorySignature(decision), 'denied')
+              void recordOperatorAction(
+                decisionOperatorAction(decision, 'denied'),
+              )
+            }}
           >
             Deny
           </button>
@@ -140,7 +200,16 @@ export function OperatorActionPanel() {
           <button
             type="button"
             className="operator-action__btn operator-action__btn--undo"
-            onClick={() => clearDecisionStatus(decision.id)}
+            onClick={() => {
+              clearDecisionStatus(decision.id)
+              rememberOperatorAction(
+                decisionMemorySignature(decision),
+                'dismissed',
+              )
+              void recordOperatorAction(
+                decisionOperatorAction(decision, 'dismissed'),
+              )
+            }}
           >
             Reconsider
           </button>

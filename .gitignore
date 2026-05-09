@@ -20,10 +20,13 @@ __pycache__/
 # Generated data
 data/kb.sqlite
 data/kb.sqlite-journal
+data/mission_memory.json
+data/mission_memory.json.tmp
 
 # Node / Vite
 node_modules
 dist
+dist-web
 dist-ssr
 *.local
 .vite/
@@ -54,3 +57,4 @@ Thumbs.db
 # Bench-generated scenario variants
 bench/scorecard.json
 bench/compare/
+.vercel

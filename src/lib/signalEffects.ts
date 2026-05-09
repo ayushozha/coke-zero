@@ -1,4 +1,4 @@
-import type { Domain, Signal } from '../types/canopy'
+import type { Domain, Signal } from '../types/coke_zero'
 
 export type SignalEffectState = 'nominal' | 'watch' | 'danger'
 

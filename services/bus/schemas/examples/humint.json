@@ -2,7 +2,7 @@
   "id": "sig_humint_00001",
   "ts": "2026-05-02T13:25:00Z",
   "domain": "humint",
-  "source": "canopy-humint-adapter",
+  "source": "coke-zero-humint-adapter",
   "realism": "mock_operational",
   "confidence": 0.67,
   "location": {
@@ -18,8 +18,8 @@
     "event_type": "humint"
   },
   "provenance": {
-    "source_id": "canopy-humint-adapter",
+    "source_id": "coke-zero-humint-adapter",
     "citation": null,
-    "notes": "CANOPY data-lane signal"
+    "notes": "coke-zero data-lane signal"
   }
 }

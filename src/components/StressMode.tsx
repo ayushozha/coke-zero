@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { Domain } from '../types/canopy'
+import { COKE_ZERO_API_URL } from '../lib/runtimeConfig'
+import type { Domain } from '../types/coke_zero'
 
-const API_URL =
-  import.meta.env.VITE_CANOPY_API_URL ?? 'http://localhost:8000'
+const API_URL = COKE_ZERO_API_URL
 
 const ALL_DOMAINS: Domain[] = [
   'sda',
@@ -36,6 +36,7 @@ export function StressMode() {
   const [status, setStatus] = useState<'idle' | 'applying' | 'error'>('idle')
 
   useEffect(() => {
+    if (!API_URL) return
     let cancelled = false
     void fetch(`${API_URL}/stress`)
       .then((r) => r.json())
@@ -63,6 +64,10 @@ export function StressMode() {
   }
 
   async function apply() {
+    if (!API_URL) {
+      setStatus('error')
+      return
+    }
     setStatus('applying')
     try {
       const response = await fetch(`${API_URL}/stress`, {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useEventStore } from '../store/eventStore'
-import type { ReasoningTrace } from '../types/canopy'
+import type { ReasoningTrace } from '../types/coke_zero'
 
 interface Props {
   /** When true, the panel renders compact for a sidebar slot. */

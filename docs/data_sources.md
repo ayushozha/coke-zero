@@ -1,6 +1,6 @@
-# CANOPY Data Sources
+# coke-zero Data Sources
 
-CANOPY separates public source caches from demo-only overlays. Public orbital
+coke-zero separates public source caches from demo-only overlays. Public orbital
 catalog inputs come from CelesTrak and are cached so demos and tests can run
 without a network dependency.
 
@@ -59,7 +59,7 @@ Every cache update writes a manifest with:
 
 | Field | Meaning |
 | --- | --- |
-| `cache_version` | Stable cache contract, currently `canopy-orbital-cache-v1` |
+| `cache_version` | Stable cache contract, currently `coke-zero-orbital-cache-v1` |
 | `updated_at` | UTC timestamp for this cache run |
 | `mode` | `offline_fixture` or `celestrak_live` |
 | `refresh_policy` | Human-readable refresh rule |
@@ -74,6 +74,6 @@ entries use `realism: "real_source"` and set `fetched_at`.
 ## Curated RPO Placeholders
 
 `data/orbital/curated/rpo_placeholders.json` holds fictional objects such as
-`SATCOM-3` and `CANOPY-RPO-1`. They are labeled
+`SATCOM-3` and `coke-zero-RPO-1`. They are labeled
 `synthetic_orbital_overlay`, support RPO close-approach demo flows, and should
 not be cited as CelesTrak data.

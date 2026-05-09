@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from canopy.services.bus import InProcessBus
-from canopy.services.schemas.events import Location, Provenance, Signal
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.schemas.events import Location, Provenance, Signal
 
 
 def _signal(domain: str = "cyber", confidence: float = 0.5) -> Signal:

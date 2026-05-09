@@ -1,4 +1,4 @@
-# CANOPY benchmark seeds.
+# coke-zero benchmark seeds.
 #
 # 11 hand-authored scenarios with ground-truth labels for the engine to
 # score itself against. Procedural variants under bench/scenarios/ are

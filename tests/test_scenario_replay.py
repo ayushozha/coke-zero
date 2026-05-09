@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.bus import InProcessBus
-from canopy.services.scenario_replay import ScenarioReplayService, load_scenario_signals
-from canopy.services.schemas.events import Signal
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.scenario_replay import ScenarioReplayService, load_scenario_signals
+from coke_zero.services.schemas.events import Signal
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIOS = sorted((ROOT / "scenarios").glob("*.jsonl"))

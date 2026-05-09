@@ -1,0 +1,16 @@
+{
+  "$schema": "https://trynia.ai/schema/project.json",
+  "version": 1,
+  "name": "coke-zero",
+  "sources": [],
+  "vaults": [],
+  "local": [
+    {
+      "id": "82f1fc68-882f-45e7-a06e-301df3a267b8",
+      "path": "."
+    }
+  ],
+  "defaults": {
+    "search_mode": "scoped"
+  }
+}

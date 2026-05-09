@@ -1,7 +1,7 @@
 # Army Demo Scenarios
 
 These scenario feeds are optional demo lanes built on the same canonical
-`Signal` schema as the main CANOPY beats. They are meant to feel Army-relevant:
+`Signal` schema as the main coke-zero beats. They are meant to feel Army-relevant:
 small UAS, contested spectrum, PNT attacks, tactical SATCOM degradation, and
 space-enabled collection risk.
 
@@ -9,7 +9,7 @@ space-enabled collection risk.
 
 Use `scenarios/army_multidomain_attack_chain.jsonl` as the main story.
 
-It shows CANOPY moving from raw events to operational meaning:
+It shows coke-zero moving from raw events to operational meaning:
 
 1. RPO screening alert near a friendly LEO support asset.
 2. RF interference against drone links.
@@ -18,7 +18,7 @@ It shows CANOPY moving from raw events to operational meaning:
 5. Cyber probes hit the telemetry gateway.
 6. SATCOM degrades.
 7. RPO close approach escalates the space risk.
-8. CANOPY emits a confidence-scored multi-domain assessment.
+8. coke-zero emits a confidence-scored multi-domain assessment.
 
 The key line for the pitch:
 
@@ -30,7 +30,7 @@ Consistent with coordinated counter-C5ISR pressure, not proof of a single actor.
 
 - `scenarios/army_drone_fdir.jsonl`
   - Focus: drone fault detection, isolation, and recovery under PNT/RF attack.
-  - Demo value: shows CANOPY preserving ISR after a drone navigation fault.
+  - Demo value: shows coke-zero preserving ISR after a drone navigation fault.
 
 - `scenarios/army_relay_reconfig.jsonl`
   - Focus: autonomous drone relay switching under SATCOM degradation and terrain masking.

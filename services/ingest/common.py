@@ -1,4 +1,4 @@
-"""Shared helpers for CANOPY ingest adapters."""
+"""Shared helpers for coke-zero ingest adapters."""
 
 from __future__ import annotations
 

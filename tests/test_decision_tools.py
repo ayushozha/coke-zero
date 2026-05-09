@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.bus import InProcessBus
-from canopy.services.decide.tools import (
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.decide.tools import (
     KBLookupTool,
     OrbitSimulateManeuverTool,
     RequestDraftTool,
@@ -16,10 +16,10 @@ from canopy.services.decide.tools import (
     build_tool_registry,
     dispatch,
 )
-from canopy.services.kb import KB
-from canopy.services.orbit import OrbitService
-from canopy.services.schemas.events import ReasoningTrace
-from canopy.services.traces import Tracer
+from coke_zero.services.kb import KB
+from coke_zero.services.orbit import OrbitService
+from coke_zero.services.schemas.events import ReasoningTrace
+from coke_zero.services.traces import Tracer
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_FILE = ROOT / "data" / "kb_seed_entries.json"

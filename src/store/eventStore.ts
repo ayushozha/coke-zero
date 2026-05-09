@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { uiEventMemorySignature } from "../lib/missionMemory";
 import type {
   Anomaly,
   Attribution,
@@ -7,11 +8,13 @@ import type {
   Decision,
   KBEntry,
   OsintEmbeddingSnapshot,
+  OperatorActionMemory,
+  OperatorActionStatus,
   ReasoningTrace,
   Signal,
   UIEvent,
   ViewMode,
-} from "../types/canopy";
+} from "../types/coke_zero";
 
 const RING_BUFFER = 200;
 const TRACE_BUFFER = 500;
@@ -83,6 +86,7 @@ interface EventState {
   selectedEventId: string | null;
   pendingApproval: UIEvent | null;
   approvedEventIds: Set<string>;
+  operatorMemoryBySignature: Record<string, OperatorActionStatus>;
   /** Decision ids the operator accepted in the left-rail action panel. */
   acceptedDecisionIds: Set<string>;
   /** Decision ids the operator denied in the left-rail action panel. */
@@ -110,6 +114,11 @@ interface EventState {
   selectEvent: (id: string | null) => void;
   dismissApproval: () => void;
   markApproved: (id: string) => void;
+  hydrateOperatorMemory: (actions: Record<string, OperatorActionMemory>) => void;
+  rememberOperatorAction: (
+    signature: string,
+    status: OperatorActionStatus,
+  ) => void;
   acceptDecision: (id: string) => void;
   deferDecision: (id: string) => void;
   clearDecisionStatus: (id: string) => void;
@@ -135,6 +144,8 @@ const initialState = (): Omit<
   | "selectEvent"
   | "dismissApproval"
   | "markApproved"
+  | "hydrateOperatorMemory"
+  | "rememberOperatorAction"
   | "acceptDecision"
   | "deferDecision"
   | "clearDecisionStatus"
@@ -160,6 +171,7 @@ const initialState = (): Omit<
   selectedEventId: null,
   pendingApproval: null,
   approvedEventIds: new Set(),
+  operatorMemoryBySignature: {},
   acceptedDecisionIds: new Set(),
   deferredDecisionIds: new Set(),
   maneuverDemo: null,
@@ -208,6 +220,8 @@ export const useEventStore = create<EventState>()(
 
   ingestUIEvent: (event) =>
     set((state) => {
+      const signature = uiEventMemorySignature(event);
+      const rememberedStatus = state.operatorMemoryBySignature[signature];
       const next = {
         uiEvents: pushBounded(state.uiEvents, event),
       } as Partial<EventState>;
@@ -216,9 +230,14 @@ export const useEventStore = create<EventState>()(
       if (
         event.type === "recommendation_created" &&
         event.recommendation &&
-        !state.approvedEventIds.has(event.id)
+        !state.approvedEventIds.has(event.id) &&
+        !rememberedStatus
       ) {
         next.pendingApproval = event;
+      } else if (rememberedStatus === "approved") {
+        const approvedEventIds = new Set(state.approvedEventIds);
+        approvedEventIds.add(event.id);
+        next.approvedEventIds = approvedEventIds;
       }
       return next;
     }),
@@ -237,6 +256,25 @@ export const useEventStore = create<EventState>()(
           state.pendingApproval?.id === id ? null : state.pendingApproval,
       };
     }),
+  hydrateOperatorMemory: (actions) =>
+    set((state) => ({
+      operatorMemoryBySignature: {
+        ...state.operatorMemoryBySignature,
+        ...Object.fromEntries(
+          Object.values(actions).map((action) => [
+            action.subject_signature,
+            action.status,
+          ]),
+        ),
+      },
+    })),
+  rememberOperatorAction: (signature, status) =>
+    set((state) => ({
+      operatorMemoryBySignature: {
+        ...state.operatorMemoryBySignature,
+        [signature]: status,
+      },
+    })),
   acceptDecision: (id) =>
     set((state) => {
       const acceptedDecisionIds = new Set(state.acceptedDecisionIds);
@@ -277,7 +315,7 @@ export const useEventStore = create<EventState>()(
       // every tab switch). Persisting the engine event ring buffers means
       // the reasoning panel and event timeline keep their history when
       // the user moves between pages.
-      name: "canopy-event-store",
+      name: "coke-zero-event-store",
       version: 2,
       storage: createJSONStorage(() => sessionStorage),
       // Skip live UI/connection state and the Set (Sets don't survive
@@ -293,6 +331,7 @@ export const useEventStore = create<EventState>()(
         signalsById: state.signalsById,
         attributionsById: state.attributionsById,
         decisionsById: state.decisionsById,
+        operatorMemoryBySignature: state.operatorMemoryBySignature,
       }),
     },
   ),

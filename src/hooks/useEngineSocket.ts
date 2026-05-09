@@ -1,35 +1,32 @@
 import { useEffect, useRef } from "react";
 import { useEventStore } from "../store/eventStore";
+import { COKE_ZERO_API_URL, COKE_ZERO_WS_URL } from "../lib/runtimeConfig";
 import type {
   KBEntry,
   ReasoningTrace,
   Signal,
   UIEvent,
   WSEnvelope,
-} from "../types/canopy";
+} from "../types/coke_zero";
 
-// Backend URLs. Vite proxies during dev would also work, but for a hackathon
-// demo a hard-coded localhost is fine.
-const API_URL =
-  import.meta.env.VITE_CANOPY_API_URL ?? "http://localhost:8000";
-const WS_URL =
-  API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws";
+const API_URL = COKE_ZERO_API_URL;
+const WS_URL = COKE_ZERO_WS_URL;
 
 const RECONNECT_BACKOFFS_MS = [500, 1500, 4000];
 const FIXTURE_REPLAY_INTERVAL_MS = 3000;
 const FIXTURE_SIGNAL_LOCATIONS: Record<string, { lat: number; lng: number; label: string }> = {
   // Synthesised marker positions for fixture mode — keeps the AOR map alive
   // when the engine isn't running and we're replaying expected_ui_events.json.
-  "canopy-beat1-001": { lat: 21.3, lng: 142.8, label: "LEO track over Western Pacific" },
-  "canopy-beat1-002": { lat: 20.1, lng: 121.7, label: "Luzon Strait" },
-  "canopy-beat2-001": { lat: 13.5, lng: 144.8, label: "Guam RF site" },
-  "canopy-beat2-002": { lat: 13.5, lng: 144.8, label: "Guam ground gateway" },
-  "canopy-beat2-003": { lat: 18.5, lng: 121.0, label: "Northern Luzon monitor" },
-  "canopy-beat2-004": { lat: 15.0, lng: 145.6, label: "Tinian launch corridor" },
-  "canopy-beat47-001": { lat: 13.5, lng: 144.8, label: "Guam SATCOM gateway" },
-  "canopy-beat47-002": { lat: 14.9, lng: 132.1, label: "CANOPY-LEO-07 relative motion frame" },
-  "canopy-beat47-003": { lat: 14.5, lng: 133.8, label: "CANOPY-LEO-07 downlink footprint" },
-  "canopy-beat47-004": { lat: 13.5, lng: 144.8, label: "Guam RF site" },
+  "coke-zero-beat1-001": { lat: 21.3, lng: 142.8, label: "LEO track over Western Pacific" },
+  "coke-zero-beat1-002": { lat: 20.1, lng: 121.7, label: "Luzon Strait" },
+  "coke-zero-beat2-001": { lat: 13.5, lng: 144.8, label: "Guam RF site" },
+  "coke-zero-beat2-002": { lat: 13.5, lng: 144.8, label: "Guam ground gateway" },
+  "coke-zero-beat2-003": { lat: 18.5, lng: 121.0, label: "Northern Luzon monitor" },
+  "coke-zero-beat2-004": { lat: 15.0, lng: 145.6, label: "Tinian launch corridor" },
+  "coke-zero-beat47-001": { lat: 13.5, lng: 144.8, label: "Guam SATCOM gateway" },
+  "coke-zero-beat47-002": { lat: 14.9, lng: 132.1, label: "coke-zero-LEO-07 relative motion frame" },
+  "coke-zero-beat47-003": { lat: 14.5, lng: 133.8, label: "coke-zero-LEO-07 downlink footprint" },
+  "coke-zero-beat47-004": { lat: 13.5, lng: 144.8, label: "Guam RF site" },
 };
 
 interface FixtureFile {
@@ -62,16 +59,22 @@ export function useEngineSocket(): void {
     let cancelled = false;
 
     // Pull the KB once at startup; it's static for a session.
-    void fetch(`${API_URL}/kb`)
+    if (API_URL) {
+      void fetch(`${API_URL}/kb`)
       .then((r) => r.json())
       .then((data: { entries: KBEntry[] }) => setKB(data.entries))
       .catch(() => {
         // KB load failure isn't fatal — the operator view degrades to "kb-..."
         // citation ids without expanded card content.
       });
+    }
 
     function startFixtureMode() {
       setConnection("fixture");
+      if (!API_URL) {
+        setConnection("offline");
+        return;
+      }
       void fetch(`${API_URL}/fixture/ui_events`)
         .then((r) => r.json())
         .then((data: FixtureFile) => {
@@ -111,6 +114,10 @@ export function useEngineSocket(): void {
 
     function connect() {
       if (cancelled) return;
+      if (!WS_URL) {
+        startFixtureMode();
+        return;
+      }
       setConnection("connecting");
       try {
         socket = new WebSocket(WS_URL);
@@ -146,6 +153,8 @@ export function useEngineSocket(): void {
               break;
             case "ui_event":
               ingestUIEvent(envelope.data as UIEvent);
+              break;
+            case "operator_action":
               break;
             case "trace":
               ingestTrace(envelope.data as ReasoningTrace);
@@ -204,6 +213,7 @@ export async function triggerReplay(
   name: string,
   speed = 5,
 ): Promise<void> {
+  if (!API_URL) return;
   await fetch(
     `${API_URL}/scenarios/${encodeURIComponent(name)}/replay?speed=${speed}`,
     { method: "POST" },
@@ -212,6 +222,7 @@ export async function triggerReplay(
 
 /** GET /scenarios — lists the available beats for the controls bar. */
 export async function listScenarios(): Promise<string[]> {
+  if (!API_URL) return [];
   try {
     const response = await fetch(`${API_URL}/scenarios`);
     if (!response.ok) return [];

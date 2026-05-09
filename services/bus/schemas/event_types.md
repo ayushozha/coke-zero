@@ -1,4 +1,4 @@
-# CANOPY event types
+# coke-zero event types
 
 Signal adapters use `payload.event_type`. Some prototype fusion tools also accept
 legacy `payload.event` for compatibility, but new scenario feeds should stay on

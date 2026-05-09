@@ -5,15 +5,15 @@ import asyncio
 
 import pytest
 
-from canopy.services.bus import InProcessBus
-from canopy.services.fusion import FusionService
-from canopy.services.schemas.events import (
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.fusion import FusionService
+from coke_zero.services.schemas.events import (
     Location,
     Provenance,
     ReasoningTrace,
     Signal,
 )
-from canopy.services.traces import Tracer
+from coke_zero.services.traces import Tracer
 
 
 def _signal() -> Signal:

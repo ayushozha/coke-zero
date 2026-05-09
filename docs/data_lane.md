@@ -1,6 +1,6 @@
-# CANOPY Data Lane
+# coke-zero Data Lane
 
-The data lane owns the contract between sources and the CANOPY engine. Every
+The data lane owns the contract between sources and the coke-zero engine. Every
 adapter, real or mock, emits a canonical `Signal`; downstream services convert
 `Signal -> Anomaly -> Attribution -> Decision -> UIEvent`.
 

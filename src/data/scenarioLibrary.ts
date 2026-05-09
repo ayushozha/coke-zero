@@ -9,7 +9,7 @@ import beat47Raw from '../../scenarios/beat47.jsonl?raw'
 import iranC5isrRaw from '../../scenarios/iran_counter_c5isr_brigade.jsonl?raw'
 import iranHormuzRaw from '../../scenarios/iran_hormuz_convoy_resilience.jsonl?raw'
 import iranProxyRaw from '../../scenarios/iran_proxy_uas_base_defense.jsonl?raw'
-import type { Domain, Signal } from '../types/canopy'
+import type { Domain, Signal } from '../types/coke_zero'
 
 export type ScenarioDefinition = {
   id: string

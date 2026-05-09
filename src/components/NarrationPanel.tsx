@@ -1,4 +1,4 @@
-import type { Attribution, UIEvent } from '../types/canopy'
+import type { Attribution, UIEvent } from '../types/coke_zero'
 
 type NarrationPanelProps = {
   attribution: Attribution | null
@@ -48,7 +48,7 @@ export function NarrationPanel({
       ) : attribution ? (
         <>
           <p className="narration__plain">
-            CANOPY sees a pattern consistent with {attribution.actor}. It may{' '}
+            coke-zero sees a pattern consistent with {attribution.actor}. It may{' '}
             {predictedNext.toLowerCase()}.
           </p>
           <details className="details-panel details-panel--nested">
@@ -75,7 +75,7 @@ export function NarrationPanel({
         </>
       ) : (
         <p className="narration__plain">
-          CANOPY is correlating multi-domain activity. No attribution package is
+          coke-zero is correlating multi-domain activity. No attribution package is
           ready.
         </p>
       )}

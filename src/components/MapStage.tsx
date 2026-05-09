@@ -5,7 +5,7 @@ import { MissionAlert } from './MissionAlert'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import { signalEffectState } from '../lib/signalEffects'
 import type { PlaybackStatus } from '../types/playback'
-import type { Signal } from '../types/canopy'
+import type { Signal } from '../types/coke_zero'
 
 type MapStageProps = {
   correlatedSignalIds: string[]

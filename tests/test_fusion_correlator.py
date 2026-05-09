@@ -4,9 +4,9 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from canopy.services.bus import InProcessBus
-from canopy.services.fusion import FusionService
-from canopy.services.schemas.events import (
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.fusion import FusionService
+from coke_zero.services.schemas.events import (
     Anomaly,
     Location,
     Provenance,
@@ -89,7 +89,7 @@ async def test_rpo_close_approach_emits_orbital_rpo_risk() -> None:
             domain="orbit",
             event_type="rpo_close_approach",
             confidence=0.78,
-            observables={"miss_distance_km": 8.6, "target": "CANOPY-LEO-07"},
+            observables={"miss_distance_km": 8.6, "target": "coke-zero-LEO-07"},
         ),
     )
 

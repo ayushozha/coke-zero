@@ -20,12 +20,12 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.fusion import (
+from coke_zero.services.fusion import (
     DOMAIN_PATTERN_MAP,
     IGNORED_EVENT_TYPES,
     ORBIT_EVENT_TYPES,
 )
-from canopy.services.scenario_replay import load_scenario_signals
+from coke_zero.services.scenario_replay import load_scenario_signals
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIOS = sorted((ROOT / "scenarios").glob("*.jsonl"))
@@ -62,8 +62,8 @@ def test_every_scenario_event_type_is_covered_by_fusion() -> None:
     lines.append("Fix by ONE of:")
     lines.append(
         "  - Add (domain, event_type) → anomaly_kind to DOMAIN_PATTERN_MAP "
-        "in canopy/services/fusion/__init__.py, and add a matching attribution "
-        "template to _KIND_TO_ATTRIBUTION in canopy/services/llm/stub.py."
+        "in coke_zero/services/fusion/__init__.py, and add a matching attribution "
+        "template to _KIND_TO_ATTRIBUTION in coke_zero/services/llm/stub.py."
     )
     lines.append(
         "  - Add (domain, event_type) to IGNORED_EVENT_TYPES if it is a "
@@ -83,7 +83,7 @@ def test_pattern_map_kinds_have_stub_templates() -> None:
     the demo loses narrative — the failure mode is silent and content-shaped
     rather than crash-shaped.
     """
-    from canopy.services.llm.stub import _KIND_TO_ATTRIBUTION
+    from coke_zero.services.llm.stub import _KIND_TO_ATTRIBUTION
 
     pattern_kinds = set(DOMAIN_PATTERN_MAP.values())
     orbital_kinds = {
@@ -97,6 +97,6 @@ def test_pattern_map_kinds_have_stub_templates() -> None:
     missing = sorted(expected_kinds - set(_KIND_TO_ATTRIBUTION))
     assert not missing, (
         f"{len(missing)} anomaly kind(s) emitted by fusion lack a stub "
-        f"template in canopy/services/llm/stub.py:_KIND_TO_ATTRIBUTION: "
+        f"template in coke_zero/services/llm/stub.py:_KIND_TO_ATTRIBUTION: "
         f"{missing}. Add an _AttribTemplate for each."
     )

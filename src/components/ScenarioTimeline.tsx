@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { commanderSignalSummary, signalKindLabel } from '../lib/commanderLanguage'
 import type { ScenarioDefinition } from '../data/scenarioLibrary'
 import type { PlaybackStatus } from '../types/playback'
-import type { Signal } from '../types/canopy'
+import type { Signal } from '../types/coke_zero'
 
 type ScenarioTimelineProps = {
   offsets: number[]

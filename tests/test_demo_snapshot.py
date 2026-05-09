@@ -29,16 +29,16 @@ from pathlib import Path
 
 import pytest
 
-from canopy.services.attrib import AttribService
-from canopy.services.bus import InProcessBus
-from canopy.services.decide import DecideService
-from canopy.services.fusion import FusionService
-from canopy.services.kb import KB
-from canopy.services.llm.stub import StubLLMClient
-from canopy.services.orbit import OrbitService
-from canopy.services.scenario_replay import ScenarioReplayService
-from canopy.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
-from canopy.services.ui_events import UIEventService
+from coke_zero.services.attrib import AttribService
+from coke_zero.services.bus import InProcessBus
+from coke_zero.services.decide import DecideService
+from coke_zero.services.fusion import FusionService
+from coke_zero.services.kb import KB
+from coke_zero.services.llm.stub import StubLLMClient
+from coke_zero.services.orbit import OrbitService
+from coke_zero.services.scenario_replay import ScenarioReplayService
+from coke_zero.services.schemas.events import Anomaly, Attribution, Decision, UIEvent
+from coke_zero.services.ui_events import UIEventService
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIO = ROOT / "scenarios" / "army_multidomain_attack_chain.jsonl"
@@ -95,7 +95,7 @@ EXPECTED_ANOMALY_SEVERITIES = [
 EXPECTED_ATTRIBUTION_ACTOR = "China"
 # 0.74 (primary) - 0.03 (red-team confidence_delta for orbital_rpo_risk) = 0.71.
 # The multi-agent pipeline reconciles primary against red-team challenge before
-# publishing; see canopy/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
+# publishing; see coke_zero/services/llm/stub.py _KIND_TO_REDTEAM["orbital_rpo_risk"].
 EXPECTED_ATTRIBUTION_CONFIDENCE = 0.71
 EXPECTED_ATTRIBUTION_CITATIONS = {
     "kb-rpo-ambiguity-001",
@@ -128,7 +128,7 @@ EXPECTED_UI_EVENT_TITLE = "Active defense escort recommended — China"
 # km of along-track drift, so the recommender hits its 100 km target with a
 # small burn. Numbers are uniform across scenarios because they all converge
 # on "what's achievable with realistic ops planning."
-EXPECTED_MANEUVER_FRIENDLY = "CANOPY-LEO-07"
+EXPECTED_MANEUVER_FRIENDLY = "coke-zero-LEO-07"
 EXPECTED_MANEUVER_INSPECTOR = "UNKNOWN-RSO-441"
 EXPECTED_PRE_MISS_KM = 18.5
 EXPECTED_POST_MISS_KM = 100.3
@@ -137,7 +137,7 @@ EXPECTED_LEAD_SECONDS = 21600.0
 EXPECTED_ACTUAL_LEAD_SECONDS = 870.0
 EXPECTED_BURN_UTC = "2026-06-18T09:55:30Z"
 EXPECTED_MANEUVER_CLAUSE = (
-    "Recommended maneuver with 6 h planning lead: CANOPY-LEO-07 1.44 m/s "
+    "Recommended maneuver with 6 h planning lead: coke-zero-LEO-07 1.44 m/s "
     "prograde burn, miss 18.5 → 100.3 km (+81.8 km separation)."
 )
 

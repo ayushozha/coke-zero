@@ -1,0 +1,9 @@
+{
+  "status": "ok",
+  "mode": "static-deployment-demo",
+  "app": "coke-zero",
+  "track": "Always-On Agents",
+  "primary_scenario": "iran_counter_c5isr_brigade.jsonl",
+  "operator_route": "/operator",
+  "backend_note": "The deployed judge path runs from checked-in scenario fixtures and a browser static demo feed. A live FastAPI gateway can be attached with VITE_COKE_ZERO_PUBLIC_API_URL and VITE_COKE_ZERO_PUBLIC_WS_URL."
+}

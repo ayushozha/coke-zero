@@ -31,9 +31,9 @@
       "notes": "Open-source counterspace capability assessment used for KB entries and caveated attribution."
     },
     {
-      "id": "canopy-game-plan",
+      "id": "coke-zero-game-plan",
       "title": "Hackathon Demo Concepts: Autonomous ISR Relay Network",
-      "organization": "CANOPY Team",
+      "organization": "coke-zero Team",
       "source_type": "mock_operational",
       "path": "/Users/ethan/Downloads/Hackathon Demo Concepts_ Autonomous ISR Relay Network (1).pdf",
       "domains": ["drone", "humint", "rf_ew", "cyber", "pnt", "satcom"],
@@ -42,8 +42,8 @@
     },
     {
       "id": "mock-beat-feeds",
-      "title": "CANOPY Deterministic Scenario Feeds",
-      "organization": "CANOPY Team",
+      "title": "coke-zero Deterministic Scenario Feeds",
+      "organization": "coke-zero Team",
       "source_type": "mock_operational",
       "path": "scenarios/",
       "domains": ["humint", "rf_ew", "cyber", "pnt", "satcom", "drone"],
