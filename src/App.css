@@ -5650,6 +5650,155 @@
   font-size: 1rem;
 }
 
+.capability-backbone {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(201, 164, 87, 0.08), transparent 64%),
+    rgba(3, 7, 7, 0.84);
+  padding: 9px 10px 10px;
+}
+
+.capability-backbone__header,
+.capability-backbone__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.capability-backbone__header span {
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.capability-backbone__header strong {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.capability-backbone__header--compact {
+  align-items: center;
+}
+
+.capability-backbone__chips {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.capability-backbone__chip {
+  min-width: 0;
+  border: 1px solid rgba(220, 227, 213, 0.12);
+  border-left: 2px solid var(--text-subtle);
+  background: rgba(0, 0, 0, 0.24);
+  color: var(--text-muted);
+  font-size: 0.54rem;
+  font-weight: 760;
+  overflow: hidden;
+  padding: 3px 4px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.capability-backbone__chip strong {
+  color: var(--text-primary);
+  font-size: inherit;
+  margin-left: 2px;
+}
+
+.capability-backbone__chip--active {
+  border-left-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.capability-backbone__chip--degraded {
+  border-left-color: var(--red);
+  color: var(--red);
+}
+
+.capability-backbone__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.capability-backbone__item {
+  position: relative;
+  min-width: 0;
+  border: 1px solid rgba(220, 227, 213, 0.11);
+  border-left-color: var(--text-subtle);
+  border-left-width: 3px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 7px 8px;
+}
+
+.capability-backbone__item--active {
+  border-left-color: var(--cyan);
+  background:
+    linear-gradient(90deg, rgba(51, 242, 240, 0.055), transparent 78%),
+    rgba(0, 0, 0, 0.24);
+}
+
+.capability-backbone__item--degraded {
+  border-left-color: var(--red);
+  background:
+    linear-gradient(90deg, rgba(224, 92, 79, 0.075), transparent 78%),
+    rgba(0, 0, 0, 0.24);
+}
+
+.capability-backbone__top span,
+.capability-backbone__top strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capability-backbone__top span {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.capability-backbone__top strong {
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 740;
+  text-align: right;
+}
+
+.capability-backbone__item--active .capability-backbone__top strong {
+  color: var(--cyan);
+}
+
+.capability-backbone__item--degraded .capability-backbone__top strong {
+  color: var(--red);
+}
+
+.capability-backbone__item p {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .decision-loop__steps {
   display: grid;
   gap: 0;
@@ -5731,6 +5880,39 @@
 
 .decision-loop--compact .decision-loop__metrics {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.operator-grid > .decision-loop .capability-backbone__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.operator-grid > .decision-loop .capability-backbone {
+  gap: 6px;
+  padding: 7px 10px 8px;
+}
+
+.operator-grid > .decision-loop .capability-backbone__item {
+  padding: 6px 7px;
+}
+
+.operator-grid > .decision-loop .capability-backbone__item p {
+  display: none;
+}
+
+.decision-loop--compact .capability-backbone__item p {
+  display: none;
+}
+
+.decision-loop--compact .capability-backbone {
+  padding: 7px 9px 8px;
+}
+
+.decision-loop--compact .capability-backbone__header span {
+  font-size: 0.58rem;
+}
+
+.decision-loop--compact .capability-backbone__chips {
+  flex-wrap: nowrap;
 }
 
 .decision-loop--compact .decision-loop__step {

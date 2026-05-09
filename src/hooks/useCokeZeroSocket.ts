@@ -31,6 +31,10 @@ const initialState: CokeZeroSocketState = {
   lastError: null,
 }
 
+const setGlobalConnection = (status: 'connecting' | 'live' | 'fixture' | 'offline') => {
+  useEventStore.getState().setConnection(status)
+}
+
 const prependLimited = <T extends { id: string }>(
   items: T[],
   next: T,
@@ -142,11 +146,17 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
     let socket: WebSocket | null = null
     let cancelled = false
     let staticDemoStarted = false
+    let connected = false
 
     const startStaticDemo = () => {
-      if (!STATIC_DEMO_ENABLED || cancelled) return
+      if (cancelled) return
+      if (!STATIC_DEMO_ENABLED) {
+        setGlobalConnection('offline')
+        return
+      }
       if (staticDemoStarted) return
       staticDemoStarted = true
+      setGlobalConnection('fixture')
       const messages = createStaticDemoMessages()
       let index = 0
 
@@ -169,6 +179,7 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
       }
     }
 
+    setGlobalConnection('connecting')
     void loadMissionMemory().then((memory) => {
       if (memory) {
         useEventStore
@@ -178,7 +189,7 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
     })
 
     fallbackTimer = window.setTimeout(() => {
-      if (!state.isConnected) {
+      if (!connected) {
         try {
           socket?.close()
         } catch {
@@ -191,10 +202,12 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
     socket = new WebSocket(url)
 
     socket.addEventListener('open', () => {
+      connected = true
       if (fallbackTimer !== null) {
         window.clearTimeout(fallbackTimer)
         fallbackTimer = null
       }
+      setGlobalConnection('live')
       setState((current) => ({
         ...current,
         isConnected: true,
@@ -203,6 +216,7 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
     })
 
     socket.addEventListener('close', () => {
+      connected = false
       setState((current) => ({
         ...current,
         isConnected: false,
@@ -213,6 +227,7 @@ export function useCokeZeroSocket(url: string | null = DEFAULT_URL) {
     })
 
     socket.addEventListener('error', () => {
+      if (!STATIC_DEMO_ENABLED) setGlobalConnection('offline')
       setState((current) => ({
         ...current,
         lastError: 'coke-zero socket error',
