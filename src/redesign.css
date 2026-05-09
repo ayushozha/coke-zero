@@ -34,7 +34,7 @@
     radial-gradient(circle at 14% 8%, rgba(77, 217, 255, 0.08), transparent 32%),
     radial-gradient(circle at 88% 14%, rgba(167, 139, 255, 0.05), transparent 30%),
     radial-gradient(circle at 50% 110%, rgba(94, 234, 212, 0.05), transparent 40%),
-    linear-gradient(180deg, #050a12 0%, #03070d 60%, #01030a 100%);
+    linear-gradient(180deg, var(--black) 0%, #03070d 60%, #01030a 100%);
 }
 
 .brigade-shell::before,
