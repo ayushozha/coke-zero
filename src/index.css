@@ -1,49 +1,78 @@
 :root {
-  --black: #07100f;
-  --white: #f5f7f0;
-  --amber: #c9a457;
-  --red: #e05c4f;
-  --green: #77b884;
-  --cyan: #33f2f0;
-  --olive: #a7b96f;
-  --violet: #8b87c7;
+  /* Core surface */
+  --black: #050a12;
+  --bg-deep: #02060b;
+  --bg-panel: #0a1320;
+  --bg-panel-soft: #111e2c;
+  --white: #eaf1f7;
+
+  /* Accent + status */
+  --amber: #f1b347;
+  --red: #ff5b6c;
+  --green: #5eead4;
+  --cyan: #4dd9ff;
+  --cyan-bright: #80efff;
+  --olive: #c2d97a;
+  --violet: #a78bff;
+
   --status-white: var(--white);
   --status-amber: var(--amber);
   --status-red: var(--red);
   --status-live: var(--green);
-  --status-live-bright: #a7d5ad;
-  --domain-rf-ew: #b8841f;
+  --status-live-bright: #9af2dc;
+
+  /* Domain tints */
+  --domain-rf-ew: #f1b347;
   --domain-cyber: var(--violet);
-  --domain-pnt: #7fa8d8;
-  --domain-space: #65b8b2;
-  --domain-drone: var(--green);
-  --domain-context: #9ba6ad;
-  --panel: rgba(13, 23, 24, 0.9);
-  --panel-strong: rgba(9, 17, 18, 0.96);
-  --panel-soft: rgba(24, 38, 38, 0.76);
-  --control-surface: rgba(19, 30, 30, 0.58);
-  --control-surface-active: rgba(47, 82, 80, 0.66);
-  --control-line: rgba(154, 190, 180, 0.25);
-  --line: rgba(220, 227, 213, 0.13);
-  --line-bright: rgba(220, 227, 213, 0.28);
-  --text-primary: #f5f7f0;
-  --text-muted: #b6beb2;
-  --text-subtle: #879188;
-  --ambient-cyan: rgba(79, 181, 178, 0.18);
-  --ambient-olive: rgba(145, 166, 92, 0.15);
-  --ambient-violet: rgba(111, 101, 173, 0.12);
+  --domain-pnt: #76b6ff;
+  --domain-space: #5eead4;
+  --domain-drone: #c2d97a;
+  --domain-context: #8fa1b4;
+
+  /* Panel surfaces — darker, cooler, glassier */
+  --panel: rgba(10, 19, 32, 0.86);
+  --panel-strong: rgba(6, 12, 22, 0.94);
+  --panel-soft: rgba(20, 32, 48, 0.72);
+  --control-surface: rgba(15, 26, 40, 0.62);
+  --control-surface-active: rgba(40, 80, 105, 0.72);
+  --control-line: rgba(120, 195, 230, 0.28);
+  --line: rgba(180, 210, 230, 0.12);
+  --line-bright: rgba(180, 210, 230, 0.26);
+
+  /* Type */
+  --text-primary: #eaf1f7;
+  --text-muted: #aebccb;
+  --text-subtle: #7a8a9b;
+
+  /* Ambient wash */
+  --ambient-cyan: rgba(77, 217, 255, 0.18);
+  --ambient-magenta: rgba(255, 91, 108, 0.12);
+  --ambient-violet: rgba(167, 139, 255, 0.12);
+
+  /* Glow accents (new) */
+  --glow-cyan: 0 0 24px rgba(77, 217, 255, 0.22);
+  --glow-cyan-soft: 0 0 12px rgba(77, 217, 255, 0.14);
+  --glow-warn: 0 0 22px rgba(241, 179, 71, 0.26);
+  --glow-danger: 0 0 22px rgba(255, 91, 108, 0.32);
+
+  /* Geometry */
+  --radius-panel: 4px;
+  --radius-pill: 999px;
+  --tick-size: 14px;
+
   --font-sans:
-    Aptos, "Aptos Display", "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Text",
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "Inter", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display:
-    "Aptos Display", Aptos, "IBM Plex Sans Condensed", "IBM Plex Sans", "SF Pro Display",
-    ui-sans-serif, system-ui, sans-serif;
+    "Inter", "IBM Plex Sans", "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.45;
   color: var(--text-primary);
-  background: var(--black);
+  background: var(--bg-deep);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -59,7 +88,7 @@ body {
   min-width: 320px;
   min-height: 100svh;
   overflow: hidden;
-  background: var(--black);
+  background: var(--bg-deep);
 }
 
 button,
@@ -86,7 +115,7 @@ h1 {
   color: var(--text-primary);
   font-size: 2rem;
   font-weight: 650;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   line-height: 1.08;
 }
 
