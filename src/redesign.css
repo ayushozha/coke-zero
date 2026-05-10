@@ -1,22 +1,32 @@
 /* =============================================================
-   COKE-ZERO REDESIGN LAYER
-   Loaded after App.css. Reshapes color, surface, motion, and the
-   primary panel motifs while keeping the layout grid intact.
+   COKE-ZERO REDESIGN — v2 (synthwave HUD)
+   - Purple/magenta/cyan palette
+   - Flipped layout: Commander stack LEFT, Scenarios RIGHT
+   - HUD bracket frame around the entire workbench
+   - Diagonal-cut panel corners (sci-fi tactical look)
+   - Stronger overrides via !important to defeat App.css
+   - MapStage interior is untouched on purpose
    ============================================================= */
 
-@keyframes cz-scan {
-  from { background-position: 0 0; }
-  to   { background-position: 0 -240px; }
+@keyframes cz-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -56px, -56px 0; }
 }
 
-@keyframes cz-pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(77, 217, 255, 0.55); }
-  70%  { box-shadow: 0 0 0 14px rgba(77, 217, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(77, 217, 255, 0); }
+@keyframes cz-pulse-mag {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 61, 138, 0.6); }
+  70%  { box-shadow: 0 0 0 14px rgba(255, 61, 138, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 61, 138, 0); }
+}
+
+@keyframes cz-pulse-cyan {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 225, 255, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(34, 225, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 225, 255, 0); }
 }
 
 @keyframes cz-card-in {
-  from { transform: translateY(8px) scale(0.985); opacity: 0; filter: blur(6px); }
+  from { transform: translateX(40px) scale(0.97); opacity: 0; filter: blur(6px); }
   to   { transform: none; opacity: 1; filter: blur(0); }
 }
 
@@ -25,154 +35,226 @@
   100% { background-position: 200% 50%; }
 }
 
-/* ---------- Shell background: cooler, calmer ambient grid ---------- */
+@keyframes cz-sweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* ==================================================================
+   1. Shell — synthwave grid + HUD corner brackets
+   ================================================================== */
 
 .brigade-shell,
 .operator-shell {
-  padding: 16px;
+  padding: 18px 18px 14px !important;
   background:
-    radial-gradient(circle at 14% 8%, rgba(77, 217, 255, 0.08), transparent 32%),
-    radial-gradient(circle at 88% 14%, rgba(167, 139, 255, 0.05), transparent 30%),
-    radial-gradient(circle at 50% 110%, rgba(94, 234, 212, 0.05), transparent 40%),
-    linear-gradient(180deg, var(--black) 0%, #03070d 60%, #01030a 100%);
+    radial-gradient(ellipse at 0% 0%, rgba(255, 61, 138, 0.14), transparent 38%),
+    radial-gradient(ellipse at 100% 0%, rgba(34, 225, 255, 0.12), transparent 36%),
+    radial-gradient(ellipse at 50% 120%, rgba(180, 139, 255, 0.16), transparent 50%),
+    linear-gradient(180deg, #0b0420 0%, #04020e 60%, #02010a 100%) !important;
 }
 
 .brigade-shell::before,
 .operator-shell::before {
   background:
-    radial-gradient(rgba(77, 217, 255, 0.16) 1px, transparent 1.5px) 0 0 / 28px 28px,
-    linear-gradient(180deg, transparent 0%, rgba(77, 217, 255, 0.04) 50%, transparent 100%);
-  opacity: 0.7;
-  animation: cz-scan 9s linear infinite;
+    linear-gradient(rgba(180, 139, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 225, 255, 0.06) 1px, transparent 1px) !important;
+  background-size: 56px 56px, 56px 56px !important;
+  opacity: 0.65 !important;
+  animation: cz-grid-drift 18s linear infinite !important;
 }
 
 .brigade-shell::after,
 .operator-shell::after {
   background:
-    conic-gradient(from 200deg at 60% 40%, transparent, rgba(77, 217, 255, 0.07), transparent 32%),
-    radial-gradient(circle, rgba(167, 139, 255, 0.05), transparent 50%);
-  opacity: 0.55;
+    conic-gradient(from 200deg at 30% 50%, transparent, rgba(255, 61, 138, 0.08), transparent 32%),
+    conic-gradient(from 20deg at 70% 50%, transparent, rgba(34, 225, 255, 0.08), transparent 32%) !important;
+  opacity: 0.55 !important;
 }
 
-/* ---------- Header: cleaner, with neon underline ---------- */
+/* Outer HUD frame — 4 corner brackets on the shell */
+.brigade-shell > .hud-frame,
+.operator-shell > .hud-frame { display: none; }
+
+.brigade-shell {
+  position: relative;
+}
+
+.brigade-shell > .command-workbench {
+  position: relative;
+}
+
+.brigade-shell > .command-workbench::before,
+.brigade-shell > .command-workbench::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.brigade-shell > .command-workbench::before {
+  top: -6px; left: -6px;
+  width: 28px; height: 28px;
+  border-top: 1.5px solid var(--magenta);
+  border-left: 1.5px solid var(--magenta);
+  filter: drop-shadow(0 0 6px rgba(255, 61, 138, 0.5));
+}
+
+.brigade-shell > .command-workbench::after {
+  bottom: -6px; right: -6px;
+  width: 28px; height: 28px;
+  border-bottom: 1.5px solid var(--cyan);
+  border-right: 1.5px solid var(--cyan);
+  filter: drop-shadow(0 0 6px rgba(34, 225, 255, 0.55));
+}
+
+/* ==================================================================
+   2. Header — title row + status pills + scanline accent
+   ================================================================== */
 
 .app-header {
   position: relative;
-  align-items: flex-end;
-  padding: 4px 4px 14px;
-  border-bottom: 1px solid transparent;
-  border-image: linear-gradient(90deg, transparent, rgba(77, 217, 255, 0.55) 22%, rgba(167, 139, 255, 0.42) 60%, transparent) 1;
+  align-items: flex-end !important;
+  padding: 4px 6px 14px !important;
+  border-bottom: 1px solid transparent !important;
+  border-image: linear-gradient(90deg, transparent, var(--magenta) 18%, var(--violet) 50%, var(--cyan) 82%, transparent) 1 !important;
 }
 
-.app-header::after {
+.app-header::before {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(77, 217, 255, 0.18), rgba(167, 139, 255, 0.14), transparent);
-  filter: blur(2px);
+  inset: 0 0 -1px 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 61, 138, 0.18), rgba(34, 225, 255, 0.18), transparent);
+  filter: blur(10px);
+  opacity: 0.6;
   pointer-events: none;
+  z-index: 0;
 }
 
+.app-header > * { position: relative; z-index: 1; }
+
 .app-header h1 {
-  font-size: 1.36rem;
-  font-weight: 720;
-  letter-spacing: -0.01em;
-  color: #f5fbff;
+  font-size: 1.42rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  background: linear-gradient(92deg, #fff 0%, #ffd6ec 40%, #b9efff 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  text-shadow: 0 0 24px rgba(255, 61, 138, 0.18);
 }
 
 .app-header__eyebrow {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   gap: 8px;
-  color: var(--cyan-bright);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  color: var(--magenta-bright) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.66rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.24em !important;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 6px !important;
 }
 
 .app-header__eyebrow::before {
   content: '';
-  width: 6px;
-  height: 6px;
+  width: 7px; height: 7px;
   border-radius: var(--radius-pill);
-  background: var(--cyan-bright);
-  box-shadow: 0 0 10px var(--cyan-bright);
-  animation: cz-pulse-ring 2.4s ease-out infinite;
+  background: var(--magenta);
+  box-shadow: 0 0 10px var(--magenta);
+  animation: cz-pulse-mag 2.2s ease-out infinite;
 }
 
-.app-header__right {
-  gap: 10px;
-}
+.app-header__right { gap: 10px !important; }
 
 .app-header a,
 .app-header__right a {
-  border: 1px solid rgba(120, 195, 230, 0.32);
-  border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.08), rgba(77, 217, 255, 0.02));
-  color: #d6ecf6;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  border: 1px solid var(--cyan) !important;
+  border-radius: var(--radius-pill) !important;
+  background: linear-gradient(180deg, rgba(34, 225, 255, 0.16), rgba(34, 225, 255, 0.04)) !important;
+  color: #d6f8ff !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em !important;
   text-transform: uppercase;
-  padding: 8px 16px;
-  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  padding: 8px 16px !important;
+  transition: all 180ms ease !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
 
 .app-header a:hover,
 .app-header__right a:hover {
-  border-color: var(--cyan-bright);
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
-  color: #fff;
-  box-shadow: var(--glow-cyan-soft);
+  border-color: var(--cyan-bright) !important;
+  background: linear-gradient(180deg, rgba(34, 225, 255, 0.32), rgba(34, 225, 255, 0.08)) !important;
+  color: #fff !important;
+  box-shadow: var(--glow-cyan-soft) !important;
 }
 
-/* ---------- Status pill (Engine live / Feed) ---------- */
-
 .socket-status {
-  position: relative;
-  border: 1px solid rgba(94, 234, 212, 0.35);
-  border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, rgba(94, 234, 212, 0.08), rgba(94, 234, 212, 0.02));
-  color: var(--status-live-bright);
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  position: relative !important;
+  border: 1px solid var(--mint) !important;
+  border-radius: var(--radius-pill) !important;
+  background: linear-gradient(180deg, rgba(0, 255, 170, 0.14), rgba(0, 255, 170, 0.02)) !important;
+  color: var(--mint-soft) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
   text-transform: uppercase;
-  padding: 8px 14px 8px 26px;
+  padding: 8px 14px 8px 28px !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
 
 .socket-status::before {
-  content: '';
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  margin-top: -3.5px;
+  content: '' !important;
+  position: absolute !important;
+  left: 12px; top: 50%;
+  width: 8px; height: 8px;
+  margin-top: -4px;
   border-radius: var(--radius-pill);
-  background: var(--status-live-bright);
-  box-shadow: 0 0 10px var(--status-live-bright);
+  background: var(--mint);
+  box-shadow: 0 0 12px var(--mint);
+  animation: cz-pulse-cyan 2.2s ease-out infinite;
 }
 
-.socket-status--online::before {
-  animation: cz-pulse-ring 2.2s ease-out infinite;
-}
-
-/* ---------- Workbench grid: tighter columns ---------- */
+/* ==================================================================
+   3. Workbench layout — FLIPPED: commander LEFT, scenarios RIGHT
+   ================================================================== */
 
 .command-workbench {
-  grid-template-columns: 232px minmax(0, 1fr) 360px;
-  gap: 14px;
+  display: grid !important;
+  grid-template-columns: 360px minmax(0, 1fr) 232px !important;
+  gap: 14px !important;
+  min-height: 0;
 }
 
-/* ---------- Panel surface: replace clip-path chamfer with corner ticks ---------- */
+/* Use grid order to flip without touching JSX */
+.command-workbench > .scenario-rail { order: 3 !important; }
+.command-workbench > .panel-tab--left-edge { order: 4 !important; }
+.command-workbench > .map-workspace { order: 2 !important; }
+.command-workbench > .decision-stack { order: 1 !important; }
+.command-workbench > .panel-tab--right-edge { order: 0 !important; }
+
+/* The two side tabs are positioned absolutely against panel edges in App.css.
+   Re-anchor them so the LEFT-edge tab now sits on the right side of the
+   scenario rail (which lives on the right), and the RIGHT-edge tab sits on
+   the left side of the decision stack. */
+.command-workbench > .panel-tab--left-edge {
+  left: auto !important;
+  right: calc(232px + 14px - 12px) !important;
+}
+.command-workbench > .panel-tab--right-edge {
+  right: auto !important;
+  left: calc(360px + 14px - 12px) !important;
+}
+
+/* ==================================================================
+   4. Panels — diagonal HUD corner cut (top-left + bottom-right)
+   ================================================================== */
 
 .scenario-rail,
 .mission-summary,
@@ -180,612 +262,620 @@
 .narration,
 .approve-banner,
 .details-panel,
-.panel {
-  border: 1px solid rgba(120, 195, 230, 0.18);
-  border-radius: var(--radius-panel);
-  clip-path: none;
+.panel,
+.decision-stack {
+  border: 1px solid rgba(180, 139, 255, 0.26) !important;
+  border-radius: 0 !important;
   background:
-    linear-gradient(180deg, rgba(77, 217, 255, 0.04), transparent 24%),
-    linear-gradient(180deg, rgba(10, 19, 32, 0.92), rgba(6, 12, 22, 0.96));
+    linear-gradient(180deg, rgba(34, 225, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(17, 10, 38, 0.92), rgba(8, 5, 26, 0.96)) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 0 0 1px rgba(77, 217, 255, 0.04),
-    0 18px 44px rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(10px);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(180, 139, 255, 0.06),
+    0 22px 48px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(10px) !important;
+  clip-path: polygon(
+    var(--hud-cut) 0,
+    100% 0,
+    100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%,
+    0 100%,
+    0 var(--hud-cut)
+  ) !important;
 }
 
-/* Replace the hot red ::before tint with a cool cyan top accent */
+/* Replace ::before red+cyan tints with magenta→cyan top sweep */
 .scenario-rail::before,
 .mission-summary::before,
 .event-feed::before,
 .narration::before,
 .approve-banner::before,
 .panel::before {
-  background:
-    linear-gradient(90deg, transparent 0%, rgba(77, 217, 255, 0.38) 14%, rgba(167, 139, 255, 0.32) 60%, transparent 100%);
-  height: 1px;
-  inset: 0 0 auto 0;
-  opacity: 0.85;
-  border-radius: 0;
+  background: linear-gradient(90deg, transparent, var(--magenta) 14%, var(--violet) 50%, var(--cyan) 86%, transparent) !important;
+  background-size: 200% 100% !important;
+  height: 1.5px !important;
+  inset: 0 0 auto 0 !important;
+  border-radius: 0 !important;
+  opacity: 0.85 !important;
+  animation: cz-glow-shift 9s linear infinite !important;
 }
 
-/* Replace single corner bracket with refined L-tick at all four corners */
+/* Replace single corner bracket with refined L-tick */
 .scenario-rail::after,
 .mission-summary::after,
 .event-feed::after,
 .narration::after,
 .approve-banner::after,
 .panel::after {
-  top: 6px;
-  right: 6px;
-  width: var(--tick-size);
-  height: var(--tick-size);
-  border-top: 1px solid rgba(77, 217, 255, 0.5);
-  border-right: 1px solid rgba(77, 217, 255, 0.5);
-  opacity: 0.75;
+  top: 8px !important;
+  right: 8px !important;
+  width: var(--tick-size) !important;
+  height: var(--tick-size) !important;
+  border-top: 1px solid var(--cyan-bright) !important;
+  border-right: 1px solid var(--cyan-bright) !important;
+  opacity: 0.9 !important;
+  filter: drop-shadow(0 0 4px rgba(34, 225, 255, 0.5));
 }
 
-/* Add bottom-left tick via panel decor utility */
-.scenario-rail,
-.mission-summary,
-.event-feed,
-.narration,
-.approve-banner,
-.panel {
-  position: relative;
-}
-
-.scenario-rail > :first-child,
-.mission-summary > :first-child,
-.event-feed > :first-child,
-.narration > :first-child,
-.approve-banner > :first-child,
-.panel > :first-child {
-  position: relative;
-  z-index: 1;
-}
-
-/* ---------- Scenario rail ---------- */
+/* ==================================================================
+   5. Scenario rail (now on the right)
+   ================================================================== */
 
 .scenario-rail {
-  border-radius: var(--radius-panel);
+  border-color: rgba(255, 61, 138, 0.28) !important;
+}
+
+.scenario-list__item {
+  border-color: rgba(180, 139, 255, 0.16) !important;
+  background: rgba(20, 14, 44, 0.5) !important;
+  transition: all 160ms ease !important;
+}
+
+.scenario-list__item:hover {
+  border-color: rgba(34, 225, 255, 0.4) !important;
+  background: rgba(28, 18, 56, 0.7) !important;
 }
 
 .scenario-list__item::before {
-  background: var(--cyan-bright);
-  box-shadow: 0 0 8px var(--cyan-bright);
+  background: var(--magenta-bright) !important;
+  box-shadow: 0 0 10px var(--magenta-bright) !important;
 }
 
 .scenario-list__item--active {
-  border-color: rgba(77, 217, 255, 0.45);
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.1), rgba(77, 217, 255, 0.02));
-  box-shadow: var(--glow-cyan-soft);
+  border-color: var(--magenta) !important;
+  background: linear-gradient(180deg, rgba(255, 61, 138, 0.12), rgba(20, 14, 44, 0.7)) !important;
+  box-shadow: var(--glow-magenta-soft) !important;
 }
 
-/* ---------- Mission summary cards ---------- */
+.scenario-list__item--active::before {
+  animation: cz-pulse-mag 2s ease-out infinite !important;
+}
+
+/* ==================================================================
+   6. Mission summary cards (CENTCOM SCENARIO header)
+   ================================================================== */
 
 .mission-summary--white {
-  border-color: rgba(180, 210, 230, 0.24);
+  border-color: rgba(34, 225, 255, 0.32) !important;
 }
 
 .mission-summary--amber {
-  border-color: rgba(241, 179, 71, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    var(--glow-warn),
-    0 18px 44px rgba(0, 0, 0, 0.42);
+  border-color: rgba(255, 181, 71, 0.5) !important;
+  box-shadow: var(--glow-warn), 0 18px 44px rgba(0, 0, 0, 0.5) !important;
 }
 
 .mission-summary--red {
-  border-color: rgba(255, 91, 108, 0.5);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    var(--glow-danger),
-    0 18px 44px rgba(0, 0, 0, 0.42);
+  border-color: var(--magenta) !important;
+  box-shadow: var(--glow-danger), 0 18px 44px rgba(0, 0, 0, 0.5) !important;
 }
 
 .mission-summary--amber::before {
-  background: linear-gradient(90deg, transparent, rgba(241, 179, 71, 0.7), transparent);
+  background: linear-gradient(90deg, transparent, var(--amber), transparent) !important;
 }
 
 .mission-summary--red::before {
-  background: linear-gradient(90deg, transparent, rgba(255, 91, 108, 0.85), transparent);
-  animation: cz-glow-shift 3.2s linear infinite;
-  background-size: 200% 100%;
+  background: linear-gradient(90deg, transparent, var(--magenta) 20%, var(--cyan) 80%, transparent) !important;
+  background-size: 200% 100% !important;
+  animation: cz-glow-shift 3s linear infinite !important;
 }
 
-/* ---------- Status cards ---------- */
+/* ==================================================================
+   7. Status cards
+   ================================================================== */
 
 .status-card {
-  border-radius: var(--radius-panel);
-  background: linear-gradient(180deg, rgba(15, 26, 40, 0.78), rgba(10, 19, 32, 0.62));
-  transition: border-color 180ms ease, transform 200ms ease, box-shadow 200ms ease;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, rgba(26, 18, 56, 0.7), rgba(17, 10, 38, 0.6)) !important;
+  border: 1px solid rgba(180, 139, 255, 0.18) !important;
+  transition: all 200ms ease !important;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
 .status-card:hover {
   transform: translateY(-1px);
-  box-shadow: var(--glow-cyan-soft);
+  border-color: rgba(34, 225, 255, 0.5) !important;
+  box-shadow: var(--glow-cyan-soft) !important;
 }
 
-.status-card--white {
-  border-left: 2px solid var(--cyan-bright);
-}
+.status-card--white { border-left: 2px solid var(--cyan-bright) !important; }
+.status-card--amber { border-left: 2px solid var(--amber) !important; }
+.status-card--red   { border-left: 2px solid var(--magenta) !important; }
 
-.status-card--amber {
-  border-left: 2px solid var(--amber);
-}
-
-.status-card--red {
-  border-left: 2px solid var(--red);
-}
-
-/* ---------- Map stage ---------- */
-
-.map-stage {
-  border-radius: var(--radius-panel);
-  border: 1px solid rgba(120, 195, 230, 0.2);
-  box-shadow:
-    inset 0 0 0 1px rgba(77, 217, 255, 0.04),
-    0 24px 60px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.map-stage::before,
-.map-stage::after {
-  content: '';
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0.85;
-}
-
-.map-stage::before {
-  top: 8px;
-  left: 8px;
-  border-top: 1px solid rgba(77, 217, 255, 0.55);
-  border-left: 1px solid rgba(77, 217, 255, 0.55);
-}
-
-.map-stage::after {
-  bottom: 8px;
-  right: 8px;
-  border-bottom: 1px solid rgba(77, 217, 255, 0.55);
-  border-right: 1px solid rgba(77, 217, 255, 0.55);
-}
-
-/* Threat update banner inside map */
-.mission-alert {
-  border-radius: var(--radius-panel);
-  border: 1px solid rgba(241, 179, 71, 0.45);
-  background:
-    linear-gradient(180deg, rgba(241, 179, 71, 0.14), rgba(15, 26, 40, 0.86));
-  box-shadow: var(--glow-warn);
-  backdrop-filter: blur(8px);
-}
-
-.mission-alert--danger {
-  border-color: rgba(255, 91, 108, 0.55);
-  background: linear-gradient(180deg, rgba(255, 91, 108, 0.18), rgba(15, 26, 40, 0.88));
-  box-shadow: var(--glow-danger);
-}
-
-/* Map view toggle (NAV / GLOBE) */
-.map-view-toggle {
-  border: 1px solid rgba(120, 195, 230, 0.32);
-  border-radius: var(--radius-pill);
-  background: rgba(10, 19, 32, 0.78);
-  overflow: hidden;
-  backdrop-filter: blur(8px);
-  clip-path: none;
-}
-
-.map-view-toggle button {
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  padding: 7px 16px;
-  transition: color 160ms ease, background 160ms ease;
-}
-
-.map-view-toggle button:hover,
-.map-view-toggle button.is-active {
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
-  color: #f5fbff;
-  box-shadow: inset 0 0 0 1px rgba(77, 217, 255, 0.4);
-}
-
-/* TAK / space hud chrome */
-.tak-map-chrome,
-.tak-map-strip,
-.space-hud {
-  border: 1px solid rgba(120, 195, 230, 0.22);
-  border-radius: var(--radius-panel);
-  background: rgba(10, 19, 32, 0.78);
-  backdrop-filter: blur(8px);
-  font-family: var(--font-mono);
-  letter-spacing: 0.08em;
-}
-
-.tak-map-chrome strong,
-.space-hud strong {
-  color: var(--cyan-bright);
-}
-
-/* Cesium scenario controls */
-.cesium-scenario-controls button,
-.satellite-family-controls button,
-.orbit-toggle {
-  border: 1px solid rgba(120, 195, 230, 0.28);
-  border-radius: var(--radius-pill);
-  background: rgba(10, 19, 32, 0.78);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  transition: all 160ms ease;
-  backdrop-filter: blur(6px);
-}
-
-.cesium-scenario-controls button:hover,
-.cesium-scenario-controls button.is-active,
-.satellite-family-controls button:hover,
-.satellite-family-controls button.is-active {
-  border-color: var(--cyan-bright);
-  color: #f5fbff;
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(77, 217, 255, 0.04));
-  box-shadow: var(--glow-cyan-soft);
-}
-
-/* ---------- Decision stack (right column) ---------- */
+/* ==================================================================
+   8. Decision stack (now on the LEFT)
+   ================================================================== */
 
 .decision-stack {
-  border: 1px solid rgba(120, 195, 230, 0.18);
-  border-radius: var(--radius-panel);
-  background: linear-gradient(180deg, rgba(10, 19, 32, 0.92), rgba(6, 12, 22, 0.95));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 18px 44px rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(10px);
+  border-color: rgba(34, 225, 255, 0.28) !important;
+  background:
+    linear-gradient(180deg, rgba(34, 225, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(17, 10, 38, 0.94), rgba(8, 5, 26, 0.96)) !important;
 }
 
-/* Stack section headers */
 .stack-section {
-  border-bottom: 1px solid rgba(120, 195, 230, 0.1);
+  border-bottom: 1px solid rgba(180, 139, 255, 0.12) !important;
 }
 
 .stack-section__summary,
 .stack-section > summary {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.22em !important;
   text-transform: uppercase;
-  color: var(--text-muted);
-  padding: 10px 14px;
-  transition: color 160ms ease, background 160ms ease;
+  color: var(--text-muted) !important;
+  padding: 11px 14px !important;
+  transition: all 160ms ease !important;
 }
 
 .stack-section__summary:hover,
 .stack-section > summary:hover {
-  color: var(--cyan-bright);
-  background: rgba(77, 217, 255, 0.04);
-}
-
-/* DECISION LOOP awaiting approval marker */
-.decision-loop .panel__header,
-.reasoning-panel .panel__header,
-.action-log .panel__header,
-.embedding-viz .panel__header {
-  border-bottom: 1px solid rgba(120, 195, 230, 0.14);
+  color: var(--cyan-bright) !important;
+  background: rgba(34, 225, 255, 0.05) !important;
 }
 
 .decision-loop .panel__header h2,
 .reasoning-panel .panel__header h2,
 .action-log .panel__header h2,
 .embedding-viz .panel__header h2 {
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-family: var(--font-mono) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
   text-transform: uppercase;
-  color: var(--cyan-bright);
+  background: linear-gradient(92deg, var(--cyan-bright), var(--magenta-bright));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
 }
 
-/* ---------- Approval banner: floating glass card with magenta glow ---------- */
+/* ==================================================================
+   9. Approval / decision gate — slide in from the side
+   ================================================================== */
 
 .approve-banner {
   position: relative;
-  overflow: visible;
-  border: 1px solid rgba(255, 91, 108, 0.42);
-  border-radius: 6px;
+  overflow: visible !important;
+  border: 1.5px solid var(--magenta) !important;
+  border-radius: 0 !important;
   background:
-    linear-gradient(180deg, rgba(255, 91, 108, 0.1), transparent 30%),
-    linear-gradient(180deg, rgba(15, 26, 40, 0.92), rgba(10, 19, 32, 0.96));
+    linear-gradient(180deg, rgba(255, 61, 138, 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(20, 10, 38, 0.95), rgba(10, 5, 26, 0.98)) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 0 0 1px rgba(255, 91, 108, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(255, 61, 138, 0.18),
     var(--glow-danger),
-    0 24px 60px rgba(0, 0, 0, 0.6);
-  animation: cz-card-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    0 24px 60px rgba(0, 0, 0, 0.7) !important;
+  animation: cz-card-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  clip-path: polygon(
+    var(--hud-cut) 0,
+    100% 0,
+    100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%,
+    0 100%,
+    0 var(--hud-cut)
+  ) !important;
 }
 
 .approve-banner::before {
-  background: linear-gradient(90deg, transparent, var(--red), var(--cyan-bright), transparent);
-  background-size: 200% 100%;
-  animation: cz-glow-shift 4s linear infinite;
-  height: 1.5px;
-  opacity: 1;
+  background: linear-gradient(90deg, transparent, var(--magenta) 18%, var(--cyan) 60%, transparent) !important;
+  background-size: 200% 100% !important;
+  height: 2px !important;
+  animation: cz-glow-shift 3s linear infinite !important;
+  opacity: 1 !important;
 }
 
 .approve-banner::after {
-  /* "PRIORITY" tick */
-  border-color: rgba(255, 91, 108, 0.7);
+  border-color: var(--magenta-bright) !important;
+  filter: drop-shadow(0 0 6px var(--magenta));
 }
 
 .approve-banner__kicker {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   gap: 8px;
-  color: var(--red);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  color: var(--magenta-bright) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.24em !important;
   text-transform: uppercase;
 }
 
 .approve-banner__kicker::before {
-  content: '';
-  width: 7px;
-  height: 7px;
+  content: '' !important;
+  width: 8px; height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--red);
-  box-shadow: 0 0 10px var(--red);
-  animation: cz-pulse-ring 1.6s ease-out infinite;
+  background: var(--magenta);
+  box-shadow: 0 0 12px var(--magenta);
+  animation: cz-pulse-mag 1.4s ease-out infinite;
 }
 
 .approve-banner h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.005em;
-  color: #fff;
-  margin-top: 6px;
+  font-size: 1.06rem !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  margin-top: 6px !important;
+  letter-spacing: -0.005em !important;
+}
+
+.approve-banner__meta dt {
+  font-family: var(--font-mono) !important;
+  font-size: 0.64rem !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase;
+  color: var(--text-subtle) !important;
+}
+
+.approve-banner__meta dd {
+  font-family: var(--font-mono) !important;
+  color: var(--cyan-bright) !important;
 }
 
 .approve-banner__button {
-  position: relative;
-  border: 1px solid rgba(94, 234, 212, 0.55);
-  border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, rgba(94, 234, 212, 0.2), rgba(94, 234, 212, 0.04));
-  color: #d8fff5;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  position: relative !important;
+  border: 1px solid var(--mint) !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, rgba(0, 255, 170, 0.24), rgba(0, 255, 170, 0.06)) !important;
+  color: #ddfff0 !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.18em !important;
   text-transform: uppercase;
-  padding: 9px 18px;
-  transition: all 180ms ease;
+  padding: 10px 20px !important;
+  transition: all 180ms ease !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
 
 .approve-banner__button:hover {
-  border-color: var(--green);
-  background: linear-gradient(180deg, rgba(94, 234, 212, 0.32), rgba(94, 234, 212, 0.08));
-  color: #fff;
-  box-shadow: 0 0 20px rgba(94, 234, 212, 0.4);
+  background: linear-gradient(180deg, rgba(0, 255, 170, 0.4), rgba(0, 255, 170, 0.1)) !important;
+  color: #fff !important;
+  box-shadow: var(--glow-mint) !important;
   transform: translateY(-1px);
 }
 
 .approve-banner__button--secondary {
-  border-color: rgba(180, 210, 230, 0.32);
-  background: rgba(10, 19, 32, 0.6);
-  color: var(--text-muted);
+  border-color: rgba(180, 139, 255, 0.45) !important;
+  background: rgba(20, 14, 44, 0.7) !important;
+  color: var(--text-muted) !important;
 }
 
 .approve-banner__button--secondary:hover {
-  border-color: rgba(180, 210, 230, 0.6);
-  background: rgba(20, 32, 48, 0.85);
-  color: #fff;
-  box-shadow: none;
+  border-color: var(--violet) !important;
+  background: rgba(40, 26, 78, 0.85) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(180, 139, 255, 0.3) !important;
 }
 
-/* ---------- Event feed (Signal Stream) ---------- */
+/* ==================================================================
+   10. Map stage — keep interior, just frame it
+   ================================================================== */
+
+.map-stage {
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 225, 255, 0.32) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 225, 255, 0.06),
+    0 0 32px rgba(34, 225, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
+  clip-path: polygon(
+    var(--hud-cut) 0,
+    100% 0,
+    100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%,
+    0 100%,
+    0 var(--hud-cut)
+  ) !important;
+}
+
+/* 4-corner HUD brackets on the map (stays out of the world content) */
+.map-stage::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 10px; left: 10px;
+  width: 24px; height: 24px;
+  border-top: 1.5px solid var(--cyan-bright);
+  border-left: 1.5px solid var(--cyan-bright);
+  filter: drop-shadow(0 0 4px var(--cyan));
+  pointer-events: none;
+  z-index: 6;
+  background: none !important;
+  inset: auto auto auto auto;
+  opacity: 0.95 !important;
+}
+
+.map-stage::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 10px; right: 10px;
+  width: 24px; height: 24px;
+  border-bottom: 1.5px solid var(--magenta);
+  border-right: 1.5px solid var(--magenta);
+  filter: drop-shadow(0 0 4px var(--magenta));
+  pointer-events: none;
+  z-index: 6;
+  background: none !important;
+  inset: auto auto auto auto;
+  opacity: 0.95 !important;
+}
+
+/* Threat update banner over map */
+.mission-alert {
+  border-radius: 0 !important;
+  border: 1px solid var(--amber) !important;
+  background: linear-gradient(180deg, rgba(255, 181, 71, 0.18), rgba(20, 10, 38, 0.92)) !important;
+  box-shadow: var(--glow-warn) !important;
+  backdrop-filter: blur(8px) !important;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.mission-alert--danger {
+  border-color: var(--magenta) !important;
+  background: linear-gradient(180deg, rgba(255, 61, 138, 0.22), rgba(20, 10, 38, 0.95)) !important;
+  box-shadow: var(--glow-danger) !important;
+}
+
+/* Map view toggle */
+.map-view-toggle {
+  border: 1px solid var(--cyan) !important;
+  border-radius: 0 !important;
+  background: rgba(20, 10, 38, 0.84) !important;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.map-view-toggle button {
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase;
+  padding: 8px 16px !important;
+}
+
+.map-view-toggle button:hover,
+.map-view-toggle button.is-active {
+  background: linear-gradient(180deg, rgba(34, 225, 255, 0.22), rgba(34, 225, 255, 0.04)) !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 0 1px var(--cyan-bright) !important;
+}
+
+/* TAK / space hud chrome */
+.tak-map-chrome,
+.tak-map-strip,
+.space-hud {
+  border: 1px solid rgba(180, 139, 255, 0.32) !important;
+  border-radius: 0 !important;
+  background: rgba(20, 10, 38, 0.82) !important;
+  backdrop-filter: blur(8px) !important;
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.1em !important;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.tak-map-chrome strong,
+.space-hud strong { color: var(--cyan-bright) !important; }
+
+/* Cesium controls */
+.cesium-scenario-controls button,
+.satellite-family-controls button,
+.orbit-toggle {
+  border: 1px solid rgba(180, 139, 255, 0.36) !important;
+  border-radius: 0 !important;
+  background: rgba(20, 10, 38, 0.82) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+  transition: all 160ms ease !important;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+.cesium-scenario-controls button:hover,
+.cesium-scenario-controls button.is-active,
+.satellite-family-controls button:hover,
+.satellite-family-controls button.is-active {
+  border-color: var(--cyan-bright) !important;
+  color: #fff !important;
+  background: linear-gradient(180deg, rgba(34, 225, 255, 0.22), rgba(20, 10, 38, 0.86)) !important;
+  box-shadow: var(--glow-cyan-soft) !important;
+}
+
+/* ==================================================================
+   11. Event feed (Signal Stream)
+   ================================================================== */
 
 .event-feed {
-  border-color: rgba(120, 195, 230, 0.2);
+  border-color: rgba(0, 255, 170, 0.28) !important;
 }
 
 .event-feed::before {
-  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.45), rgba(77, 217, 255, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, var(--mint) 14%, var(--cyan) 60%, transparent) !important;
 }
 
-/* ---------- Scenario timeline ---------- */
-
-.scenario-timeline {
-  border-radius: var(--radius-panel);
-}
-
-/* ---------- Panel tabs (collapse handles) ---------- */
+/* ==================================================================
+   12. Panel tabs (collapse handles)
+   ================================================================== */
 
 .panel-tab {
-  border: 1px solid rgba(120, 195, 230, 0.32);
-  background: linear-gradient(180deg, rgba(15, 26, 40, 0.92), rgba(6, 12, 22, 0.94));
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  border: 1px solid var(--violet) !important;
+  background: linear-gradient(180deg, rgba(40, 26, 78, 0.92), rgba(17, 10, 38, 0.95)) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.22em !important;
   text-transform: uppercase;
-  border-radius: var(--radius-pill);
+  border-radius: 0 !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 22px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  transition: all 180ms ease;
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 22px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all 180ms ease !important;
 }
 
 .panel-tab:hover {
-  border-color: var(--cyan-bright);
-  color: #f5fbff;
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.18), rgba(15, 26, 40, 0.92));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    var(--glow-cyan-soft),
-    0 10px 24px rgba(0, 0, 0, 0.45);
+  border-color: var(--cyan-bright) !important;
+  color: #fff !important;
+  background: linear-gradient(180deg, rgba(34, 225, 255, 0.2), rgba(40, 26, 78, 0.92)) !important;
+  box-shadow: var(--glow-cyan-soft), 0 10px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
-.panel-tab__arrow {
-  color: var(--cyan-bright);
-}
+.panel-tab__arrow { color: var(--magenta-bright) !important; }
 
-/* ---------- Reasoning trace lines ---------- */
+/* ==================================================================
+   13. Reasoning trace
+   ================================================================== */
 
 .reasoning-line {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  border-left: 1.5px solid rgba(120, 195, 230, 0.2);
-  padding-left: 10px;
-  transition: border-color 160ms ease, background 160ms ease;
+  font-family: var(--font-mono) !important;
+  font-size: 0.78rem !important;
+  border-left: 2px solid rgba(180, 139, 255, 0.22) !important;
+  padding-left: 10px !important;
+  transition: all 160ms ease !important;
 }
 
 .reasoning-line:hover {
-  border-left-color: var(--cyan-bright);
-  background: rgba(77, 217, 255, 0.04);
+  border-left-color: var(--cyan-bright) !important;
+  background: rgba(34, 225, 255, 0.04) !important;
 }
 
-.reasoning-line--decision {
-  border-left-color: var(--green);
-}
+.reasoning-line--decision { border-left-color: var(--mint) !important; }
+.reasoning-line--decision .reasoning-line__msg { color: #d8fff0 !important; }
+.reasoning-line--tool { border-left-color: var(--violet) !important; }
+.reasoning-line--tool .reasoning-line__msg { color: #e8dcff !important; }
+.reasoning-line--warn { border-left-color: var(--amber) !important; }
+.reasoning-line--warn .reasoning-line__msg { color: #ffe2b1 !important; }
 
-.reasoning-line--decision .reasoning-line__msg {
-  color: #d8fff5;
-}
-
-.reasoning-line--tool {
-  border-left-color: var(--violet);
-}
-
-.reasoning-line--tool .reasoning-line__msg {
-  color: #d9d0ff;
-}
-
-.reasoning-line--warn {
-  border-left-color: var(--amber);
-}
-
-.reasoning-line--warn .reasoning-line__msg {
-  color: #ffe1ad;
-}
-
-/* ---------- AOR signals: refresh markers ---------- */
+/* ==================================================================
+   14. AOR signals — let glows match the new palette
+   ================================================================== */
 
 .aor-signal__glyph {
-  filter: drop-shadow(0 0 6px rgba(77, 217, 255, 0.4));
+  filter: drop-shadow(0 0 6px rgba(34, 225, 255, 0.5));
 }
 
 .aor-signal--high .aor-signal__glyph {
-  filter: drop-shadow(0 0 8px rgba(255, 91, 108, 0.55));
+  filter: drop-shadow(0 0 8px rgba(255, 61, 138, 0.65));
 }
 
 .aor-signal--watch .aor-signal__glyph {
-  filter: drop-shadow(0 0 7px rgba(241, 179, 71, 0.5));
+  filter: drop-shadow(0 0 7px rgba(255, 181, 71, 0.55));
 }
 
 .aor-signal--newest .aor-signal__glyph {
-  animation: cz-pulse-ring 2s ease-out infinite;
+  animation: cz-pulse-cyan 2s ease-out infinite;
 }
 
-/* ---------- Operator action card ---------- */
+/* ==================================================================
+   15. Operator action card / request packet
+   ================================================================== */
 
 .operator-action {
-  border-radius: var(--radius-panel);
-  border: 1px solid rgba(120, 195, 230, 0.22);
-  background: linear-gradient(180deg, rgba(15, 26, 40, 0.85), rgba(10, 19, 32, 0.92));
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  border-radius: 0 !important;
+  border: 1px solid rgba(180, 139, 255, 0.28) !important;
+  background: linear-gradient(180deg, rgba(26, 18, 56, 0.85), rgba(17, 10, 38, 0.92)) !important;
+  transition: all 180ms ease !important;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 .operator-action:hover {
-  border-color: rgba(77, 217, 255, 0.5);
-  box-shadow: var(--glow-cyan-soft);
+  border-color: var(--cyan) !important;
+  box-shadow: var(--glow-cyan-soft) !important;
 }
 
 .operator-action--accepted {
-  border-color: rgba(94, 234, 212, 0.5);
-  box-shadow: 0 0 18px rgba(94, 234, 212, 0.18);
+  border-color: var(--mint) !important;
+  box-shadow: 0 0 18px rgba(0, 255, 170, 0.24) !important;
 }
 
 .operator-action--denied {
-  border-color: rgba(255, 91, 108, 0.5);
-  box-shadow: 0 0 18px rgba(255, 91, 108, 0.18);
+  border-color: var(--magenta) !important;
+  box-shadow: 0 0 18px rgba(255, 61, 138, 0.24) !important;
 }
-
-/* ---------- Request packet ---------- */
 
 .request-packet {
-  border-radius: var(--radius-panel);
-  border: 1px solid rgba(167, 139, 255, 0.32);
+  border-radius: 0 !important;
+  border: 1px solid var(--violet) !important;
   background:
-    linear-gradient(180deg, rgba(167, 139, 255, 0.06), transparent 40%),
-    linear-gradient(180deg, rgba(15, 26, 40, 0.85), rgba(10, 19, 32, 0.92));
-  font-family: var(--font-mono);
+    linear-gradient(180deg, rgba(180, 139, 255, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(26, 18, 56, 0.85), rgba(17, 10, 38, 0.92)) !important;
+  font-family: var(--font-mono) !important;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
 
-/* ---------- Details panel ---------- */
+/* ==================================================================
+   16. Details panel
+   ================================================================== */
 
 .details-panel {
-  border-radius: var(--radius-panel);
+  border-radius: 0 !important;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px) !important;
 }
 
 .details-panel summary {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.18em !important;
   text-transform: uppercase;
 }
 
-/* ---------- Scrollbars ---------- */
+/* ==================================================================
+   17. Scrollbars / selection / focus
+   ================================================================== */
 
-html::-webkit-scrollbar {
+html::-webkit-scrollbar,
+*::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(10, 19, 32, 0.4);
+  background: rgba(8, 5, 26, 0.5);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.32), rgba(167, 139, 255, 0.28));
-  border-radius: 8px;
+  background: linear-gradient(180deg, var(--magenta) 0%, var(--violet) 50%, var(--cyan) 100%);
+  border-radius: 0;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(77, 217, 255, 0.55), rgba(167, 139, 255, 0.45));
+  background: linear-gradient(180deg, var(--magenta-bright) 0%, var(--violet) 50%, var(--cyan-bright) 100%);
 }
 
-/* ---------- Selection ---------- */
-
 ::selection {
-  background: rgba(77, 217, 255, 0.32);
+  background: rgba(255, 61, 138, 0.4);
   color: #fff;
 }
 
-/* ---------- Subtle text refinements ---------- */
-
-.app-header__plain {
-  color: var(--text-muted);
-  letter-spacing: 0.005em;
-}
-
-/* Buttons throughout: refined focus ring */
 button:focus-visible,
 a:focus-visible {
   outline: 1px solid var(--cyan-bright);
@@ -793,41 +883,28 @@ a:focus-visible {
   box-shadow: var(--glow-cyan-soft);
 }
 
-/* ---------- Text utility refresh ---------- */
+/* ==================================================================
+   18. Narration tone
+   ================================================================== */
 
-.scenario-list__item h3,
-.mission-summary h2,
-.status-card h2 {
-  letter-spacing: -0.005em;
-}
-
-/* ---------- Live animations on key indicators ---------- */
-
-.scenario-list__item--active::before {
-  animation: cz-pulse-ring 2.4s ease-out infinite;
-}
-
-/* ---------- Approve banner meta + details ---------- */
-
-.approve-banner__meta dt {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-}
-
-.approve-banner__meta dd {
-  font-family: var(--font-mono);
-  color: var(--cyan-bright);
-}
-
-/* ---------- Narration ---------- */
-
-.narration {
-  border-color: rgba(167, 139, 255, 0.24);
-}
+.narration { border-color: var(--violet) !important; }
 
 .narration::before {
-  background: linear-gradient(90deg, transparent, rgba(167, 139, 255, 0.55), rgba(77, 217, 255, 0.45), transparent);
+  background: linear-gradient(90deg, transparent, var(--violet), var(--cyan), transparent) !important;
+}
+
+/* ==================================================================
+   19. Mobile / responsive — keep flipped layout below the breakpoint
+   stays vertical; nothing extra needed
+   ================================================================== */
+
+@media (max-width: 1080px) {
+  .command-workbench {
+    grid-template-columns: 1fr !important;
+  }
+  .command-workbench > .scenario-rail,
+  .command-workbench > .map-workspace,
+  .command-workbench > .decision-stack { order: initial !important; }
+  .brigade-shell > .command-workbench::before,
+  .brigade-shell > .command-workbench::after { display: none; }
 }
