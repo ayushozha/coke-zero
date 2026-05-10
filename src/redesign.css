@@ -223,6 +223,11 @@
 
 /* ==================================================================
    3. Workbench layout — FLIPPED: commander LEFT, scenarios RIGHT
+   App.css ships two layout regimes:
+     (a) default (<1081px): plain grid, items flow in source order
+     (b) desktop (>=1081px): "overlay" mode where rails sit on top of a
+         full-width map via explicit grid-column placement and gap=0.
+   We flip both regimes consistently below.
    ================================================================== */
 
 .command-workbench {
@@ -232,24 +237,73 @@
   min-height: 0;
 }
 
-/* Use grid order to flip without touching JSX */
+/* (a) Default regime — flip via `order` so source-order placement reverses */
 .command-workbench > .scenario-rail { order: 3 !important; }
 .command-workbench > .panel-tab--left-edge { order: 4 !important; }
 .command-workbench > .map-workspace { order: 2 !important; }
 .command-workbench > .decision-stack { order: 1 !important; }
 .command-workbench > .panel-tab--right-edge { order: 0 !important; }
 
-/* The two side tabs are positioned absolutely against panel edges in App.css.
-   Re-anchor them so the LEFT-edge tab now sits on the right side of the
-   scenario rail (which lives on the right), and the RIGHT-edge tab sits on
-   the left side of the decision stack. */
-.command-workbench > .panel-tab--left-edge {
-  left: auto !important;
-  right: calc(232px + 14px - 12px) !important;
-}
-.command-workbench > .panel-tab--right-edge {
-  right: auto !important;
-  left: calc(360px + 14px - 12px) !important;
+/* Collapse-slide direction must flip — push rails out toward the edge they
+   now occupy, not the original edge. */
+.scenario-rail--collapsed { transform: translateX(100%) !important; }
+.decision-stack--collapsed { transform: translateX(-100%) !important; }
+
+/* (b) Desktop overlay regime — App.css uses grid-column 1 / 3 placements
+   plus rail-width vars. Swap both so the columns visually invert. */
+@media (min-width: 1081px) {
+  .command-workbench {
+    --left-rail: 360px !important;   /* now belongs to decision-stack */
+    --right-rail: 232px !important;  /* now belongs to scenario-rail */
+    grid-template-columns: var(--left-rail) minmax(0, 1fr) var(--right-rail) !important;
+    gap: 0 !important;
+    /* Outer corner brackets need to escape the workbench bounds */
+    overflow: visible !important;
+  }
+  .command-workbench > .scenario-rail { grid-column: 3 !important; }
+  .command-workbench > .decision-stack { grid-column: 1 !important; }
+  /* .map-workspace already spans 1 / -1 so the map sits under both rails */
+
+  /* Re-anchor the absolute panel-tabs:
+     - .panel-tab--left-edge holds the SCENARIOS label and toggles the
+       scenario rail. Since the rail moved to column 3, the tab anchors
+       on the right side now.
+     - .panel-tab--right-edge holds the COMMANDER label and toggles the
+       decision stack. The stack moved to column 1, so the tab anchors
+       on the left side now. */
+  .panel-tab--left-edge {
+    left: auto !important;
+    right: var(--right-rail, 232px) !important;
+    border-radius: 4px 0 0 4px !important;
+    border-right: 0 !important;
+    border-left: 1px solid var(--violet) !important;
+  }
+  .panel-tab--left-edge.panel-tab--at-edge {
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  .panel-tab--right-edge {
+    right: auto !important;
+    left: var(--left-rail, 360px) !important;
+    border-radius: 0 4px 4px 0 !important;
+    border-left: 0 !important;
+    border-right: 1px solid var(--violet) !important;
+  }
+  .panel-tab--right-edge.panel-tab--at-edge {
+    left: 0 !important;
+    right: auto !important;
+  }
+
+  /* Cesium overlay controls were nudged left by the original 352px right
+     rail. The new right rail is narrower (232px), so reduce the offset
+     accordingly to reclaim some map breathing room. */
+  .cesium-scenario-controls,
+  .satellite-family-controls,
+  .orbit-toggle,
+  .satellite-detail {
+    right: calc(var(--right-rail, 232px) + 14px) !important;
+  }
 }
 
 /* ==================================================================
@@ -750,6 +804,13 @@
 }
 
 .panel-tab__arrow { color: var(--magenta-bright) !important; }
+
+/* Flip arrow direction since columns are mirrored from the original */
+.panel-tab--left-edge .panel-tab__arrow,
+.panel-tab--right-edge .panel-tab__arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
 
 /* ==================================================================
    13. Reasoning trace
