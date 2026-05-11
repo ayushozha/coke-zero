@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.138",
     "cesium": "^1.141.0",
     "maplibre-gl": "^5.24.0",
     "mgrs": "^2.1.0",

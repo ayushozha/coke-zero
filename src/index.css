@@ -1,64 +1,75 @@
 :root {
-  /* Core surface */
-  --black: #050a12;
-  --bg-deep: #02060b;
-  --bg-panel: #0a1320;
-  --bg-panel-soft: #111e2c;
-  --white: #eaf1f7;
+  /* Core surface — purple/indigo tinted */
+  --black: #08051a;
+  --bg-deep: #04020e;
+  --bg-panel: #110a26;
+  --bg-panel-soft: #1a1238;
+  --white: #f1ebff;
 
-  /* Accent + status */
-  --amber: #f1b347;
-  --red: #ff5b6c;
-  --green: #5eead4;
-  --cyan: #4dd9ff;
-  --cyan-bright: #80efff;
-  --olive: #c2d97a;
-  --violet: #a78bff;
+  /* Accents — synthwave HUD */
+  --magenta: #ff3d8a;
+  --magenta-bright: #ff66a8;
+  --cyan: #22e1ff;
+  --cyan-bright: #80f1ff;
+  --amber: #ffb547;
+  --mint: #00ffaa;
+  --mint-soft: #6affc8;
+  --violet: #b48bff;
+  --indigo: #6e57ff;
+
+  /* Legacy mapping (App.css consumes these) */
+  --red: var(--magenta);
+  --green: var(--mint);
+  --olive: var(--mint-soft);
 
   --status-white: var(--white);
   --status-amber: var(--amber);
-  --status-red: var(--red);
-  --status-live: var(--green);
-  --status-live-bright: #9af2dc;
+  --status-red: var(--magenta);
+  --status-live: var(--mint);
+  --status-live-bright: var(--mint-soft);
 
   /* Domain tints */
-  --domain-rf-ew: #f1b347;
+  --domain-rf-ew: var(--amber);
   --domain-cyber: var(--violet);
-  --domain-pnt: #76b6ff;
-  --domain-space: #5eead4;
-  --domain-drone: #c2d97a;
-  --domain-context: #8fa1b4;
+  --domain-pnt: var(--cyan);
+  --domain-space: var(--mint);
+  --domain-drone: var(--mint-soft);
+  --domain-context: #a698c4;
 
-  /* Panel surfaces — darker, cooler, glassier */
-  --panel: rgba(10, 19, 32, 0.86);
-  --panel-strong: rgba(6, 12, 22, 0.94);
-  --panel-soft: rgba(20, 32, 48, 0.72);
-  --control-surface: rgba(15, 26, 40, 0.62);
-  --control-surface-active: rgba(40, 80, 105, 0.72);
-  --control-line: rgba(120, 195, 230, 0.28);
-  --line: rgba(180, 210, 230, 0.12);
-  --line-bright: rgba(180, 210, 230, 0.26);
+  /* Panel surfaces */
+  --panel: rgba(17, 10, 38, 0.86);
+  --panel-strong: rgba(8, 5, 26, 0.95);
+  --panel-soft: rgba(26, 18, 56, 0.74);
+  --control-surface: rgba(22, 14, 48, 0.62);
+  --control-surface-active: rgba(60, 38, 110, 0.72);
+  --control-line: rgba(180, 139, 255, 0.32);
+  --line: rgba(200, 180, 255, 0.12);
+  --line-bright: rgba(200, 180, 255, 0.28);
 
   /* Type */
-  --text-primary: #eaf1f7;
-  --text-muted: #aebccb;
-  --text-subtle: #7a8a9b;
+  --text-primary: #f1ebff;
+  --text-muted: #b9add6;
+  --text-subtle: #8478a6;
 
   /* Ambient wash */
-  --ambient-cyan: rgba(77, 217, 255, 0.18);
-  --ambient-magenta: rgba(255, 91, 108, 0.12);
-  --ambient-violet: rgba(167, 139, 255, 0.12);
+  --ambient-cyan: rgba(34, 225, 255, 0.18);
+  --ambient-magenta: rgba(255, 61, 138, 0.18);
+  --ambient-violet: rgba(180, 139, 255, 0.18);
 
-  /* Glow accents (new) */
-  --glow-cyan: 0 0 24px rgba(77, 217, 255, 0.22);
-  --glow-cyan-soft: 0 0 12px rgba(77, 217, 255, 0.14);
-  --glow-warn: 0 0 22px rgba(241, 179, 71, 0.26);
-  --glow-danger: 0 0 22px rgba(255, 91, 108, 0.32);
+  /* Glow accents */
+  --glow-magenta: 0 0 22px rgba(255, 61, 138, 0.42);
+  --glow-magenta-soft: 0 0 12px rgba(255, 61, 138, 0.22);
+  --glow-cyan: 0 0 22px rgba(34, 225, 255, 0.36);
+  --glow-cyan-soft: 0 0 12px rgba(34, 225, 255, 0.2);
+  --glow-mint: 0 0 22px rgba(0, 255, 170, 0.34);
+  --glow-warn: 0 0 22px rgba(255, 181, 71, 0.32);
+  --glow-danger: 0 0 24px rgba(255, 61, 138, 0.46);
 
   /* Geometry */
-  --radius-panel: 4px;
+  --radius-panel: 2px;
   --radius-pill: 999px;
-  --tick-size: 14px;
+  --tick-size: 16px;
+  --hud-cut: 18px;
 
   --font-sans:
     "Inter", "IBM Plex Sans", "SF Pro Text", ui-sans-serif, system-ui,
@@ -114,7 +125,7 @@ h1 {
   font-family: var(--font-display);
   color: var(--text-primary);
   font-size: 2rem;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.08;
 }
